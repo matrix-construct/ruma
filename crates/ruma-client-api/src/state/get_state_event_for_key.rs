@@ -9,11 +9,9 @@ pub mod v3 {
 
     use ruma_common::{
         api::{response, Metadata},
-        metadata,
-        serde::Raw,
-        OwnedRoomId,
+        metadata, OwnedRoomId,
     };
-    use ruma_events::{AnyStateEventContent, StateEventType};
+    use ruma_events::StateEventType;
 
     const METADATA: Metadata = metadata! {
         method: GET,
@@ -37,12 +35,16 @@ pub mod v3 {
 
         /// The key of the state to look up.
         pub state_key: String,
+
+        /// Optional parameter to return the event content
+        /// or the full state event.
+        pub format: Option<String>,
     }
 
     impl Request {
         /// Creates a new `Request` with the given room ID, event type and state key.
         pub fn new(room_id: OwnedRoomId, event_type: StateEventType, state_key: String) -> Self {
-            Self { room_id, event_type, state_key }
+            Self { room_id, event_type, state_key, format: None }
         }
     }
 
@@ -51,17 +53,23 @@ pub mod v3 {
     pub struct Response {
         /// The content of the state event.
         ///
-        /// Since the inner type of the `Raw` does not implement `Deserialize`, you need to use
-        /// `.deserialize_as_unchecked::<T>()` or
-        /// `.cast_ref_unchecked::<T>().deserialize_with_type()` to deserialize it.
-        #[ruma_api(body)]
-        pub content: Raw<AnyStateEventContent>,
+        /// This is `serde_json::Value` due to complexity issues with returning only the
+        /// actual JSON content without a top level key.
+        #[serde(flatten, skip_serializing_if = "Option::is_none")]
+        pub content: Option<serde_json::Value>,
+
+        /// The full state event
+        ///
+        /// This is `serde_json::Value` due to complexity issues with returning only the
+        /// actual JSON content without a top level key.
+        #[serde(flatten, skip_serializing_if = "Option::is_none")]
+        pub event: Option<serde_json::Value>,
     }
 
     impl Response {
         /// Creates a new `Response` with the given content.
-        pub fn new(content: Raw<AnyStateEventContent>) -> Self {
-            Self { content }
+        pub fn new(content: serde_json::Value, event: serde_json::Value) -> Self {
+            Self { content: Some(content), event: Some(event) }
         }
     }
 
@@ -80,13 +88,15 @@ pub mod v3 {
         ) -> Result<http::Request<T>, ruma_common::api::error::IntoHttpError> {
             use http::header;
 
+            let query_string = serde_html_form::to_string(RequestQuery { format: self.format })?;
+
             http::Request::builder()
                 .method(http::Method::GET)
                 .uri(METADATA.make_endpoint_url(
                     considering,
                     base_url,
                     &[&self.room_id, &self.event_type, &self.state_key],
-                    "",
+                    &query_string,
                 )?)
                 .header(header::CONTENT_TYPE, "application/json")
                 .header(
@@ -111,7 +121,7 @@ pub mod v3 {
         const METADATA: Metadata = METADATA;
 
         fn try_from_http_request<B, S>(
-            _request: http::Request<B>,
+            request: http::Request<B>,
             path_args: &[S],
         ) -> Result<Self, ruma_common::api::error::FromHttpRequestError>
         where
@@ -140,7 +150,21 @@ pub mod v3 {
                     (a, b, "".into())
                 };
 
-            Ok(Self { room_id, event_type, state_key })
+            let request_query: RequestQuery =
+                serde_html_form::from_str(request.uri().query().unwrap_or(""))?;
+
+            Ok(Self { room_id, event_type, state_key, format: request_query.format })
         }
+    }
+
+    /// Data in the request's query string.
+    #[derive(Debug)]
+    #[cfg_attr(feature = "client", derive(serde::Serialize))]
+    #[cfg_attr(feature = "server", derive(serde::Deserialize))]
+    struct RequestQuery {
+        /// Optional parameter to return the event content
+        /// or the full state event.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        format: Option<String>,
     }
 }
