@@ -74,19 +74,11 @@ pub mod v3 {
     #[allow(deprecated)]
     pub struct Capabilities {
         /// Capability to indicate if the user can change their password.
-        #[serde(
-            rename = "m.change_password",
-            default,
-            skip_serializing_if = "ChangePasswordCapability::is_default"
-        )]
+        #[serde(rename = "m.change_password", default)]
         pub change_password: ChangePasswordCapability,
 
         /// The room versions the server supports.
-        #[serde(
-            rename = "m.room_versions",
-            default,
-            skip_serializing_if = "RoomVersionsCapability::is_default"
-        )]
+        #[serde(rename = "m.room_versions", default)]
         pub room_versions: RoomVersionsCapability,
 
         /// Capability to indicate if the user can change their display name.
@@ -109,20 +101,12 @@ pub mod v3 {
 
         /// Capability to indicate if the user can change the third-party identifiers associated
         /// with their account.
-        #[serde(
-            rename = "m.3pid_changes",
-            default,
-            skip_serializing_if = "ThirdPartyIdChangesCapability::is_default"
-        )]
+        #[serde(rename = "m.3pid_changes", default)]
         pub thirdparty_id_changes: ThirdPartyIdChangesCapability,
 
         /// Capability to indicate if the user can generate tokens to log further clients into
         /// their account.
-        #[serde(
-            rename = "m.get_login_token",
-            default,
-            skip_serializing_if = "GetLoginTokenCapability::is_default"
-        )]
+        #[serde(rename = "m.get_login_token", default)]
         pub get_login_token: GetLoginTokenCapability,
 
         /// Capability to indicate if the user can set extended profile fields.
