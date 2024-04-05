@@ -32,6 +32,7 @@ rand = ["dep:rand", "dep:getrandom", "dep:uuid"]
 
 unstable-msc2666 = []
 unstable-msc2870 = []
+unstable-msc3026 = []
 unstable-msc3417 = []
 unstable-msc3768 = []
 unstable-msc3843 = []
@@ -47,7 +48,9 @@ unstable-msc4306 = []
 unstable-msc4406 = []
 
 # Allow IDs to exceed 255 bytes.
-compat-arbitrary-length-ids = ["ruma-identifiers-validation/compat-arbitrary-length-ids"]
+compat-arbitrary-length-ids = [
+    "ruma-identifiers-validation/compat-arbitrary-length-ids",
+]
 
 # Don't validate `ServerSigningKeyVersion`.
 compat-server-signing-key-version = ["ruma-identifiers-validation/compat-server-signing-key-version"]
