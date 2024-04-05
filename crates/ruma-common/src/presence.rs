@@ -17,6 +17,10 @@ pub enum PresenceState {
     #[default]
     Online,
 
+    /// Connected to the service and active but not available for chat.
+    #[cfg(feature = "unstable-msc3026")]
+    Busy,
+
     /// Connected to the service but not available for chat.
     Unavailable,
 

@@ -28,6 +28,7 @@ rand = ["dep:rand", "dep:getrandom", "dep:uuid"]
 unstable-msc2666 = []
 unstable-msc2870 = []
 unstable-msc3768 = []
+unstable-msc3026 = []
 unstable-msc3930 = []
 unstable-msc3931 = []
 unstable-msc3932 = ["unstable-msc3931"]
@@ -38,7 +39,9 @@ unstable-msc4186 = []
 unstable-msc4306 = []
 
 # Allow IDs to exceed 255 bytes.
-compat-arbitrary-length-ids = ["ruma-identifiers-validation/compat-arbitrary-length-ids"]
+compat-arbitrary-length-ids = [
+    "ruma-identifiers-validation/compat-arbitrary-length-ids",
+]
 
 # Don't validate `ServerSigningKeyVersion`.
 compat-server-signing-key-version = ["ruma-identifiers-validation/compat-server-signing-key-version"]
@@ -64,7 +67,11 @@ getrandom = { version = "0.2.6", optional = true }
 http = { workspace = true, optional = true }
 indexmap = { version = "2.0.0", features = ["serde"] }
 js_int = { workspace = true, features = ["serde"] }
-konst = { version = "0.3.5", default-features = false, features = ["cmp", "iter", "parsing"], optional = true }
+konst = { version = "0.3.5", default-features = false, features = [
+    "cmp",
+    "iter",
+    "parsing",
+], optional = true }
 percent-encoding = "2.1.0"
 rand = { workspace = true, optional = true }
 regex = { version = "1.5.6", default-features = false, features = ["std", "perf"] }
