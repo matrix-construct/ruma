@@ -29,6 +29,10 @@ pub enum PresenceState {
     )]
     Online,
 
+    /// Connected to the service and active but not available for chat.
+    #[cfg(feature = "unstable-msc3026")]
+    Busy,
+
     /// Connected to the service but not available for chat.
     #[cfg_attr(
         feature = "unstable-msc4532",
@@ -62,7 +66,7 @@ pub enum PresenceState {
     /// [MSC4532]: https://github.com/matrix-org/matrix-spec-proposals/pull/4532
     #[cfg(feature = "unstable-msc4532")]
     #[ruma_enum(rename = "org.continuwuity.presence_v2.msc4532.busy")]
-    Busy,
+    Msc4532Busy,
 
     #[doc(hidden)]
     _Custom(PrivOwnedStr),
@@ -97,7 +101,7 @@ impl PresenceState {
         match self {
             Self::Active => Self::Online,
             Self::Idle => Self::Unavailable,
-            Self::Busy => Self::Unavailable,
+            Self::Msc4532Busy => Self::Unavailable,
             state => state.clone(),
         }
     }
@@ -108,7 +112,7 @@ impl PresenceState {
     ///
     /// [MSC4532]: https://github.com/matrix-org/matrix-spec-proposals/pull/4532
     pub fn is_msc4532_state(&self) -> bool {
-        matches!(self, Self::Active | Self::Idle | Self::Busy | Self::Offline)
+        matches!(self, Self::Active | Self::Idle | Self::Msc4532Busy | Self::Offline)
     }
 
     /// Return a reasonable `currently_active` value for this [`PresenceState`].
