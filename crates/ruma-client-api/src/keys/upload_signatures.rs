@@ -45,7 +45,7 @@ pub mod v3 {
     #[derive(Default)]
     pub struct Response {
         /// Signature processing failures.
-        #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+        #[serde(default)]
         pub failures: BTreeMap<OwnedUserId, BTreeMap<String, Failure>>,
     }
 
