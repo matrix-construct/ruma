@@ -424,6 +424,7 @@ pub mod v3 {
     #[cfg_attr(not(ruma_unstable_exhaustive_types), non_exhaustive)]
     pub struct IdentityServerInfo {
         /// The base URL for the identity server for client-server connections.
+        #[serde(default)]
         pub base_url: String,
     }
 
