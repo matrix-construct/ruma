@@ -354,7 +354,7 @@ pub mod v3 {
         pub homeserver: HomeserverInfo,
 
         /// Information about the identity server to connect to.
-        #[serde(rename = "m.identity_server")]
+        #[serde(rename = "m.identity_server", skip_serializing_if = "Option::is_none")]
         pub identity_server: Option<IdentityServerInfo>,
     }
 
@@ -385,6 +385,7 @@ pub mod v3 {
     #[cfg_attr(not(ruma_unstable_exhaustive_types), non_exhaustive)]
     pub struct IdentityServerInfo {
         /// The base URL for the identity server for client-server connections.
+        #[serde(default)]
         pub base_url: String,
     }
 
