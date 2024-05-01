@@ -81,6 +81,10 @@ pub mod v3 {
         #[serde(skip_serializing_if = "Option::is_none")]
         pub room_alias_name: Option<String>,
 
+        /// The desired custom room ID local part.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub room_id: Option<String>,
+
         /// Room version to set for the room.
         ///
         /// Defaults to homeserver's default if not specified.
