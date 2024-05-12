@@ -28,6 +28,7 @@ pub mod message;
 pub mod name;
 pub mod pinned_events;
 pub mod power_levels;
+pub mod preview_url;
 pub mod redaction;
 pub mod server_acl;
 pub mod third_party_invite;
