@@ -44,6 +44,7 @@ pub mod policy;
 pub mod power_levels;
 #[cfg(feature = "unstable-msc4495")]
 pub mod presence_sharing;
+pub mod preview_url;
 pub mod redaction;
 #[cfg(feature = "unstable-msc1763")]
 pub mod retention;
