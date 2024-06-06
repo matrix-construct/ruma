@@ -157,6 +157,7 @@ impl AuthData {
                 identifier: x.identifier.clone(),
                 password: x.password.clone(),
                 session: None,
+                user: None,
             })),
             Self::ReCaptcha(x) => {
                 Cow::Owned(serialize(ReCaptcha { response: x.response.clone(), session: None }))
@@ -284,28 +285,36 @@ pub enum AuthType {
 #[serde(tag = "type", rename = "m.login.password")]
 pub struct Password {
     /// One of the user's identifiers.
-    pub identifier: UserIdentifier,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub identifier: Option<UserIdentifier>,
 
     /// The plaintext password.
     pub password: String,
 
     /// The value of the session key given by the homeserver, if any.
     pub session: Option<String>,
+
+    /// Username for the user. (Legacy Element Android/iOS hack, do not use!)
+    ///
+    /// See <https://github.com/element-hq/element-android/issues/8043>
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub user: Option<String>,
 }
 
 impl Password {
     /// Creates a new `Password` with the given identifier and password.
     pub fn new(identifier: UserIdentifier, password: String) -> Self {
-        Self { identifier, password, session: None }
+        Self { identifier: Some(identifier), password, session: None, user: None }
     }
 }
 
 impl fmt::Debug for Password {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let Self { identifier, password: _, session } = self;
+        let Self { identifier, password: _, session, user } = self;
         f.debug_struct("Password")
             .field("identifier", identifier)
             .field("session", session)
+            .field("user", user)
             .finish_non_exhaustive()
     }
 }
