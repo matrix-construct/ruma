@@ -303,13 +303,6 @@ impl TryFrom<Field> for ResponseField {
     type Error = syn::Error;
 
     fn try_from(mut field: Field) -> syn::Result<Self> {
-        if has_lifetime(&field.ty) {
-            return Err(syn::Error::new_spanned(
-                field.ident,
-                "Lifetimes on Response fields cannot be supported until GAT are stable",
-            ));
-        }
-
         let (mut api_attrs, attrs) =
             field.attrs.into_iter().partition::<Vec<_>, _>(|attr| attr.path().is_ident("ruma_api"));
         field.attrs = attrs;
@@ -341,6 +334,7 @@ impl ToTokens for ResponseField {
     }
 }
 
+#[allow(dead_code)]
 fn has_lifetime(ty: &Type) -> bool {
     struct Visitor {
         found_lifetime: bool,
