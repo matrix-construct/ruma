@@ -65,6 +65,8 @@ identity-service-api-s = [
 ]
 identity-service-api = ["identity-service-api-c", "identity-service-api-s"]
 
+identifiers-validation = ["dep:ruma-identifiers-validation"]
+
 push-gateway-api-c = [
     "api",
     "dep:ruma-push-gateway-api",
@@ -334,6 +336,7 @@ ruma-appservice-api = { workspace = true, optional = true }
 ruma-client-api = { workspace = true, optional = true }
 ruma-federation-api = { workspace = true, optional = true }
 ruma-identity-service-api = { workspace = true, optional = true }
+ruma-identifiers-validation = { workspace = true, optional = true }
 ruma-push-gateway-api = { workspace = true, optional = true }
 
 [dev-dependencies]
