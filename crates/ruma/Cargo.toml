@@ -36,6 +36,8 @@ identity-service-api-c = ["api", "dep:ruma-identity-service-api", "ruma-identity
 identity-service-api-s = ["api", "dep:ruma-identity-service-api", "ruma-identity-service-api?/server"]
 identity-service-api = ["identity-service-api-c", "identity-service-api-s"]
 
+identifiers-validation = ["dep:ruma-identifiers-validation"]
+
 push-gateway-api-c = ["api", "dep:ruma-push-gateway-api", "ruma-push-gateway-api?/client"]
 push-gateway-api-s = ["api", "dep:ruma-push-gateway-api", "ruma-push-gateway-api?/server"]
 push-gateway-api = ["push-gateway-api-c", "push-gateway-api-s"]
@@ -204,7 +206,7 @@ unstable-msc4354 = ["ruma-events?/unstable-msc4354", "ruma-client-api?/unstable-
 unstable-msc4359 = ["ruma-events?/unstable-msc4359"]
 unstable-msc4360 = ["ruma-client-api?/unstable-msc4360"]
 unstable-msc4362 = ["ruma-events?/unstable-msc4362"]
-unstable-msc4363 = ["ruma-common/unstable-msc4363"]
+unstable-msc4363 = ["ruma-common/unstable-msc4363", "ruma-identifiers-validation?/unstable-msc4363"]
 unstable-msc4380 = ["ruma-events?/unstable-msc4380"]
 unstable-msc4383 = ["ruma-client-api?/unstable-msc4383"]
 unstable-msc4385 = ["ruma-events?/unstable-msc4385"]
@@ -258,6 +260,7 @@ ruma-state-res = { workspace = true, optional = true }
 ruma-appservice-api = { workspace = true, optional = true }
 ruma-client-api = { workspace = true, optional = true }
 ruma-federation-api = { workspace = true, optional = true }
+ruma-identifiers-validation = { workspace = true, optional = true }
 ruma-identity-service-api = { workspace = true, optional = true }
 ruma-push-gateway-api = { workspace = true, optional = true }
 
