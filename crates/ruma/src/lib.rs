@@ -96,6 +96,9 @@ pub use ruma_events as events;
 #[cfg(feature = "html")]
 #[doc(inline)]
 pub use ruma_html as html;
+#[cfg(feature = "identifiers-validation")]
+#[doc(inline)]
+pub use ruma_identifiers_validation as identifiers_validation;
 #[cfg(feature = "signatures")]
 #[doc(inline)]
 pub use ruma_signatures as signatures;
