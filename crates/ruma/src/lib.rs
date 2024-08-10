@@ -138,7 +138,9 @@ pub mod api {
 #[doc(no_inline)]
 pub use assign::assign;
 #[doc(no_inline)]
-pub use js_int::{int, uint, Int, UInt};
+pub use js_int::{
+    int, uint, Int, ParseIntError as JsParseIntError, TryFromIntError as JsTryFromIntError, UInt,
+};
 #[doc(no_inline)]
 pub use js_option::JsOption;
 #[cfg(all(feature = "events", feature = "unstable-msc4334"))]
