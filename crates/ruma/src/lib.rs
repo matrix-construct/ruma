@@ -208,7 +208,9 @@ pub mod canonical_json {
 #[doc(no_inline)]
 pub use assign::assign;
 #[doc(no_inline)]
-pub use js_int::{Int, UInt, int, uint};
+pub use js_int::{
+    Int, ParseIntError as JsParseIntError, TryFromIntError as JsTryFromIntError, UInt, int, uint,
+};
 #[doc(no_inline)]
 pub use js_option::JsOption;
 #[cfg(all(feature = "events", feature = "unstable-msc4334"))]
