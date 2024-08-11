@@ -551,6 +551,20 @@ impl IdDst {
                         .map_err(D::Error::custom)
                 }
             }
+
+            #[automatically_derived]
+            impl<'de, #generic_params> #serde::Deserialize<'de> for &'de #id {
+                fn deserialize<D>(deserializer: D) -> ::std::result::Result<Self, D::Error>
+                where
+                    D: #serde::Deserializer<'de>,
+                {
+                    use #serde::de::Error;
+
+                    let s = <&'de #str>::deserialize(deserializer)?;
+                    #validate(s).map_err(D::Error::custom)?;
+                    ::std::result::Result::Ok(#ident::from_borrowed_unchecked(s))
+                }
+            }
         })
     }
 
@@ -625,6 +639,16 @@ impl IdDst {
                     // We always deserialize as a string to make sure that it is valid UTF-8,
                     // regardless of the inner representation.
                     #ruma_common::serde::deserialize_cow_str(deserializer).map(::std::convert::Into::into)
+                }
+            }
+
+            #[automatically_derived]
+            impl<'de, #generic_params> #serde::Deserialize<'de> for &'de #id {
+                fn deserialize<D>(deserializer: D) -> ::std::result::Result<Self, D::Error>
+                where
+                    D: #serde::Deserializer<'de>,
+                {
+                    <&'de #str>::deserialize(deserializer).map(#ident::from_borrowed_unchecked)
                 }
             }
         })
