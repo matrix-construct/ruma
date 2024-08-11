@@ -560,6 +560,23 @@ fn expand_checked_impls(input: &ItemStruct, validate: Path) -> TokenStream {
         }
 
         #[automatically_derived]
+        impl<'de, #generic_params> serde::Deserialize<'de> for &'de #id_ty {
+            fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+            where
+                D: serde::Deserializer<'de>,
+            {
+                use serde::de::Error;
+
+                let s = <&'de str>::deserialize(deserializer)?;
+
+                match #validate(s) {
+                    Ok(_) => Ok(<#id_ty>::from_borrowed(s)),
+                    Err(e) => Err(D::Error::custom(e)),
+                }
+            }
+        }
+
+        #[automatically_derived]
         impl<'a, #generic_params> std::convert::TryFrom<&'a str> for &'a #id_ty {
             type Error = crate::IdParseError;
 
@@ -706,6 +723,17 @@ fn expand_unchecked_impls(input: &ItemStruct) -> TokenStream {
                 Box::<str>::deserialize(deserializer).map(#id::from_box).map(Into::into)
             }
         }
+
+        #[automatically_derived]
+        impl<'de> serde::Deserialize<'de> for &'de #id {
+            fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+            where
+                D: serde::Deserializer<'de>,
+            {
+                <&'de str>::deserialize(deserializer).map(<#id>::from_borrowed).map(Into::into)
+            }
+        }
+
     }
 }
 
