@@ -9,10 +9,15 @@ impl Response {
         let bytes = quote! { #ruma_common::exports::bytes };
         let http = quote! { #ruma_common::exports::http };
 
+        let reserve_headers = self.fields.iter().fold(0_usize, |acc, response_field| {
+            acc + (response_field.as_header_field().is_some() as usize)
+        });
+
         // If there is a `raw_body` field, the `application/json` content-type is likely to be
         // wrong.
         let mut headers = if self.has_raw_body() {
             quote! {
+                headers.reserve(1 + #reserve_headers);
                 headers.insert(
                     #http::header::CONTENT_TYPE,
                     #ruma_common::http_headers::APPLICATION_OCTET_STREAM,
@@ -20,6 +25,7 @@ impl Response {
             }
         } else {
             quote! {
+                headers.reserve(1 + #reserve_headers);
                 headers.insert(
                     #http::header::CONTENT_TYPE,
                     #ruma_common::http_headers::APPLICATION_JSON,
@@ -87,6 +93,9 @@ impl Response {
                 fn try_into_http_response<T: ::std::default::Default + #bytes::BufMut>(
                     self,
                 ) -> ::std::result::Result<#http::Response<T>, #ruma_common::api::error::IntoHttpError> {
+                    static APPLICATION_JSON: #http::header::HeaderValue =
+                           #http::header::HeaderValue::from_static("application/json");
+
                     let mut resp_builder = #http::Response::builder()
                         .status(#http::StatusCode::#status_ident);
 
