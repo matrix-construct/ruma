@@ -9,6 +9,10 @@ impl Response {
         let bytes = quote! { #ruma_common::exports::bytes };
         let http = quote! { #ruma_common::exports::http };
 
+        let reserve_headers = self.fields.iter().fold(0_usize, |acc, response_field| {
+            acc + (response_field.as_header_field().is_some() as usize)
+        });
+
         let serialize_response_headers = self.fields.iter().filter_map(|response_field| {
             response_field.as_header_field().map(|(field, header_name)| {
                 let field_name =
@@ -68,11 +72,15 @@ impl Response {
                 fn try_into_http_response<T: ::std::default::Default + #bytes::BufMut>(
                     self,
                 ) -> ::std::result::Result<#http::Response<T>, #ruma_common::api::error::IntoHttpError> {
+                    static APPLICATION_JSON: #http::header::HeaderValue =
+                           #http::header::HeaderValue::from_static("application/json");
+
                     let mut resp_builder = #http::Response::builder()
-                        .status(#http::StatusCode::#status_ident)
-                        .header(#http::header::CONTENT_TYPE, "application/json");
+                        .status(#http::StatusCode::#status_ident);
 
                     if let Some(mut headers) = resp_builder.headers_mut() {
+                        headers.reserve(1 + #reserve_headers);
+                        headers.insert(#http::header::CONTENT_TYPE, APPLICATION_JSON.clone());
                         #(#serialize_response_headers)*
                     }
 
