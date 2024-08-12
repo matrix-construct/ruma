@@ -170,9 +170,11 @@ impl Headers {
         }
 
         let src = kind.as_variable_ident();
+        let reserve = self.0.len() + 1;
 
         Some(quote! {{
             let headers = #src.headers_mut();
+            headers.reserve(#reserve);
             #serialize
         }})
     }
