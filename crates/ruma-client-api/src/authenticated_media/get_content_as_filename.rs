@@ -9,13 +9,15 @@ pub mod v1 {
 
     use std::time::Duration;
 
-    use http::header::{CONTENT_DISPOSITION, CONTENT_TYPE};
+    use http::header::{CACHE_CONTROL, CONTENT_DISPOSITION, CONTENT_TYPE};
     use ruma_common::{
         IdParseError, MxcUri, OwnedServerName,
         api::{auth_scheme::AccessToken, request, response},
         http_headers::ContentDisposition,
         metadata,
     };
+
+    use crate::http_headers::CROSS_ORIGIN_RESOURCE_POLICY;
 
     metadata! {
         method: GET,
@@ -70,6 +72,26 @@ pub mod v1 {
         /// file that was previously uploaded.
         #[ruma_api(header = CONTENT_DISPOSITION)]
         pub content_disposition: Option<ContentDisposition>,
+
+        /// The value of the `Cross-Origin-Resource-Policy` HTTP header.
+        ///
+        /// See [MDN] for the syntax.
+        ///
+        /// [MDN]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cross-Origin-Resource-Policy#syntax
+        ///
+        /// TODO: make this use Cow static str's
+        #[ruma_api(header = CROSS_ORIGIN_RESOURCE_POLICY)]
+        pub cross_origin_resource_policy: Option<String>,
+
+        /// The value of the `Cache-Control` HTTP header.
+        ///
+        /// See [MDN] for the syntax.
+        ///
+        /// [MDN]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cache-Control#syntax
+        ///
+        /// TODO: make this use Cow static str's
+        #[ruma_api(header = CACHE_CONTROL)]
+        pub cache_control: Option<String>,
     }
 
     impl Request {
@@ -102,6 +124,8 @@ pub mod v1 {
                 file,
                 content_type: Some(content_type),
                 content_disposition: Some(content_disposition),
+                cross_origin_resource_policy: None,
+                cache_control: None,
             }
         }
     }
