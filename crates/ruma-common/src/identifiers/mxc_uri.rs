@@ -2,7 +2,7 @@
 //!
 //! [MXC URI]: https://spec.matrix.org/v1.19/client-server-api/#matrix-content-mxc-uris
 
-use std::num::NonZeroU16;
+use std::{fmt, num::NonZeroU16};
 
 use ruma_identifiers_validation::{error::MxcUriError, mxc_uri::validate};
 use ruma_macros::IdDst;
@@ -19,25 +19,34 @@ type Result<T, E = MxcUriError> = std::result::Result<T, E>;
 #[ruma_id(smallvec_inline_bytes = 60)]
 pub struct MxcUri(str);
 
+/// Structured MXC URI which may reference strings from separate sources without serialization
+#[non_exhaustive]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct Mxc<'a> {
+    /// ServerName part of the MXC URI
+    pub server_name: &'a ServerName,
+
+    /// MediaId part of the MXC URI
+    pub media_id: &'a str,
+}
+
 impl MxcUri {
     /// If this is a valid MXC URI, returns the media ID.
     pub fn media_id(&self) -> Result<&str> {
-        self.parts().map(|(_, s)| s)
+        self.parts().map(|mxc| mxc.media_id)
     }
 
     /// If this is a valid MXC URI, returns the server name.
     pub fn server_name(&self) -> Result<&ServerName> {
-        self.parts().map(|(s, _)| s)
+        self.parts().map(|mxc| mxc.server_name)
     }
 
     /// If this is a valid MXC URI, returns a `(server_name, media_id)` tuple, else it returns the
     /// error.
-    pub fn parts(&self) -> Result<(&ServerName, &str)> {
-        self.extract_slash_idx().map(|idx| {
-            (
-                ServerName::from_borrowed_unchecked(&self.as_str()[6..idx.get() as usize]),
-                &self.as_str()[idx.get() as usize + 1..],
-            )
+    pub fn parts(&self) -> Result<Mxc<'_>> {
+        self.extract_slash_idx().map(|idx| Mxc::<'_> {
+            server_name: ServerName::from_borrowed_unchecked(&self.as_str()[6..idx.get() as usize]),
+            media_id: &self.as_str()[idx.get() as usize + 1..],
         })
     }
 
@@ -59,11 +68,43 @@ impl MxcUri {
     }
 }
 
+impl fmt::Display for Mxc<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "mxc://{}/{}", self.server_name, self.media_id)
+    }
+}
+
+impl<'a> TryFrom<&'a MxcUri> for Mxc<'a> {
+    type Error = MxcUriError;
+
+    fn try_from(s: &'a MxcUri) -> Result<Self, Self::Error> {
+        s.parts()
+    }
+}
+
+impl<'a> TryFrom<&'a str> for Mxc<'a> {
+    type Error = MxcUriError;
+
+    fn try_from(s: &'a str) -> Result<Self, Self::Error> {
+        let s: &MxcUri = s.into();
+        s.try_into()
+    }
+}
+
+impl<'a> TryFrom<&'a OwnedMxcUri> for Mxc<'a> {
+    type Error = MxcUriError;
+
+    fn try_from(s: &'a OwnedMxcUri) -> Result<Self, Self::Error> {
+        let s: &MxcUri = s.as_ref();
+        s.try_into()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use ruma_identifiers_validation::error::MxcUriError;
 
-    use super::{MxcUri, OwnedMxcUri};
+    use super::{Mxc, MxcUri, OwnedMxcUri};
     use crate::server_name;
 
     #[test]
@@ -71,7 +112,10 @@ mod tests {
         let mxc = <&MxcUri>::from("mxc://127.0.0.1/asd32asdfasdsd");
 
         assert!(mxc.is_valid());
-        assert_eq!(mxc.parts(), Ok((server_name!("127.0.0.1"), "asd32asdfasdsd")));
+        assert_eq!(
+            mxc.parts(),
+            Ok(Mxc { server_name: server_name!("127.0.0.1"), media_id: "asd32asdfasdsd" })
+        );
     }
 
     #[test]
@@ -103,7 +147,10 @@ mod tests {
 
         assert_eq!(mxc, "mxc://server/1234id");
         assert!(mxc.is_valid());
-        assert_eq!(mxc.parts(), Ok((server_name!("server"), "1234id")));
+        assert_eq!(
+            mxc.parts(),
+            Ok(Mxc { server_name: server_name!("server"), media_id: "1234id" })
+        );
     }
 
     #[test]
@@ -113,7 +160,7 @@ mod tests {
         let mxc = <&MxcUri>::from(uri.as_str());
 
         assert!(mxc.is_valid());
-        let (mxc_server_name, mxc_media_id) = mxc.parts().unwrap();
+        let Mxc { server_name: mxc_server_name, media_id: mxc_media_id } = mxc.parts().unwrap();
         assert_eq!(*mxc_server_name, server_name);
         assert_eq!(mxc_media_id, "1");
     }

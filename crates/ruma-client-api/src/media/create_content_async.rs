@@ -9,7 +9,7 @@ pub mod v3 {
 
     use http::header::CONTENT_TYPE;
     use ruma_common::{
-        IdParseError, MxcUri, OwnedServerName,
+        IdParseError, Mxc, MxcUri, OwnedServerName,
         api::{auth_scheme::AccessToken, request, response},
         metadata,
     };
@@ -62,7 +62,7 @@ pub mod v3 {
 
         /// Creates a new `Request` with the given url and file contents.
         pub fn from_url(url: &MxcUri, file: Vec<u8>) -> Result<Self, IdParseError> {
-            let (server_name, media_id) = url.parts()?;
+            let Mxc { server_name, media_id, .. } = url.parts()?;
             Ok(Self::new(media_id.to_owned(), server_name.to_owned(), file))
         }
     }
