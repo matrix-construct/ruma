@@ -13,7 +13,7 @@ pub mod v1 {
     use ruma_common::{
         api::{request, response, Metadata},
         http_headers::ContentDisposition,
-        metadata, IdParseError, MxcUri, OwnedServerName,
+        metadata, IdParseError, Mxc, MxcUri, OwnedServerName,
     };
 
     use crate::http_headers::CROSS_ORIGIN_RESOURCE_POLICY;
@@ -101,7 +101,7 @@ pub mod v1 {
 
         /// Creates a new `Request` with the given URI.
         pub fn from_uri(uri: &MxcUri) -> Result<Self, IdParseError> {
-            let (server_name, media_id) = uri.parts()?;
+            let Mxc { server_name, media_id, .. } = uri.parts()?;
 
             Ok(Self::new(media_id.to_owned(), server_name.to_owned()))
         }
