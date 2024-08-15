@@ -11,6 +11,14 @@ use crate::util::{
     expand_fields_as_list,
 };
 
+/// Whether the given type is a `Cow<_>` (any lifetime, any inner type).
+fn is_cow_str(ty: &syn::Type) -> bool {
+    let syn::Type::Path(syn::TypePath { path: syn::Path { segments, .. }, .. }) = ty else {
+        return false;
+    };
+    segments.last().is_some_and(|s| s.ident == "Cow")
+}
+
 /// Parsed HTTP headers of a request or response struct.
 #[derive(Default)]
 pub(super) struct Headers(BTreeMap<syn::Ident, syn::Field>);
@@ -79,8 +87,15 @@ impl Headers {
         let option_inner_type = field_type.option_inner_type();
 
         let some_case = if let Some(field_type) = option_inner_type {
-            quote! {
-                str_value.parse::<#field_type>().ok()
+            // Borrow zero-copy when the field is `Cow<'static, str>`.
+            if is_cow_str(field_type) {
+                quote! {
+                    Some(::std::borrow::Cow::Owned(str_value.to_owned()))
+                }
+            } else {
+                quote! {
+                    str_value.parse::<#field_type>().ok()
+                }
             }
         } else {
             quote! {
@@ -146,7 +161,26 @@ impl Headers {
             let ident = field.ident();
             let cfg_attrs = field.cfg_attrs();
 
-            let header = if field.ty.option_inner_type().is_some() {
+            let header = if let Some(inner) = field.ty.option_inner_type()
+                && is_cow_str(inner)
+            {
+                // Static `&'static str` inside `Cow::Borrowed` becomes a zero-alloc
+                // `HeaderValue::from_static`; owned values fall back to the parsing path.
+                quote! {
+                    #( #cfg_attrs )*
+                    if let Some(header_val) = #ident.as_ref() {
+                        headers.insert(
+                            #header_name,
+                            match header_val {
+                                ::std::borrow::Cow::Borrowed(s) =>
+                                    #http::header::HeaderValue::from_static(s),
+                                ::std::borrow::Cow::Owned(s) =>
+                                    #http::header::HeaderValue::from_str(s)?,
+                            },
+                        );
+                    }
+                }
+            } else if field.ty.option_inner_type().is_some() {
                 quote! {
                     #( #cfg_attrs )*
                     if let Some(header_val) = #ident.as_ref() {
