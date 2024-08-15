@@ -5,6 +5,7 @@ use syn::Ident;
 use super::{Response, ResponseField};
 
 impl Response {
+    #[allow(clippy::wildcard_in_or_patterns)]
     pub fn expand_outgoing(&self, status_ident: &Ident, ruma_common: &TokenStream) -> TokenStream {
         let bytes = quote! { #ruma_common::exports::bytes };
         let http = quote! { #ruma_common::exports::http };
@@ -22,19 +23,56 @@ impl Response {
                     syn::Type::Path(syn::TypePath { path: syn::Path { segments, .. }, .. })
                         if segments.last().unwrap().ident == "Option" =>
                     {
-                        quote! {
-                            if let Some(header) = self.#field_name {
-                                headers.insert(
-                                    #header_name,
-                                    header.to_string().parse()?,
-                                );
+                        let syn::PathArguments::AngleBracketed(
+                            syn::AngleBracketedGenericArguments { args: option_args, .. },
+                        ) = &segments.last().unwrap().arguments
+                        else {
+                            panic!("Option should use angle brackets");
+                        };
+                        let syn::GenericArgument::Type(field_type) = option_args.first().unwrap()
+                        else {
+                            panic!("Option brackets should contain type");
+                        };
+                        let syn::Type::Path(syn::TypePath {
+                            path: syn::Path { segments, .. }, ..
+                        }) = field_type
+                        else {
+                            panic!("Option type should have a path")
+                        };
+                        let ident =
+                            &segments.last().expect("Option type should have path segments").ident;
+                        match ident.to_string().as_str() {
+                            "Cow" => {
+                                quote! {
+                                    if let Some(ref header) = self.#field_name {
+                                        headers.insert(
+                                            #header_name,
+                                            match header {
+                                                ::std::borrow::Cow::Borrowed(ref header) =>
+                                                    #http::header::HeaderValue::from_static(header),
+                                                ::std::borrow::Cow::Owned(ref header) =>
+                                                    #http::header::HeaderValue::from_str(&header)?,
+                                            },
+                                        );
+                                    }
+                                }
+                            }
+                            "ContentDisposition" | _ => {
+                                quote! {
+                                    if let Some(ref header) = self.#field_name {
+                                        headers.insert(
+                                            #header_name,
+                                            header.try_into()?,
+                                        );
+                                    }
+                                }
                             }
                         }
                     }
                     _ => quote! {
                         headers.insert(
                             #header_name,
-                            self.#field_name.to_string().parse()?,
+                            self.#field_name.try_into()?,
                         );
                     },
                 }
