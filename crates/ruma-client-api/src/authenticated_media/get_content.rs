@@ -11,7 +11,7 @@ pub mod v1 {
 
     use http::header::{CACHE_CONTROL, CONTENT_DISPOSITION, CONTENT_TYPE};
     use ruma_common::{
-        IdParseError, MxcUri, OwnedServerName,
+        IdParseError, Mxc, MxcUri, OwnedServerName,
         api::{auth_scheme::AccessToken, request, response},
         http_headers::ContentDisposition,
         metadata,
@@ -102,7 +102,7 @@ pub mod v1 {
 
         /// Creates a new `Request` with the given URI.
         pub fn from_uri(uri: &MxcUri) -> Result<Self, IdParseError> {
-            let (server_name, media_id) = uri.parts()?;
+            let Mxc { server_name, media_id, .. } = uri.parts()?;
 
             Ok(Self::new(media_id.to_owned(), server_name.to_owned()))
         }

@@ -13,7 +13,7 @@ pub mod v3 {
     use js_int::UInt;
     pub use ruma_common::media::Method;
     use ruma_common::{
-        IdParseError, MxcUri, OwnedServerName,
+        IdParseError, Mxc, MxcUri, OwnedServerName,
         api::{auth_scheme::NoAuthentication, request, response},
         http_headers::ContentDisposition,
         metadata,
@@ -167,7 +167,7 @@ pub mod v3 {
         /// Creates a new `Request` with the given url, desired thumbnail width and
         /// desired thumbnail height.
         pub fn from_url(url: &MxcUri, width: UInt, height: UInt) -> Result<Self, IdParseError> {
-            let (server_name, media_id) = url.parts()?;
+            let Mxc { server_name, media_id, .. } = url.parts()?;
 
             Ok(Self::new(media_id.to_owned(), server_name.to_owned(), width, height))
         }
