@@ -64,7 +64,7 @@ impl Response {
                                 let syn::GenericArgument::Type(field_type) = option_args.first().unwrap() else {
                                     panic!("Option brackets should contain type");
                                 };
-                                let syn::Type::Path(syn::TypePath { path: syn::Path { segments, .. }, .. }) = field_type else {
+                                let Type::Path(syn::TypePath { path: syn::Path { segments, .. }, .. }) = field_type else {
                                     panic!("Option type should have a path")
                                 };
                                 let ident = &segments.last().expect("Option type should have path segments").ident;

@@ -15,7 +15,7 @@ pub mod v1 {
         api::{request, response, Metadata},
         http_headers::ContentDisposition,
         media::Method,
-        metadata, IdParseError, MxcUri, OwnedServerName,
+        metadata, IdParseError, Mxc, MxcUri, OwnedServerName,
     };
 
     use crate::http_headers::CROSS_ORIGIN_RESOURCE_POLICY;
@@ -140,7 +140,7 @@ pub mod v1 {
         /// Creates a new `Request` with the given URI, desired thumbnail width and
         /// desired thumbnail height.
         pub fn from_uri(uri: &MxcUri, width: UInt, height: UInt) -> Result<Self, IdParseError> {
-            let (server_name, media_id) = uri.parts()?;
+            let Mxc { server_name, media_id, .. } = uri.parts()?;
 
             Ok(Self::new(media_id.to_owned(), server_name.to_owned(), width, height))
         }
