@@ -2,6 +2,7 @@
 
 use std::{fmt, ops::Deref, str::FromStr};
 
+use http::header::{HeaderValue, InvalidHeaderValue};
 use ruma_macros::{AsRefStr, AsStrAsRefStr, DebugAsRefStr, DisplayAsRefStr, OrdAsRefStr};
 
 use super::{
@@ -65,6 +66,14 @@ impl fmt::Display for ContentDisposition {
         }
 
         Ok(())
+    }
+}
+
+impl TryFrom<&ContentDisposition> for HeaderValue {
+    type Error = InvalidHeaderValue;
+
+    fn try_from(cd: &ContentDisposition) -> Result<Self, Self::Error> {
+        HeaderValue::from_str(cd.to_string().as_str())
     }
 }
 

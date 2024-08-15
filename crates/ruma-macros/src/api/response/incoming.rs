@@ -64,11 +64,25 @@ impl Response {
                                 let syn::GenericArgument::Type(field_type) = option_args.first().unwrap() else {
                                     panic!("Option brackets should contain type");
                                 };
-                                quote! {
-                                    #( #cfg_attrs )*
-                                    #field_name: {
-                                        headers.remove(#header_name)
-                                            .and_then(|h| { h.to_str().ok()?.parse::<#field_type>().ok() })
+                                let Type::Path(syn::TypePath { path: syn::Path { segments, .. }, .. }) = field_type else {
+                                    panic!("Option type should have a path")
+                                };
+                                let ident = &segments.last().expect("Option type should have path segments").ident;
+                                if ident == "Cow" {
+                                    quote! {
+                                        #( #cfg_attrs )*
+                                        #field_name: {
+                                            headers.remove(#header_name)
+                                                .map(|h| h.to_str().map(str::to_owned)).transpose()?.map(Into::into)
+                                        }
+                                    }
+                                } else {
+                                    quote! {
+                                        #( #cfg_attrs )*
+                                        #field_name: {
+                                            headers.remove(#header_name)
+                                                .and_then(|h| { h.to_str().ok()?.parse::<#field_type>().ok() })
+                                        }
                                     }
                                 }
                             }
@@ -84,6 +98,7 @@ impl Response {
                                             .to_str()?
                                             .parse::<#field_type>()
                                             .map_err(|e| #ruma_common::api::error::HeaderDeserializationError::InvalidHeader(e.into()))?
+                                            .into()
                                     }
                                 }
                             }

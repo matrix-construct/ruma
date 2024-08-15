@@ -7,7 +7,7 @@ pub mod v3 {
     //!
     //! [spec]: https://spec.matrix.org/latest/client-server-api/#get_matrixmediav3downloadservernamemediaidfilename
 
-    use std::time::Duration;
+    use std::{borrow::Cow, time::Duration};
 
     use http::header::{CACHE_CONTROL, CONTENT_DISPOSITION, CONTENT_TYPE};
     use ruma_common::{
@@ -89,7 +89,7 @@ pub mod v3 {
 
         /// The content type of the file that was previously uploaded.
         #[ruma_api(header = CONTENT_TYPE)]
-        pub content_type: Option<String>,
+        pub content_type: Option<Cow<'static, str>>,
 
         /// The value of the `Content-Disposition` HTTP header, possibly containing the name of the
         /// file that was previously uploaded.
@@ -102,7 +102,7 @@ pub mod v3 {
         ///
         /// [MDN]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cross-Origin-Resource-Policy#syntax
         #[ruma_api(header = CROSS_ORIGIN_RESOURCE_POLICY)]
-        pub cross_origin_resource_policy: Option<String>,
+        pub cross_origin_resource_policy: Option<Cow<'static, str>>,
 
         /// The value of the `Cache-Control` HTTP header.
         ///
@@ -110,7 +110,7 @@ pub mod v3 {
         ///
         /// [MDN]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cache-Control#syntax
         #[ruma_api(header = CACHE_CONTROL)]
-        pub cache_control: Option<String>,
+        pub cache_control: Option<Cow<'static, str>>,
     }
 
     #[allow(deprecated)]
@@ -141,14 +141,14 @@ pub mod v3 {
         /// The Cross-Origin Resource Policy defaults to `cross-origin`.
         pub fn new(
             file: Vec<u8>,
-            content_type: String,
+            content_type: Cow<'static, str>,
             content_disposition: ContentDisposition,
         ) -> Self {
             Self {
                 file,
                 content_type: Some(content_type),
                 content_disposition: Some(content_disposition),
-                cross_origin_resource_policy: Some("cross-origin".to_owned()),
+                cross_origin_resource_policy: Some("cross-origin".into()),
                 cache_control: None,
             }
         }

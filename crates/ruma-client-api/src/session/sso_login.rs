@@ -5,6 +5,8 @@ pub mod v3 {
     //!
     //! [spec]: https://spec.matrix.org/latest/client-server-api/#get_matrixclientv3loginssoredirect
 
+    use std::borrow::Cow;
+
     use http::header::{LOCATION, SET_COOKIE};
     use ruma_common::{
         api::{auth_scheme::NoAuthentication, request, response},
@@ -53,7 +55,7 @@ pub mod v3 {
 
         /// Cookie storing state to secure the SSO process.
         #[ruma_api(header = SET_COOKIE)]
-        pub cookie: Option<String>,
+        pub cookie: Option<Cow<'static, str>>,
     }
 
     impl Request {
