@@ -32,7 +32,7 @@ pub struct Request {
     #[ruma_api(header = LOCATION)]
     pub location: String,
     #[ruma_api(header = CONTENT_DISPOSITION)]
-    pub content_disposition: ContentDisposition,
+    pub content_disposition: Option<ContentDisposition>,
 }
 
 /// Response type for the `required_headers` endpoint.
@@ -41,7 +41,7 @@ pub struct Response {
     #[ruma_api(header = LOCATION)]
     pub stuff: String,
     #[ruma_api(header = CONTENT_DISPOSITION)]
-    pub content_disposition: ContentDisposition,
+    pub content_disposition: Option<ContentDisposition>,
 }
 
 #[test]
@@ -49,8 +49,10 @@ fn request_serde() {
     let location = "https://other.tld/page/";
     let content_disposition = ContentDisposition::new(ContentDispositionType::Attachment)
         .with_filename(Some("my_file".to_owned()));
-    let req =
-        Request { location: location.to_owned(), content_disposition: content_disposition.clone() };
+    let req = Request {
+        location: location.to_owned(),
+        content_disposition: Some(content_disposition.clone()),
+    };
     let supported =
         SupportedVersions { versions: [MatrixVersion::V1_1].into(), features: Default::default() };
 
@@ -63,7 +65,7 @@ fn request_serde() {
 
     let req2 = Request::try_from_http_request::<_, &str>(http_req.clone(), &[]).unwrap();
     assert_eq!(req2.location, location);
-    assert_eq!(req2.content_disposition, content_disposition);
+    assert_eq!(req2.content_disposition, Some(content_disposition));
 
     // Try removing the headers.
     http_req.headers_mut().remove(LOCATION).unwrap();
@@ -77,17 +79,14 @@ fn request_serde() {
         ))
     );
 
-    // Try setting invalid header.
+    // Invalid value on an Option<T> header silently becomes None (the macro path uses
+    // `.parse().ok()` for optional headers). The required `LOCATION` header still parses.
     http_req.headers_mut().insert(LOCATION, location.try_into().unwrap());
     http_req.headers_mut().insert(CONTENT_DISPOSITION, ";".try_into().unwrap());
 
-    let err = Request::try_from_http_request::<_, &str>(http_req, &[]).unwrap_err();
-    assert_matches!(
-        err,
-        FromHttpRequestError::Deserialization(DeserializationError::Header(
-            HeaderDeserializationError::InvalidHeader(_)
-        ))
-    );
+    let req3 = Request::try_from_http_request::<_, &str>(http_req, &[]).unwrap();
+    assert_eq!(req3.location, location);
+    assert_eq!(req3.content_disposition, None);
 }
 
 #[test]
@@ -95,8 +94,10 @@ fn response_serde() {
     let location = "https://other.tld/page/";
     let content_disposition = ContentDisposition::new(ContentDispositionType::Attachment)
         .with_filename(Some("my_file".to_owned()));
-    let res =
-        Response { stuff: location.to_owned(), content_disposition: content_disposition.clone() };
+    let res = Response {
+        stuff: location.to_owned(),
+        content_disposition: Some(content_disposition.clone()),
+    };
 
     let mut http_res = res.clone().try_into_http_response::<Vec<u8>>().unwrap();
     assert_matches!(http_res.headers().get(LOCATION), Some(_));
@@ -104,7 +105,7 @@ fn response_serde() {
 
     let res2 = Response::try_from_http_response(http_res.clone()).unwrap();
     assert_eq!(res2.stuff, location);
-    assert_eq!(res2.content_disposition, content_disposition);
+    assert_eq!(res2.content_disposition, Some(content_disposition));
 
     // Try removing the headers.
     http_res.headers_mut().remove(LOCATION).unwrap();
@@ -118,15 +119,12 @@ fn response_serde() {
         ))
     );
 
-    // Try setting invalid header.
+    // Invalid value on an Option<T> header silently becomes None (the macro path uses
+    // `.parse().ok()` for optional headers). The required `LOCATION` header still parses.
     http_res.headers_mut().insert(LOCATION, location.try_into().unwrap());
     http_res.headers_mut().insert(CONTENT_DISPOSITION, ";".try_into().unwrap());
 
-    let err = Response::try_from_http_response(http_res).unwrap_err();
-    assert_matches!(
-        err,
-        FromHttpResponseError::Deserialization(DeserializationError::Header(
-            HeaderDeserializationError::InvalidHeader(_)
-        ))
-    );
+    let res3 = Response::try_from_http_response(http_res).unwrap();
+    assert_eq!(res3.stuff, location);
+    assert_eq!(res3.content_disposition, None);
 }
