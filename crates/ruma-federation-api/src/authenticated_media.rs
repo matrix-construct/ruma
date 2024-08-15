@@ -317,7 +317,7 @@ mod tests {
         let outgoing_metadata = ContentMetadata::new();
         let outgoing_content = FileOrLocation::File(Content {
             file: file.to_vec(),
-            content_type: Some(content_type.to_owned()),
+            content_type: Some(content_type.into()),
             content_disposition: Some(content_disposition.clone()),
         });
 
@@ -344,7 +344,7 @@ mod tests {
         let outgoing_metadata = ContentMetadata::new();
         let outgoing_content = FileOrLocation::File(Content {
             file: file.to_vec(),
-            content_type: Some(content_type.to_owned()),
+            content_type: Some(content_type.into()),
             content_disposition: Some(content_disposition.clone()),
         });
 

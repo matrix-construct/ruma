@@ -7,7 +7,7 @@ pub mod v1 {
     //!
     //! [spec]: https://spec.matrix.org/v1.18/client-server-api/#get_matrixclientv1mediadownloadservernamemediaidfilename
 
-    use std::time::Duration;
+    use std::{borrow::Cow, time::Duration};
 
     use http::header::{CACHE_CONTROL, CONTENT_DISPOSITION, CONTENT_TYPE};
     use ruma_common::{
@@ -64,7 +64,7 @@ pub mod v1 {
 
         /// The content type of the file that was previously uploaded.
         #[ruma_api(header = CONTENT_TYPE)]
-        pub content_type: Option<String>,
+        pub content_type: Option<Cow<'static, str>>,
 
         /// The value of the `Content-Disposition` HTTP header, possibly containing the name of the
         /// file that was previously uploaded.
@@ -79,7 +79,7 @@ pub mod v1 {
         ///
         /// TODO: make this use Cow static str's
         #[ruma_api(header = CROSS_ORIGIN_RESOURCE_POLICY)]
-        pub cross_origin_resource_policy: Option<String>,
+        pub cross_origin_resource_policy: Option<Cow<'static, str>>,
 
         /// The value of the `Cache-Control` HTTP header.
         ///
@@ -89,7 +89,7 @@ pub mod v1 {
         ///
         /// TODO: make this use Cow static str's
         #[ruma_api(header = CACHE_CONTROL)]
-        pub cache_control: Option<String>,
+        pub cache_control: Option<Cow<'static, str>>,
     }
 
     impl Request {
@@ -115,7 +115,7 @@ pub mod v1 {
         /// Creates a new `Response` with the given file.
         pub fn new(
             file: Vec<u8>,
-            content_type: String,
+            content_type: Cow<'static, str>,
             content_disposition: ContentDisposition,
         ) -> Self {
             Self {
