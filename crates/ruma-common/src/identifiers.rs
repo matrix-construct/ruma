@@ -33,7 +33,7 @@ pub use self::{
         ServerSigningKeyId, SigningKeyId,
     },
     matrix_uri::{MatrixToUri, MatrixUri},
-    mxc_uri::{MxcUri, OwnedMxcUri},
+    mxc_uri::{Mxc, MxcUri, OwnedMxcUri},
     one_time_key_name::{OneTimeKeyName, OwnedOneTimeKeyName},
     room_alias_id::{OwnedRoomAliasId, RoomAliasId},
     room_id::{OwnedRoomId, RoomId},
