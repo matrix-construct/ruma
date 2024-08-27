@@ -2,7 +2,7 @@
 //!
 //! [MSC3916]: https://github.com/matrix-org/matrix-spec-proposals/pull/3916
 
-use std::ops::Deref;
+use std::{borrow::Cow, ops::Deref};
 
 #[cfg(feature = "server")]
 use ruma_common::api::OutgoingBody;
@@ -54,7 +54,7 @@ pub struct Content {
     pub file: Vec<u8>,
 
     /// The content type of the file that was previously uploaded.
-    pub content_type: Option<String>,
+    pub content_type: Option<Cow<'static, str>>,
 
     /// The value of the `Content-Disposition` HTTP header, possibly containing the name of the
     /// file that was previously uploaded.
@@ -65,7 +65,7 @@ impl Content {
     /// Creates a new `Content` with the given bytes.
     pub fn new(
         file: Vec<u8>,
-        content_type: String,
+        content_type: Cow<'static, str>,
         content_disposition: ContentDisposition,
     ) -> Self {
         Self {
@@ -332,7 +332,7 @@ impl ResponseBody {
         } else {
             FileOrLocation::File(Content {
                 file: file.to_owned(),
-                content_type,
+                content_type: content_type.map(Into::into),
                 content_disposition,
             })
         };
