@@ -2,6 +2,8 @@
 //!
 //! [MSC3916]: https://github.com/matrix-org/matrix-spec-proposals/pull/3916
 
+use std::borrow::Cow;
+
 use ruma_common::http_headers::ContentDisposition;
 use serde::{Deserialize, Serialize};
 
@@ -48,7 +50,7 @@ pub struct Content {
     pub file: Vec<u8>,
 
     /// The content type of the file that was previously uploaded.
-    pub content_type: Option<String>,
+    pub content_type: Option<Cow<'static, str>>,
 
     /// The value of the `Content-Disposition` HTTP header, possibly containing the name of the
     /// file that was previously uploaded.
@@ -59,7 +61,7 @@ impl Content {
     /// Creates a new `Content` with the given bytes.
     pub fn new(
         file: Vec<u8>,
-        content_type: String,
+        content_type: Cow<'static, str>,
         content_disposition: ContentDisposition,
     ) -> Self {
         Self {
@@ -252,7 +254,11 @@ fn try_from_multipart_mixed_response<T: AsRef<[u8]>>(
     let content = if let Some(location) = location {
         FileOrLocation::Location(location)
     } else {
-        FileOrLocation::File(Content { file: file.to_owned(), content_type, content_disposition })
+        FileOrLocation::File(Content {
+            file: file.to_owned(),
+            content_type: content_type.map(Into::into),
+            content_disposition,
+        })
     };
 
     Ok((metadata, content))
