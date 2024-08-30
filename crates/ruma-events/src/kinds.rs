@@ -9,6 +9,8 @@ use ruma_macros::Event;
 use serde::{ser::SerializeStruct, Deserialize, Deserializer, Serialize};
 use serde_json::value::RawValue as RawJsonValue;
 
+use crate::{AnyGlobalAccountDataEvent, AnyRoomAccountDataEvent};
+
 use super::{
     AnyInitialStateEvent, EmptyStateKey, EphemeralRoomEventContent, EventContentFromType,
     GlobalAccountDataEventContent, MessageLikeEventContent, MessageLikeEventType,
@@ -17,6 +19,26 @@ use super::{
     RedactionDeHelper, RoomAccountDataEventContent, StateEventType, StaticStateEventContent,
     ToDeviceEventContent,
 };
+
+/// Enum allowing to use the same structures for global and room account data
+#[derive(Debug)]
+#[allow(clippy::exhaustive_enums)]
+pub enum AnyAccountDataEvent {
+    /// An event for a specific room
+    Room(AnyRoomAccountDataEvent),
+    /// An event for the whole account
+    Global(AnyGlobalAccountDataEvent),
+}
+
+/// Enum allowing to use the same structures for global and room account data
+#[derive(Debug)]
+#[allow(clippy::exhaustive_enums)]
+pub enum AnyRawAccountDataEvent {
+    /// An event for a specific room
+    Room(Raw<AnyRoomAccountDataEvent>),
+    /// An event for the whole account
+    Global(Raw<AnyGlobalAccountDataEvent>),
+}
 
 /// A global account data event.
 #[derive(Clone, Debug, Event)]
