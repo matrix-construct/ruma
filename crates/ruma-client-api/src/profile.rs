@@ -15,18 +15,19 @@ use serde_json::{from_value as from_json_value, to_value as to_json_value, Value
 
 #[cfg(feature = "unstable-msc4133")]
 pub mod delete_profile_field;
+pub mod delete_timezone_key;
 pub mod get_avatar_url;
 pub mod get_display_name;
 pub mod get_profile;
 #[cfg(feature = "unstable-msc4133")]
 pub mod get_profile_field;
+pub mod get_timezone_key;
 #[cfg(feature = "unstable-msc4133")]
 mod profile_field_serde;
 pub mod set_avatar_url;
 pub mod set_display_name;
 #[cfg(feature = "unstable-msc4133")]
 pub mod set_profile_field;
-pub mod get_timezone_key;
 pub mod set_timezone_key;
 
 /// Trait implemented by types representing a field in a user's profile having a statically-known
