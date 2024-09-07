@@ -7,3 +7,4 @@ pub mod get_timezone_key;
 pub mod set_avatar_url;
 pub mod set_display_name;
 pub mod set_timezone_key;
+pub mod delete_timezone_key;
