@@ -1,11 +1,17 @@
 //! `GET /_matrix/client/*/profile/{userId}`
 //!
 //! Get all profile information of an user.
+//!
+//! TODO: implement the "generic-ness" of MSC4133
 
 pub mod v3 {
     //! `/v3/` ([spec])
     //!
     //! [spec]: https://spec.matrix.org/latest/client-server-api/#get_matrixclientv3profileuserid
+    //!
+    //! also see: `msc4133` ([MSC])
+    //!
+    //! [MSC]: https://github.com/tcpipuk/matrix-spec-proposals/blob/main/proposals/4133-extended-profiles.md
 
     use ruma_common::{
         api::{request, response, Metadata},
@@ -17,6 +23,7 @@ pub mod v3 {
         rate_limited: false,
         authentication: None,
         history: {
+            unstable => "/_matrix/client/unstable/uk.tcpip.msc4133/profile/{user_id}",
             1.0 => "/_matrix/client/r0/profile/{user_id}",
             1.1 => "/_matrix/client/v3/profile/{user_id}",
         }
@@ -56,6 +63,14 @@ pub mod v3 {
         #[cfg(feature = "unstable-msc2448")]
         #[serde(rename = "xyz.amorgan.blurhash", skip_serializing_if = "Option::is_none")]
         pub blurhash: Option<String>,
+
+        /// [MSC4175][msc]: `m.tz` field for specifying a timezone the user is in
+        ///
+        /// [msc]: https://github.com/matrix-org/matrix-spec-proposals/blob/clokep/profile-tz/proposals/4175-profile-field-time-zone.md
+        ///
+        /// TODO: strong type this to be a valid IANA timezone?
+        #[serde(rename = "us.cloke.msc4175.tz", skip_serializing_if = "Option::is_none")]
+        pub tz: Option<String>,
     }
 
     impl Request {
@@ -66,13 +81,14 @@ pub mod v3 {
     }
 
     impl Response {
-        /// Creates a new `Response` with the given avatar URL and display name.
+        /// Creates a new `Response` with the given avatar URL, display name, and timezone.
         pub fn new(avatar_url: Option<OwnedMxcUri>, displayname: Option<String>) -> Self {
             Self {
                 avatar_url,
                 displayname,
                 #[cfg(feature = "unstable-msc2448")]
                 blurhash: None,
+                tz: None,
             }
         }
     }
