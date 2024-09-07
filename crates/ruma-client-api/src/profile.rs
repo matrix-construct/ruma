@@ -26,6 +26,8 @@ pub mod set_avatar_url;
 pub mod set_display_name;
 #[cfg(feature = "unstable-msc4133")]
 pub mod set_profile_field;
+pub mod get_timezone_key;
+pub mod set_timezone_key;
 
 /// Trait implemented by types representing a field in a user's profile having a statically-known
 /// name.
