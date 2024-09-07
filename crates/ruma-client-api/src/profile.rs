@@ -14,6 +14,7 @@ use serde::Serialize;
 use serde_json::{Value as JsonValue, from_value as from_json_value, to_value as to_json_value};
 
 pub mod delete_profile_field;
+pub mod delete_timezone_key;
 pub mod get_avatar_url;
 pub mod get_display_name;
 pub mod get_profile;
