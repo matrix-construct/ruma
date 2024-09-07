@@ -6,6 +6,10 @@ pub mod v3 {
     //! `/v3/` ([spec])
     //!
     //! [spec]: https://spec.matrix.org/latest/client-server-api/#get_matrixclientv3profileuserid
+    //!
+    //! also see: `msc4133` ([MSC])
+    //!
+    //! [MSC]: https://github.com/tcpipuk/matrix-spec-proposals/blob/main/proposals/4133-extended-profiles.md
 
     use std::collections::{BTreeMap, btree_map};
 
@@ -23,6 +27,7 @@ pub mod v3 {
         rate_limited: false,
         authentication: NoAuthentication,
         history: {
+            unstable => "/_matrix/client/unstable/uk.tcpip.msc4133/profile/{user_id}",
             1.0 => "/_matrix/client/r0/profile/{user_id}",
             1.1 => "/_matrix/client/v3/profile/{user_id}",
         }
