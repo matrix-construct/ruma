@@ -1,7 +1,7 @@
+#![allow(missing_docs)]
 //! `DELETE /_matrix/client/*/profile/{userId}/m.tz`
 //!
 //! Deletes the timezone key of the user.
-#![allow(missing_docs)]
 
 pub use v3 as unstable;
 pub mod v3 {

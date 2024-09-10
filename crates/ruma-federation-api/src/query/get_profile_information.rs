@@ -7,12 +7,15 @@ pub mod v1 {
     //!
     //! [spec]: https://spec.matrix.org/latest/server-server-api/#get_matrixfederationv1queryprofile
 
+    use std::collections::BTreeMap;
+
     use ruma_common::{
         OwnedMxcUri, OwnedUserId,
         api::{request, response},
         metadata,
         serde::StringEnum,
     };
+    use serde_json::Value as JsonValue;
 
     use crate::{PrivOwnedStr, authentication::ServerSignatures};
 
@@ -62,6 +65,19 @@ pub mod v1 {
         #[cfg(feature = "unstable-msc2448")]
         #[serde(rename = "xyz.amorgan.blurhash", skip_serializing_if = "Option::is_none")]
         pub blurhash: Option<String>,
+
+        /// [MSC4175][msc]: `m.tz` field for specifying a timezone the user is in
+        ///
+        /// [msc]: https://github.com/matrix-org/matrix-spec-proposals/blob/clokep/profile-tz/proposals/4175-profile-field-time-zone.md
+        ///
+        /// TODO: strong type this to be a valid IANA timezone?
+        #[serde(rename = "us.cloke.msc4175.tz", skip_serializing_if = "Option::is_none")]
+        pub tz: Option<String>,
+
+        /// Custom arbitrary profile fields as part of MSC4133 that are not reserved such as
+        /// MSC4175
+        #[serde(flatten, skip_serializing_if = "BTreeMap::is_empty")]
+        pub custom_profile_fields: BTreeMap<String, JsonValue>,
     }
 
     impl Request {
