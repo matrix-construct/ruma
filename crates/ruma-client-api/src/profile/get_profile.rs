@@ -1,8 +1,6 @@
 //! `GET /_matrix/client/*/profile/{userId}`
 //!
 //! Get all profile information of an user.
-//!
-//! TODO: implement the "generic-ness" of MSC4133
 
 pub mod v3 {
     //! `/v3/` ([spec])
@@ -13,10 +11,13 @@ pub mod v3 {
     //!
     //! [MSC]: https://github.com/tcpipuk/matrix-spec-proposals/blob/main/proposals/4133-extended-profiles.md
 
+    use std::collections::BTreeMap;
+
     use ruma_common::{
         api::{request, response, Metadata},
         metadata, OwnedMxcUri, OwnedUserId,
     };
+    use serde_json::Value as JsonValue;
 
     const METADATA: Metadata = metadata! {
         method: GET,
@@ -71,6 +72,11 @@ pub mod v3 {
         /// TODO: strong type this to be a valid IANA timezone?
         #[serde(rename = "us.cloke.msc4175.tz", skip_serializing_if = "Option::is_none")]
         pub tz: Option<String>,
+
+        /// Custom arbitrary profile fields as part of MSC4133 that are not reserved such as
+        /// MSC4175
+        #[serde(flatten, skip_serializing_if = "BTreeMap::is_empty")]
+        pub custom_profile_fields: BTreeMap<String, JsonValue>,
     }
 
     impl Request {
@@ -89,6 +95,7 @@ pub mod v3 {
                 #[cfg(feature = "unstable-msc2448")]
                 blurhash: None,
                 tz: None,
+                custom_profile_fields: BTreeMap::new(),
             }
         }
     }
