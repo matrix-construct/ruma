@@ -1,3 +1,4 @@
+#![allow(missing_docs)]
 //! `DELETE /_matrix/client/*/profile/{userId}/m.tz`
 //!
 //! Deletes the timezone key of the user.
@@ -13,8 +14,8 @@ pub mod unstable {
         rate_limited: true,
         authentication: AccessToken,
         history: {
-            unstable => "/_matrix/client/unstable/uk.tcpip.msc4133/profile/:user_id/us.cloke.msc4175.tz",
-            // 1.12 => "/_matrix/client/v3/profile/:user_id/m.tz",
+            unstable => "/_matrix/client/unstable/uk.tcpip.msc4133/profile/{user_id}/us.cloke.msc4175.tz",
+             1.12 => "/_matrix/client/v3/profile/{user_id}/m.tz",
         }
     };
 
