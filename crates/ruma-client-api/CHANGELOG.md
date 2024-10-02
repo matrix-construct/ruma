@@ -208,6 +208,7 @@ Improvements:
 - Allow constructing `error::ErrorBody::NotJson` outside of this crate.
 - Add function for checking if a `Content-Type` is considered "safe" for `inline`
   rendering, according to MSC2702 / Matrix 1.12.
+- Allow constructing `error::ErrorBody::NotJson` outside of this crate.
 
 Bug fixes:
 
