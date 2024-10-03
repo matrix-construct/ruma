@@ -451,6 +451,7 @@ impl IdDst {
 
         let ruma_common = &self.ruma_common;
         let serde = ruma_common.reexported(RumaCommonReexport::Serde);
+        let serde_json = ruma_common.reexported(RumaCommonReexport::SerdeJson);
 
         let parse_doc_header = format!("Try parsing a `&str` into an `{owned_ident}`.");
 
@@ -565,6 +566,42 @@ impl IdDst {
                     let s = <&'de #str>::deserialize(deserializer)?;
                     #validate(s).map_err(D::Error::custom)?;
                     ::std::result::Result::Ok(#ident::from_borrowed_unchecked(s))
+                }
+            }
+
+            #[automatically_derived]
+            impl<'a, #generic_params> ::std::convert::TryFrom<&'a #serde_json::Value> for &'a #id {
+                type Error = #ruma_common::IdParseError;
+
+                fn try_from(v: &'a #serde_json::Value) -> ::std::result::Result<Self, Self::Error> {
+                    v.as_str().unwrap_or_default().try_into()
+                }
+            }
+
+            #[automatically_derived]
+            impl<'a, #generic_params> ::std::convert::TryFrom<&'a #ruma_common::CanonicalJsonValue> for &'a #id {
+                type Error = #ruma_common::IdParseError;
+
+                fn try_from(v: &'a #ruma_common::CanonicalJsonValue) -> ::std::result::Result<Self, Self::Error> {
+                    v.as_str().unwrap_or_default().try_into()
+                }
+            }
+
+            #[automatically_derived]
+            impl<'a, #generic_params> ::std::convert::TryFrom<::std::option::Option<&'a #serde_json::Value>> for &'a #id {
+                type Error = #ruma_common::IdParseError;
+
+                fn try_from(v: ::std::option::Option<&'a #serde_json::Value>) -> ::std::result::Result<Self, Self::Error> {
+                    v.and_then(|v| v.as_str()).unwrap_or_default().try_into()
+                }
+            }
+
+            #[automatically_derived]
+            impl<'a, #generic_params> ::std::convert::TryFrom<::std::option::Option<&'a #ruma_common::CanonicalJsonValue>> for &'a #id {
+                type Error = #ruma_common::IdParseError;
+
+                fn try_from(v: ::std::option::Option<&'a #ruma_common::CanonicalJsonValue>) -> ::std::result::Result<Self, Self::Error> {
+                    v.and_then(|v| v.as_str()).unwrap_or_default().try_into()
                 }
             }
         })
