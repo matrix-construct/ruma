@@ -587,6 +587,42 @@ fn expand_checked_impls(input: &ItemStruct, validate: Path) -> TokenStream {
         }
 
         #[automatically_derived]
+        impl<'a, #generic_params> std::convert::TryFrom<&'a serde_json::Value> for &'a #id_ty {
+            type Error = crate::IdParseError;
+
+            fn try_from(v: &'a serde_json::Value) -> Result<Self, Self::Error> {
+                v.as_str().unwrap_or_default().try_into()
+            }
+        }
+
+        #[automatically_derived]
+        impl<'a, #generic_params> std::convert::TryFrom<&'a crate::CanonicalJsonValue> for &'a #id_ty {
+            type Error = crate::IdParseError;
+
+            fn try_from(v: &'a crate::CanonicalJsonValue) -> Result<Self, Self::Error> {
+                v.as_str().unwrap_or_default().try_into()
+            }
+        }
+
+        #[automatically_derived]
+        impl<'a, #generic_params> std::convert::TryFrom<Option<&'a serde_json::Value>> for &'a #id_ty {
+            type Error = crate::IdParseError;
+
+            fn try_from(v: Option<&'a serde_json::Value>) -> Result<Self, Self::Error> {
+                v.and_then(|v| v.as_str()).unwrap_or_default().try_into()
+            }
+        }
+
+        #[automatically_derived]
+        impl<'a, #generic_params> std::convert::TryFrom<Option<&'a crate::CanonicalJsonValue>> for &'a #id_ty {
+            type Error = crate::IdParseError;
+
+            fn try_from(v: Option<&'a crate::CanonicalJsonValue>) -> Result<Self, Self::Error> {
+                v.and_then(|v| v.as_str()).unwrap_or_default().try_into()
+            }
+        }
+
+        #[automatically_derived]
         impl #impl_generics std::str::FromStr for Box<#id_ty> {
             type Err = crate::IdParseError;
 
