@@ -6,6 +6,7 @@ use std::{fmt, num::NonZeroU16};
 
 use ruma_identifiers_validation::{error::MxcUriError, mxc_uri::validate};
 use ruma_macros::IdDst;
+use serde::{Serialize, Serializer};
 
 use super::ServerName;
 
@@ -97,6 +98,12 @@ impl<'a> TryFrom<&'a OwnedMxcUri> for Mxc<'a> {
     fn try_from(s: &'a OwnedMxcUri) -> Result<Self, Self::Error> {
         let s: &MxcUri = s.as_ref();
         s.try_into()
+    }
+}
+
+impl Serialize for Mxc<'_> {
+    fn serialize<S: Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
+        s.serialize_str(self.to_string().as_str())
     }
 }
 
