@@ -6,6 +6,7 @@ use http::header::{HeaderValue, InvalidHeaderValue};
 use ruma_macros::{
     AsRefStr, AsStrAsRefStr, DebugAsRefStr, DisplayAsRefStr, OrdAsRefStr, PartialOrdAsRefStr,
 };
+use serde::{Serialize, Serializer};
 
 use super::{
     is_tchar, is_token, quote_ascii_string_if_required, rfc8187, sanitize_for_ascii_quoted_string,
@@ -68,6 +69,12 @@ impl fmt::Display for ContentDisposition {
         }
 
         Ok(())
+    }
+}
+
+impl Serialize for ContentDisposition {
+    fn serialize<S: Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
+        s.serialize_str(self.to_string().as_str())
     }
 }
 
