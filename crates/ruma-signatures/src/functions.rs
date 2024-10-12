@@ -12,7 +12,7 @@ use ruma_common::{
     room_version_rules::{EventIdFormatVersion, RedactionRules, RoomVersionRules, SignaturesRules},
     serde::{base64::Standard, Base64},
     AnyKeyName, CanonicalJsonObject, CanonicalJsonValue, OwnedEventId, OwnedServerName,
-    SigningKeyAlgorithm, SigningKeyId, UserId,
+    OwnedServerSigningKeyId, SigningKeyAlgorithm, SigningKeyId, UserId,
 };
 use serde_json::to_string as to_json_string;
 use sha2::{digest::Digest, Sha256};
@@ -711,6 +711,34 @@ fn canonical_json_with_fields_to_remove(
     to_json_string(&owned_object).map_err(|e| Error::Json(e.into()))
 }
 
+/// Extracts the server names and key ids to check signatures for given event.
+pub fn required_keys(
+    object: &CanonicalJsonObject,
+    rules: &SignaturesRules,
+) -> Result<BTreeMap<OwnedServerName, Vec<OwnedServerSigningKeyId>>, Error> {
+    use CanonicalJsonValue::Object;
+
+    let mut map = BTreeMap::<OwnedServerName, Vec<OwnedServerSigningKeyId>>::new();
+    let Some(Object(signatures)) = object.get("signatures") else {
+        return Ok(map);
+    };
+
+    for server in servers_to_check_signatures(object, rules)? {
+        let Some(Object(set)) = signatures.get(server.as_str()) else {
+            continue;
+        };
+
+        let entry = map.entry(server.clone()).or_default();
+        set.keys()
+            .cloned()
+            .map(TryInto::try_into)
+            .filter_map(Result::ok)
+            .for_each(|key_id| entry.push(key_id));
+    }
+
+    Ok(map)
+}
+
 /// Extracts the server names to check signatures for given event.
 ///
 /// Respects the rules for [validating signatures on received events] for populating the result:
@@ -722,7 +750,7 @@ fn canonical_json_with_fields_to_remove(
 ///   `join_authorised_via_users_server`, add the server of that user.
 ///
 /// [validating signatures on received events]: https://spec.matrix.org/latest/server-server-api/#validating-hashes-and-signatures-on-received-events
-fn servers_to_check_signatures(
+pub fn servers_to_check_signatures(
     object: &CanonicalJsonObject,
     rules: &SignaturesRules,
 ) -> Result<BTreeSet<OwnedServerName>, Error> {
