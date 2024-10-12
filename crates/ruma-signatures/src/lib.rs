@@ -67,9 +67,9 @@ pub use self::{
     hash::{content_hash, reference_hash},
     sign::{KeyPair, Signature, hash_and_sign_event, sign_json},
     verify::{
-        PublicKeyMap, PublicKeySet, Verified, required_server_signatures_to_verify_event,
-        to_canonical_json_string_for_signing, verify_canonical_json_bytes, verify_event,
-        verify_json,
+        PublicKeyMap, PublicKeySet, Verified, required_keys,
+        required_server_signatures_to_verify_event, to_canonical_json_string_for_signing,
+        verify_canonical_json_bytes, verify_event, verify_json,
     },
 };
 
