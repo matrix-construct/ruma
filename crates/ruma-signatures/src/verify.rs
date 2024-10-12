@@ -4,7 +4,7 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use ruma_common::{
     AnyKeyName, CanonicalJsonObject, CanonicalJsonValue, IdParseError, OwnedEventId,
-    OwnedServerName, SigningKeyAlgorithm, SigningKeyId, UserId,
+    OwnedServerName, OwnedServerSigningKeyId, SigningKeyAlgorithm, SigningKeyId, UserId,
     canonical_json::{
         CanonicalJsonFieldError, CanonicalJsonObjectExt, CanonicalJsonType, RedactingSerializer,
     },
@@ -468,6 +468,38 @@ pub fn required_server_signatures_to_verify_event(
     }
 
     Ok(servers_to_check)
+}
+
+/// Extracts the server names and key ids to check signatures for the given event.
+///
+/// For each server returned by [`required_server_signatures_to_verify_event`], collects the
+/// signing-key ids actually present in the event's `signatures` block. Useful for fetching
+/// just the keys we need to verify, instead of all of them.
+pub fn required_keys(
+    object: &CanonicalJsonObject,
+    rules: &SignaturesRules,
+) -> Result<BTreeMap<OwnedServerName, Vec<OwnedServerSigningKeyId>>, VerificationError> {
+    use CanonicalJsonValue::Object;
+
+    let mut map = BTreeMap::<OwnedServerName, Vec<OwnedServerSigningKeyId>>::new();
+    let Some(Object(signatures)) = object.get("signatures") else {
+        return Ok(map);
+    };
+
+    for server in required_server_signatures_to_verify_event(object, rules)? {
+        let Some(Object(set)) = signatures.get(server.as_str()) else {
+            continue;
+        };
+
+        let entry = map.entry(server.clone()).or_default();
+        set.keys()
+            .cloned()
+            .map(TryInto::try_into)
+            .filter_map(Result::ok)
+            .for_each(|key_id| entry.push(key_id));
+    }
+
+    Ok(map)
 }
 
 /// Whether the given event is an `m.room.member` invite that was created as the result of a
