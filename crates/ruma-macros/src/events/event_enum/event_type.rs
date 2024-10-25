@@ -163,7 +163,8 @@ fn generate_enum(
 
         #[allow(deprecated)]
         impl #ident {
-            fn to_cow_str(&self) -> ::std::borrow::Cow<'_, ::std::primitive::str> {
+            /// Access the string for the type
+            pub fn to_cow_str(&self) -> ::std::borrow::Cow<'_, ::std::primitive::str> {
                 match self {
                     #(#to_cow_str_match_arms,)*
                     Self::_Custom(crate::PrivOwnedStr(s)) => ::std::borrow::Cow::Borrowed(s),
