@@ -21,6 +21,7 @@ pub mod v3 {
         authentication: AccessToken,
         history: {
             unstable => "/_matrix/client/unstable/room_keys/version/{version}",
+            1.0 => "/_matrix/client/r0/room_keys/version/{version}",
             1.1 => "/_matrix/client/v3/room_keys/version/{version}",
         }
     }
