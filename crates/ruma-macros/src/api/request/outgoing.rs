@@ -40,12 +40,15 @@ impl Request {
             quote! { "" }
         };
 
+        let reserve_headers = 2 + self.header_fields().count();
+
         // If there are no body fields, the request body will be empty (not `{}`), so the
         // `application/json` content-type would be wrong. It may also cause problems with CORS
         // policies that don't allow the `Content-Type` header (for things such as `.well-known`
         // that are commonly handled by something else than a homeserver).
         let mut header_kvs = if self.has_body_fields() {
             quote! {
+                req_headers.reserve(#reserve_headers);
                 req_headers.insert(
                     #http::header::CONTENT_TYPE,
                     #ruma_common::http_headers::APPLICATION_JSON,
@@ -53,6 +56,7 @@ impl Request {
             }
         } else if self.raw_body_field().is_some() {
             quote! {
+                req_headers.reserve(#reserve_headers);
                 req_headers.insert(
                     #http::header::CONTENT_TYPE,
                     #ruma_common::http_headers::APPLICATION_OCTET_STREAM,
@@ -92,6 +96,8 @@ impl Request {
                 {
                     let req_headers = http_request.headers_mut();
                     #header_kvs
+
+                    debug_assert!(#reserve_headers >= req_headers.len(), "not enough headers reserved");
                 }
             };
         }
