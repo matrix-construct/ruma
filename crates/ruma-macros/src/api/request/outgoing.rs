@@ -99,6 +99,7 @@ impl Request {
 
         let (impl_generics, ty_generics, where_clause) = self.generics.split_for_impl();
 
+        let reserve_headers = 2 + self.header_fields().count();
         quote! {
             #[automatically_derived]
             #[cfg(feature = "client")]
@@ -124,7 +125,10 @@ impl Request {
                         )?);
 
                     if let Some(mut req_headers) = req_builder.headers_mut() {
+                        req_headers.reserve(#reserve_headers);
                         #header_kvs
+
+                        debug_assert!(#reserve_headers >= req_headers.len(), "not enough headers reserved");
                     }
 
                     let http_request = req_builder.body(#request_body)?;
