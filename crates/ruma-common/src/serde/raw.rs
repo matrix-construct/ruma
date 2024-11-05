@@ -112,10 +112,12 @@ impl<T> Raw<T> {
         impl Visitor<'_> for FieldVisitor<'_> {
             type Value = bool;
 
+            #[inline]
             fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
                 write!(formatter, "`{}`", self.0)
             }
 
+            #[inline]
             fn visit_str<E>(self, value: &str) -> Result<bool, E>
             where
                 E: de::Error,
@@ -129,6 +131,7 @@ impl<T> Raw<T> {
         impl<'de> DeserializeSeed<'de> for Field<'_> {
             type Value = bool;
 
+            #[inline]
             fn deserialize<D>(self, deserializer: D) -> Result<bool, D::Error>
             where
                 D: Deserializer<'de>,
@@ -143,6 +146,7 @@ impl<T> Raw<T> {
         }
 
         impl<'b, T> SingleFieldVisitor<'b, T> {
+            #[inline]
             fn new(field_name: &'b str) -> Self {
                 Self { field_name, _phantom: PhantomData }
             }
@@ -154,10 +158,12 @@ impl<T> Raw<T> {
         {
             type Value = Option<T>;
 
+            #[inline]
             fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
                 formatter.write_str("a string")
             }
 
+            #[inline(never)]
             fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error>
             where
                 A: MapAccess<'de>,
@@ -180,6 +186,7 @@ impl<T> Raw<T> {
     }
 
     /// Try to deserialize the JSON as the expected type.
+    #[inline]
     pub fn deserialize<'a>(&'a self) -> serde_json::Result<T>
     where
         T: Deserialize<'a>,
@@ -188,6 +195,7 @@ impl<T> Raw<T> {
     }
 
     /// Try to deserialize the JSON as a custom type.
+    #[inline]
     pub fn deserialize_as<'a, U>(&'a self) -> serde_json::Result<U>
     where
         T: JsonCastable<U>,
@@ -207,6 +215,7 @@ impl<T> Raw<T> {
     /// Turns `Raw<T>` into `Raw<U>` without changing the underlying JSON.
     ///
     /// This is useful for turning raw specific event types into raw event enum types.
+    #[inline]
     pub fn cast<U>(self) -> Raw<U>
     where
         T: JsonCastable<U>,
@@ -217,6 +226,7 @@ impl<T> Raw<T> {
     /// Turns `&Raw<T>` into `&Raw<U>` without changing the underlying JSON.
     ///
     /// This is useful for turning raw specific event types into raw event enum types.
+    #[inline]
     pub fn cast_ref<U>(&self) -> &Raw<U>
     where
         T: JsonCastable<U>,
@@ -225,11 +235,13 @@ impl<T> Raw<T> {
     }
 
     /// Same as [`cast`][Self::cast], but without the trait restriction.
+    #[inline]
     pub fn cast_unchecked<U>(self) -> Raw<U> {
         Raw::from_json(self.into_json())
     }
 
     /// Same as [`cast_ref`][Self::cast_ref], but without the trait restriction.
+    #[inline]
     pub fn cast_ref_unchecked<U>(&self) -> &Raw<U> {
         unsafe { mem::transmute(self) }
     }
@@ -249,6 +261,7 @@ impl<T> Debug for Raw<T> {
 }
 
 impl<'de, T> Deserialize<'de> for Raw<T> {
+    #[inline]
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: Deserializer<'de>,
