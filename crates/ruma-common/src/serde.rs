@@ -43,11 +43,13 @@ pub use self::{
 pub type JsonObject = serde_json::Map<String, JsonValue>;
 
 /// Check whether a value is equal to its default value.
+#[inline]
 pub fn is_default<T: Default + PartialEq>(val: &T) -> bool {
     *val == T::default()
 }
 
 /// Deserialize a `T` via `Option<T>`, falling back to `T::default()`.
+#[inline]
 pub fn none_as_default<'de, D, T>(deserializer: D) -> Result<T, D::Error>
 where
     D: Deserializer<'de>,
@@ -59,6 +61,7 @@ where
 /// Simply returns `true`.
 ///
 /// Useful for `#[serde(default = ...)]`.
+#[inline]
 pub fn default_true() -> bool {
     true
 }
@@ -67,11 +70,13 @@ pub fn default_true() -> bool {
 ///
 /// Useful for `#[serde(skip_serializing_if = ...)]`.
 #[allow(clippy::trivially_copy_pass_by_ref)]
+#[inline]
 pub fn is_true(b: &bool) -> bool {
     *b
 }
 
 /// Helper function for `serde_json::value::RawValue` deserialization.
+#[inline(never)]
 pub fn from_raw_json_value<'a, T, E>(val: &'a RawJsonValue) -> Result<T, E>
 where
     T: Deserialize<'a>,
