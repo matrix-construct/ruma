@@ -75,16 +75,19 @@ impl<C: Base64Config, B> Base64<C, B> {
 
 impl<C: Base64Config, B: AsRef<[u8]>> Base64<C, B> {
     /// Create a `Base64` instance from raw bytes, to be base64-encoded in serialization.
+    #[inline]
     pub fn new(bytes: B) -> Self {
         Self { bytes, _phantom_conf: PhantomData }
     }
 
     /// Get a reference to the raw bytes held by this `Base64` instance.
+    #[inline]
     pub fn as_bytes(&self) -> &[u8] {
         self.bytes.as_ref()
     }
 
     /// Encode the bytes contained in this `Base64` instance to unpadded base64.
+    #[inline]
     pub fn encode(&self) -> String {
         Self::ENGINE.encode(self.as_bytes())
     }
@@ -97,6 +100,7 @@ impl<C, B> Base64<C, B> {
     }
 
     /// Get the raw bytes held by this `Base64` instance.
+    #[inline]
     pub fn into_inner(self) -> B {
         self.bytes
     }
@@ -104,6 +108,7 @@ impl<C, B> Base64<C, B> {
 
 impl<C: Base64Config> Base64<C> {
     /// Create a `Base64` instance containing an empty `Vec<u8>`.
+    #[inline]
     pub fn empty() -> Self {
         Self::new(Vec::new())
     }
@@ -111,6 +116,7 @@ impl<C: Base64Config> Base64<C> {
 
 impl<C: Base64Config, B: TryFromBase64DecodedBytes> Base64<C, B> {
     /// Parse some base64-encoded data to create a `Base64` instance.
+    #[inline]
     pub fn parse(encoded: impl AsRef<[u8]>) -> Result<Self, Base64DecodeError> {
         let decoded = Self::ENGINE.decode(encoded).map_err(Base64DecodeError::base64)?;
         B::try_from_bytes(decoded).map(Self::new)
