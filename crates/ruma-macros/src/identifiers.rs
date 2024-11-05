@@ -485,6 +485,7 @@ fn expand_checked_impls(input: &ItemStruct, validate: Path) -> TokenStream {
     quote! {
         #[automatically_derived]
         impl #impl_generics #id_ty {
+            #[inline]
             #[doc = #parse_doc_header]
             ///
             /// The same can also be done using `FromStr`, `TryFrom` or `TryInto`.
@@ -497,6 +498,7 @@ fn expand_checked_impls(input: &ItemStruct, validate: Path) -> TokenStream {
                 Ok(#id::from_borrowed(s).to_owned())
             }
 
+            #[inline]
             #[doc = #parse_box_doc_header]
             ///
             /// The same can also be done using `FromStr`, `TryFrom` or `TryInto`.
@@ -508,6 +510,7 @@ fn expand_checked_impls(input: &ItemStruct, validate: Path) -> TokenStream {
                 Ok(#id::from_box(s.into()))
             }
 
+            #[inline]
             #[doc = #parse_rc_docs]
             pub fn parse_rc(
                 s: impl AsRef<str> + Into<std::rc::Rc<str>>,
@@ -516,6 +519,7 @@ fn expand_checked_impls(input: &ItemStruct, validate: Path) -> TokenStream {
                 Ok(#id::from_rc(s.into()))
             }
 
+            #[inline]
             #[doc = #parse_arc_docs]
             pub fn parse_arc(
                 s: impl AsRef<str> + Into<std::sync::Arc<str>>,
