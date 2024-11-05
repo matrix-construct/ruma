@@ -548,6 +548,7 @@ impl<C: StaticStateEventContent> InitialStateEvent<C> {
     ///
     /// For cases where the state key is empty,
     /// [`with_empty_state_key()`](Self::with_empty_state_key) can be used instead.
+    #[inline]
     pub fn new(state_key: C::StateKey, content: C) -> Self {
         Self { content, state_key }
     }
@@ -555,6 +556,7 @@ impl<C: StaticStateEventContent> InitialStateEvent<C> {
     /// Create a new `InitialStateEvent` for an event type with an empty state key.
     ///
     /// For cases where the state key is not empty, use [`new()`](Self::new).
+    #[inline]
     pub fn with_empty_state_key(content: C) -> Self
     where
         C: StaticStateEventContent<StateKey = EmptyStateKey>,
@@ -569,6 +571,7 @@ impl<C: StaticStateEventContent> InitialStateEvent<C> {
     /// with a `Serialize` implementation that can error (for example because it contains an
     /// `enum` with one or more variants that use the `#[serde(skip)]` attribute), this method
     /// can panic.
+    #[inline]
     pub fn to_raw(&self) -> Raw<Self> {
         Raw::new(self).unwrap()
     }
@@ -580,6 +583,7 @@ impl<C: StaticStateEventContent> InitialStateEvent<C> {
     /// with a `Serialize` implementation that can error (for example because it contains an
     /// `enum` with one or more variants that use the `#[serde(skip)]` attribute), this method
     /// can panic.
+    #[inline]
     pub fn to_raw_any(&self) -> Raw<AnyInitialStateEvent> {
         self.to_raw().cast()
     }
@@ -874,6 +878,7 @@ where
     C::Redacted: RedactedStateEventContent,
 {
     /// Get the event’s type, like `m.room.create`.
+    #[inline]
     pub fn event_type(&self) -> StateEventType {
         match self {
             Self::Original { content, .. } => content.event_type(),
@@ -887,6 +892,7 @@ where
     ///
     /// A small number of events have room-version specific redaction behavior, so a
     /// [`RedactionRules`] has to be specified.
+    #[inline]
     pub fn redact(self, rules: &RedactionRules) -> C::Redacted {
         match self {
             Self::Original { content, .. } => content.redact(rules),
@@ -908,6 +914,7 @@ macro_rules! impl_possibly_redacted_event {
             $( C::Redacted: $trait<StateKey = C::StateKey>, )?
         {
             /// Returns the `type` of this event.
+			#[inline]
             pub fn event_type(&self) -> $event_type {
                 match self {
                     Self::Original(ev) => ev.content.event_type(),
@@ -916,6 +923,7 @@ macro_rules! impl_possibly_redacted_event {
             }
 
             /// Returns this event's `event_id` field.
+			#[inline]
             pub fn event_id(&self) -> &EventId {
                 match self {
                     Self::Original(ev) => &ev.event_id,
@@ -924,6 +932,7 @@ macro_rules! impl_possibly_redacted_event {
             }
 
             /// Returns this event's `sender` field.
+			#[inline]
             pub fn sender(&self) -> &UserId {
                 match self {
                     Self::Original(ev) => &ev.sender,
@@ -932,6 +941,7 @@ macro_rules! impl_possibly_redacted_event {
             }
 
             /// Returns this event's `origin_server_ts` field.
+			#[inline]
             pub fn origin_server_ts(&self) -> MilliSecondsSinceUnixEpoch {
                 match self {
                     Self::Original(ev) => ev.origin_server_ts,
@@ -971,6 +981,7 @@ impl_possibly_redacted_event!(
         MessageLikeEventContent, RedactedMessageLikeEventContent, MessageLikeEventType
     ) {
         /// Returns this event's `room_id` field.
+        #[inline]
         pub fn room_id(&self) -> &RoomId {
             match self {
                 Self::Original(ev) => &ev.room_id,
@@ -979,6 +990,7 @@ impl_possibly_redacted_event!(
         }
 
         /// Get the inner `OriginalMessageLikeEvent` if this is an unredacted event.
+        #[inline]
         pub fn as_original(&self) -> Option<&OriginalMessageLikeEvent<C>> {
             as_variant!(self, Self::Original)
         }
@@ -990,11 +1002,13 @@ impl_possibly_redacted_event!(
         MessageLikeEventContent, RedactedMessageLikeEventContent, MessageLikeEventType
     ) {
         /// Get the inner `OriginalSyncMessageLikeEvent` if this is an unredacted event.
+        #[inline]
         pub fn as_original(&self) -> Option<&OriginalSyncMessageLikeEvent<C>> {
             as_variant!(self, Self::Original)
         }
 
         /// Convert this sync event into a full event (one with a `room_id` field).
+        #[inline]
         pub fn into_full_event(self, room_id: OwnedRoomId) -> MessageLikeEvent<C> {
             match self {
                 Self::Original(ev) => MessageLikeEvent::Original(ev.into_full_event(room_id)),
@@ -1010,6 +1024,7 @@ impl_possibly_redacted_event!(
         C::Redacted: RedactedStateEventContent<StateKey = C::StateKey>,
     {
         /// Returns this event's `room_id` field.
+        #[inline]
         pub fn room_id(&self) -> &RoomId {
             match self {
                 Self::Original(ev) => &ev.room_id,
@@ -1018,6 +1033,7 @@ impl_possibly_redacted_event!(
         }
 
         /// Returns this event's `state_key` field.
+        #[inline]
         pub fn state_key(&self) -> &C::StateKey {
             match self {
                 Self::Original(ev) => &ev.state_key,
@@ -1026,6 +1042,7 @@ impl_possibly_redacted_event!(
         }
 
         /// Get the inner `OriginalStateEvent` if this is an unredacted event.
+        #[inline]
         pub fn as_original(&self) -> Option<&OriginalStateEvent<C>> {
             as_variant!(self, Self::Original)
         }
@@ -1038,6 +1055,7 @@ impl_possibly_redacted_event!(
         C::Redacted: RedactedStateEventContent<StateKey = C::StateKey>,
     {
         /// Returns this event's `state_key` field.
+        #[inline]
         pub fn state_key(&self) -> &C::StateKey {
             match self {
                 Self::Original(ev) => &ev.state_key,
@@ -1046,11 +1064,13 @@ impl_possibly_redacted_event!(
         }
 
         /// Get the inner `OriginalSyncStateEvent` if this is an unredacted event.
+        #[inline]
         pub fn as_original(&self) -> Option<&OriginalSyncStateEvent<C>> {
             as_variant!(self, Self::Original)
         }
 
         /// Convert this sync event into a full event (one with a `room_id` field).
+        #[inline]
         pub fn into_full_event(self, room_id: OwnedRoomId) -> StateEvent<C> {
             match self {
                 Self::Original(ev) => StateEvent::Original(ev.into_full_event(room_id)),
@@ -1067,6 +1087,7 @@ macro_rules! impl_sync_from_full {
             C: $content_trait + RedactContent,
             C::Redacted: $redacted_content_trait,
         {
+            #[inline]
             fn from(full: $full<C>) -> Self {
                 match full {
                     $full::Original(ev) => Self::Original(ev.into()),

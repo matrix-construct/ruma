@@ -454,6 +454,7 @@ impl IdDst {
                 ///
                 /// The same can also be done using `FromStr`, `TryFrom` or `TryInto`.
                 /// This function is simply more constrained and thus useful in generic contexts.
+                #[inline]
                 pub fn parse(
                     s: impl ::std::convert::AsRef<#str>,
                 ) -> ::std::result::Result<#owned_id, #ruma_common::IdParseError> {
