@@ -33,8 +33,9 @@ pub use self::{
     raw::{JsonCastable, Raw},
     strings::{
         btreemap_deserialize_v1_powerlevel_values, deserialize_as_number_or_string,
-        deserialize_as_optional_number_or_string, deserialize_v1_powerlevel, empty_string_as_none,
-        none_as_empty_string,
+        deserialize_as_optional_number_or_string, deserialize_map_as_vec,
+        deserialize_v1_powerlevel, empty_string_as_none, none_as_empty_string,
+        vec_deserialize_int_powerlevel_values, vec_deserialize_v1_powerlevel_values,
     },
 };
 
