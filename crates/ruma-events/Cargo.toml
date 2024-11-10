@@ -106,7 +106,7 @@ maplit = { workspace = true }
 trybuild = "1.0.71"
 
 [[bench]]
-name = "event_deserialize"
+name = "event_serde"
 harness = false
 required-features = ["criterion"]
 
