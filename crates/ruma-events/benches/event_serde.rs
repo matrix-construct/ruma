@@ -47,30 +47,51 @@ fn power_levels() -> serde_json::Value {
     })
 }
 
-fn deserialize_any_room_event(c: &mut Criterion) {
+fn interpret_any_room_event(c: &mut Criterion) {
     let json_data = power_levels();
 
-    c.bench_function("deserialize to `AnyTimelineEvent`", |b| {
+    c.bench_function("interpret `AnyTimelineEvent`", |b| {
         b.iter(|| {
             let _ = serde_json::from_value::<AnyTimelineEvent>(json_data.clone()).unwrap();
         });
     });
 }
 
-fn deserialize_any_state_event(c: &mut Criterion) {
+fn deserialize_any_room_event(c: &mut Criterion) {
+    let json_value = power_levels();
+    let json_data = serde_json::to_vec(&json_value).unwrap();
+
+    c.bench_function("deserialize `AnyTimelineEvent`", |b| {
+        b.iter(|| {
+            let _ = serde_json::from_slice::<AnyTimelineEvent>(&json_data).unwrap();
+        });
+    });
+}
+
+fn serialize_any_room_event(c: &mut Criterion) {
     let json_data = power_levels();
 
-    c.bench_function("deserialize to `AnyStateEvent`", |b| {
+    c.bench_function("serialize `AnyTimelineEvent`", |b| {
+        b.iter(|| {
+            let _ = serde_json::to_vec(&json_data).unwrap();
+        });
+    });
+}
+
+fn interpret_any_state_event(c: &mut Criterion) {
+    let json_data = power_levels();
+
+    c.bench_function("interpret `AnyStateEvent`", |b| {
         b.iter(|| {
             let _ = serde_json::from_value::<AnyStateEvent>(json_data.clone()).unwrap();
         });
     });
 }
 
-fn deserialize_specific_event(c: &mut Criterion) {
+fn interpret_specific_event(c: &mut Criterion) {
     let json_data = power_levels();
 
-    c.bench_function("deserialize to `OriginalStateEvent<PowerLevelsEventContent>`", |b| {
+    c.bench_function("interpret `OriginalStateEvent<PowerLevelsEventContent>`", |b| {
         b.iter(|| {
             let _ = serde_json::from_value::<OriginalStateEvent<RoomPowerLevelsEventContent>>(
                 json_data.clone(),
@@ -80,11 +101,27 @@ fn deserialize_specific_event(c: &mut Criterion) {
     });
 }
 
+fn deserialize_raw_specific_event(c: &mut Criterion) {
+    let json_data = power_levels();
+    let json_data: Raw<OriginalStateEvent<RoomPowerLevelsEventContent>> =
+        serde_json::from_value(json_data).unwrap();
+
+    c.bench_function("deserialize Raw<_> to `OriginalStateEvent<PowerLevelsEventContent>`", |b| {
+        b.iter(|| {
+            let _: OriginalStateEvent<RoomPowerLevelsEventContent> =
+                json_data.clone().deserialize().unwrap();
+        });
+    });
+}
+
 criterion_group!(
     benches,
+    interpret_any_room_event,
+    serialize_any_room_event,
     deserialize_any_room_event,
-    deserialize_any_state_event,
-    deserialize_specific_event
+    interpret_any_state_event,
+    interpret_specific_event,
+    deserialize_raw_specific_event,
 );
 
 criterion_main!(benches);
