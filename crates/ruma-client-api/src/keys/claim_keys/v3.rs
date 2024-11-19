@@ -18,6 +18,7 @@ metadata! {
     rate_limited: false,
     authentication: AccessToken,
     history: {
+        unstable => "/_matrix/client/unstable/keys/claim",
         1.0 => "/_matrix/client/r0/keys/claim",
         1.1 => "/_matrix/client/v3/keys/claim",
     }
