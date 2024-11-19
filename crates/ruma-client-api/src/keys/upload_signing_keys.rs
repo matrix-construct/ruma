@@ -22,6 +22,7 @@ pub mod v3 {
         authentication: AccessToken,
         history: {
             unstable => "/_matrix/client/unstable/keys/device_signing/upload",
+            1.0 => "/_matrix/client/r0/keys/device_signing/upload",
             1.1 => "/_matrix/client/v3/keys/device_signing/upload",
         }
     };
