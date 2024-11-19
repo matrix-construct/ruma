@@ -23,6 +23,7 @@ pub mod v3 {
         rate_limited: false,
         authentication: AccessToken,
         history: {
+            unstable => "/_matrix/client/unstable/keys/query",
             1.0 => "/_matrix/client/r0/keys/query",
             1.1 => "/_matrix/client/v3/keys/query",
         }

@@ -28,6 +28,7 @@ pub mod v3 {
         authentication: AccessToken,
         history: {
             unstable => "/_matrix/client/unstable/keys/signatures/upload",
+            1.0 => "/_matrix/client/r0/keys/signatures/upload",
             1.1 => "/_matrix/client/v3/keys/signatures/upload",
         }
     }
@@ -96,13 +97,14 @@ pub mod v3 {
 
     /// A failure to process a signed key.
     #[derive(Clone, Debug, Deserialize, Serialize)]
+    #[non_exhaustive]
     pub struct Failure {
         /// Machine-readable error code.
-        errcode: FailureErrorCode,
+        pub errcode: FailureErrorCode,
 
         /// Human-readable error message.
         #[cfg_attr(feature = "compat-upload-signatures", serde(alias = "message"))]
-        error: String,
+        pub error: String,
     }
 
     /// Error code for signed key processing failures.
