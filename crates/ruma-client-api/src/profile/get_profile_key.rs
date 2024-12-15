@@ -37,7 +37,6 @@ pub mod unstable {
     #[response(error = crate::Error)]
     #[derive(Default)]
     pub struct Response {
-        #[serde(flatten)]
         #[ruma_api(body)]
         pub value: BTreeMap<String, JsonValue>,
     }
