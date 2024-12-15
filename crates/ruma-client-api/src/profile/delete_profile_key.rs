@@ -34,7 +34,6 @@ pub mod unstable {
         #[ruma_api(path)]
         pub key: String,
 
-        #[serde(flatten)]
         #[ruma_api(body)]
         pub kv_pair: BTreeMap<String, JsonValue>,
     }
