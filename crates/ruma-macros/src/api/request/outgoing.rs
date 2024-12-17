@@ -40,7 +40,7 @@ impl Request {
             quote! { "" }
         };
 
-        let reserve_headers = 2 + self.header_fields().count();
+        let reserve_headers = 3 + self.header_fields().count();
 
         // If there are no body fields, the request body will be empty (not `{}`), so the
         // `application/json` content-type would be wrong. It may also cause problems with CORS
