@@ -187,6 +187,7 @@ impl<'de> Visitor<'de> for ErrorKindVisitor {
             ErrorCode::ConnectionTimeout => ErrorKind::ConnectionTimeout,
             ErrorCode::DuplicateAnnotation => ErrorKind::DuplicateAnnotation,
             ErrorCode::Exclusive => ErrorKind::Exclusive,
+            ErrorCode::FeatureDisabled => ErrorKind::FeatureDisabled,
             ErrorCode::Forbidden => ErrorKind::forbidden(),
             ErrorCode::GuestAccessForbidden => ErrorKind::GuestAccessForbidden,
             ErrorCode::IncompatibleRoomVersion => ErrorKind::IncompatibleRoomVersion {
@@ -210,6 +211,7 @@ impl<'de> Visitor<'de> for ErrorKindVisitor {
             ErrorCode::MissingParam => ErrorKind::MissingParam,
             ErrorCode::MissingToken => ErrorKind::MissingToken,
             ErrorCode::NotFound => ErrorKind::NotFound,
+            ErrorCode::NotImplemented => ErrorKind::NotImplemented,
             #[cfg(feature = "unstable-msc4306")]
             ErrorCode::NotInThread => ErrorKind::NotInThread,
             ErrorCode::NotJson => ErrorKind::NotJson,
