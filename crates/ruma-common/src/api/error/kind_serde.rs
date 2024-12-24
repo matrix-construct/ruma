@@ -243,7 +243,8 @@ impl<'de> Visitor<'de> for ErrorKindVisitor {
             ErrorCode::DelayTooLarge => ErrorKind::DelayTooLarge,
             ErrorCode::DuplicateAnnotation => ErrorKind::DuplicateAnnotation,
             ErrorCode::Exclusive => ErrorKind::Exclusive,
-            ErrorCode::Forbidden => ErrorKind::Forbidden,
+            ErrorCode::FeatureDisabled => ErrorKind::FeatureDisabled,
+            ErrorCode::Forbidden => ErrorKind::forbidden(),
             ErrorCode::GuestAccessForbidden => ErrorKind::GuestAccessForbidden,
             ErrorCode::IncompatibleRoomVersion => {
                 ErrorKind::IncompatibleRoomVersion(IncompatibleRoomVersionErrorData {
@@ -306,6 +307,7 @@ impl<'de> Visitor<'de> for ErrorKindVisitor {
             ErrorCode::MissingParam => ErrorKind::MissingParam,
             ErrorCode::MissingToken => ErrorKind::MissingToken,
             ErrorCode::NotFound => ErrorKind::NotFound,
+            ErrorCode::NotImplemented => ErrorKind::NotImplemented,
             #[cfg(feature = "unstable-msc4306")]
             ErrorCode::NotInThread => ErrorKind::NotInThread,
             ErrorCode::NotJson => ErrorKind::NotJson,
