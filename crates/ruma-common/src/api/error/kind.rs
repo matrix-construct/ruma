@@ -118,6 +118,11 @@ pub enum ErrorKind {
     /// service making the request has not created the resource.
     Exclusive,
 
+    /// `M_FEATURE_DISABLED`
+    ///
+    /// The feature has been disabled by the server administrator.
+    FeatureDisabled,
+
     /// `M_FORBIDDEN`
     ///
     /// Forbidden access, e.g. joining a room without permission, failed login.
@@ -183,6 +188,11 @@ pub enum ErrorKind {
     ///
     /// No resource was found for this request.
     NotFound,
+
+    /// `M_NOT_IMPLEMENTED`
+    ///
+    /// The endpoint or feature is not implemented by the server.
+    NotImplemented,
 
     /// `M_NOT_IN_THREAD`
     ///
@@ -423,6 +433,7 @@ impl ErrorKind {
             ErrorKind::ConnectionTimeout => ErrorCode::ConnectionTimeout,
             ErrorKind::DuplicateAnnotation => ErrorCode::DuplicateAnnotation,
             ErrorKind::Exclusive => ErrorCode::Exclusive,
+            ErrorKind::FeatureDisabled => ErrorCode::FeatureDisabled,
             ErrorKind::Forbidden => ErrorCode::Forbidden,
             ErrorKind::GuestAccessForbidden => ErrorCode::GuestAccessForbidden,
             ErrorKind::IncompatibleRoomVersion(_) => ErrorCode::IncompatibleRoomVersion,
@@ -434,6 +445,7 @@ impl ErrorKind {
             ErrorKind::MissingParam => ErrorCode::MissingParam,
             ErrorKind::MissingToken => ErrorCode::MissingToken,
             ErrorKind::NotFound => ErrorCode::NotFound,
+            ErrorKind::NotImplemented => ErrorCode::NotImplemented,
             #[cfg(feature = "unstable-msc4306")]
             ErrorKind::NotInThread => ErrorCode::NotInThread,
             ErrorKind::NotJson => ErrorCode::NotJson,
@@ -787,6 +799,11 @@ pub enum ErrorCode {
     /// service making the request has not created the resource.
     Exclusive,
 
+    /// `M_FEATURE_DISABLED`
+    ///
+    /// The feature has been disabled by the server administrator.
+    FeatureDisabled,
+
     /// `M_FORBIDDEN`
     ///
     /// Forbidden access, e.g. joining a room without permission, failed login.
@@ -855,6 +872,11 @@ pub enum ErrorCode {
     ///
     /// No resource was found for this request.
     NotFound,
+
+    /// `M_NOT_IMPLEMENTED`
+    ///
+    /// The endpoint or feature is not implemented by the server.
+    NotImplemented,
 
     /// `M_NOT_IN_THREAD`
     ///
