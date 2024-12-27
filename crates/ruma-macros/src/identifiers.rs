@@ -24,11 +24,6 @@ impl Parse for IdentifierInput {
 }
 
 pub fn expand_id_dst(input: ItemStruct) -> syn::Result<TokenStream> {
-    let id = &input.ident;
-    let owned = format_ident!("Owned{id}");
-
-    let owned_decl = expand_owned_id(&input);
-
     let meta = input.attrs.iter().filter(|attr| attr.path().is_ident("ruma_id")).try_fold(
         IdDstMeta::default(),
         |meta, attr| {
@@ -53,8 +48,18 @@ pub fn expand_id_dst(input: ItemStruct) -> syn::Result<TokenStream> {
     // So we don't have to insert #where_clause everywhere when it is always None in practice
     assert_eq!(where_clause, None, "where clauses on identifier types are not currently supported");
 
-    let as_str_docs = format!("Creates a string slice from this `{id}`.");
-    let as_bytes_docs = format!("Creates a byte slice from this `{id}`.");
+    let id = &input.ident;
+    let owned = format_ident!("Owned{id}");
+    let id_ty = quote! { #id #ty_generics };
+    let owned_ty = quote! { #owned #ty_generics };
+
+    const INLINE_BYTES: usize = 32;
+    let inline_bytes = meta.inline_bytes.unwrap_or(INLINE_BYTES);
+    let inline_array = quote! { [u8; #inline_bytes] };
+    let sv_decl = quote! { smallvec::SmallVec<#inline_array> };
+    let sv = quote! { smallvec::SmallVec::<#inline_array> };
+
+    let owned_decl = expand_owned_id(&input, inline_bytes);
 
     let as_str_impl = match &input.fields {
         Fields::Named(_) | Fields::Unit => {
@@ -67,12 +72,13 @@ pub fn expand_id_dst(input: ItemStruct) -> syn::Result<TokenStream> {
         }
     };
 
-    let id_ty = quote! { #id #ty_generics };
-    let owned_ty = quote! { #owned #ty_generics };
-
     let as_str_impls = expand_as_str_impls(id_ty.clone(), &impl_generics);
     // FIXME: Remove?
     let box_partial_eq_string = expand_partial_eq_string(quote! { Box<#id_ty> }, &impl_generics);
+
+    let as_str_docs = format!("Creates a string slice from this `{id}`.");
+    let as_bytes_docs = format!("Creates a byte slice from this `{id}`.");
+    let _max_bytes_docs = format!("Maximum byte length for any `{id}`.");
 
     Ok(quote! {
         #owned_decl
@@ -95,8 +101,15 @@ pub fn expand_id_dst(input: ItemStruct) -> syn::Result<TokenStream> {
                 unsafe { std::sync::Arc::from_raw(std::sync::Arc::into_raw(s) as _) }
             }
 
-            pub(super) fn into_owned(self: Box<Self>) -> Box<str> {
-                unsafe { Box::from_raw(Box::into_raw(self) as _) }
+            pub(super) fn into_owned(self: Box<Self>) -> #sv_decl {
+                let len = self.as_bytes().len();
+                let p: *mut u8 = Box::into_raw(self).cast();
+                let v = unsafe { Vec::<u8>::from_raw_parts(p, len, len) };
+                #sv::from_vec(v)
+            }
+
+            pub(super) fn into_box(s: Box<Self>) -> Box<str> {
+                unsafe { Box::from_raw(Box::into_raw(s) as _) }
             }
 
             #[doc = #as_str_docs]
@@ -124,7 +137,7 @@ pub fn expand_id_dst(input: ItemStruct) -> syn::Result<TokenStream> {
             type Owned = #owned_ty;
 
             fn to_owned(&self) -> Self::Owned {
-                #owned::from_ref(self)
+                Self::Owned::new(self.as_bytes().into())
             }
         }
 
@@ -173,7 +186,7 @@ pub fn expand_id_dst(input: ItemStruct) -> syn::Result<TokenStream> {
         #[automatically_derived]
         impl #impl_generics From<Box<#id_ty>> for String {
             fn from(id: Box<#id_ty>) -> Self {
-                id.into_owned().into()
+                String::from(<#id_ty>::into_box(id))
             }
         }
 
@@ -234,41 +247,49 @@ pub fn expand_id_dst(input: ItemStruct) -> syn::Result<TokenStream> {
     })
 }
 
-fn expand_owned_id(input: &ItemStruct) -> TokenStream {
+fn expand_owned_id(input: &ItemStruct, inline_bytes: usize) -> TokenStream {
+    let (impl_generics, ty_generics, _where_clause) = input.generics.split_for_impl();
+    let listed_generics: Punctuated<_, Token![,]> =
+        input.generics.type_params().map(|param| &param.ident).collect();
+
     let id = &input.ident;
     let owned = format_ident!("Owned{id}");
-
-    let doc_header = format!("Owned variant of {id}");
-    let (impl_generics, ty_generics, _where_clause) = input.generics.split_for_impl();
-
     let id_ty = quote! { #id #ty_generics };
     let owned_ty = quote! { #owned #ty_generics };
 
+    let inline_array = quote! { [u8; #inline_bytes] };
+    let sv_decl = quote! { smallvec::SmallVec<#inline_array> };
+
+    let has_generics = !listed_generics.is_empty();
+    let phantom_decl = if has_generics {
+        quote! { _p: std::marker::PhantomData<(#listed_generics)>, }
+    } else {
+        quote! {}
+    };
+
+    let phantom_impl = if has_generics {
+        quote! { _p: std::marker::PhantomData::<(#listed_generics)>, }
+    } else {
+        quote! {}
+    };
+
     let as_str_impls = expand_as_str_impls(owned_ty.clone(), &impl_generics);
+
+    let doc_header = format!("Owned variant of {id}");
 
     quote! {
         #[doc = #doc_header]
-        ///
-        /// The wrapper type for this type is variable, by default it'll use [`Box`],
-        /// but you can change that by setting "`--cfg=ruma_identifiers_storage=...`" using
-        /// `RUSTFLAGS` or `.cargo/config.toml` (under `[build]` -> `rustflags = ["..."]`)
-        /// to the following;
-        /// - `ruma_identifiers_storage="Arc"` to use [`Arc`](std::sync::Arc) as a wrapper type.
         pub struct #owned #impl_generics {
-            #[cfg(not(any(ruma_identifiers_storage = "Arc")))]
-            inner: Box<#id_ty>,
-            #[cfg(ruma_identifiers_storage = "Arc")]
-            inner: std::sync::Arc<#id_ty>,
+            inner: #sv_decl,
+            #phantom_decl
         }
 
         #[automatically_derived]
         impl #impl_generics #owned_ty {
-            fn from_ref(v: &#id_ty) -> Self {
+            fn new(inner: #sv_decl) -> Self {
                 Self {
-                    #[cfg(not(any(ruma_identifiers_storage = "Arc")))]
-                    inner: #id::from_box(v.as_str().into()),
-                    #[cfg(ruma_identifiers_storage = "Arc")]
-                    inner: #id::from_arc(v.as_str().into()),
+                    inner,
+                    #phantom_impl
                 }
             }
         }
@@ -276,38 +297,37 @@ fn expand_owned_id(input: &ItemStruct) -> TokenStream {
         #[automatically_derived]
         impl #impl_generics AsRef<#id_ty> for #owned_ty {
             fn as_ref(&self) -> &#id_ty {
-                &*self.inner
+                let s: &str = self.as_ref();
+                <#id_ty>::from_borrowed(s)
             }
         }
 
         #[automatically_derived]
         impl #impl_generics AsRef<str> for #owned_ty {
             fn as_ref(&self) -> &str {
-                self.inner.as_str()
+                let s: &[u8] = self.as_ref();
+                unsafe { std::str::from_utf8_unchecked(s) }
             }
         }
 
         #[automatically_derived]
         impl #impl_generics AsRef<[u8]> for #owned_ty {
             fn as_ref(&self) -> &[u8] {
-                self.inner.as_bytes()
+                self.inner.as_slice()
             }
         }
 
         #[automatically_derived]
         impl #impl_generics From<#owned_ty> for String {
             fn from(id: #owned_ty) -> String {
-                #[cfg(not(any(ruma_identifiers_storage = "Arc")))]
-                { id.inner.into() }
-                #[cfg(ruma_identifiers_storage = "Arc")]
-                { id.inner.as_ref().into() }
+                unsafe { String::from_utf8_unchecked(id.inner.into_vec()) }
             }
         }
 
         #[automatically_derived]
         impl #impl_generics std::clone::Clone for #owned_ty {
             fn clone(&self) -> Self {
-                (&*self.inner).into()
+                Self::new(self.inner.clone())
             }
         }
 
@@ -316,7 +336,7 @@ fn expand_owned_id(input: &ItemStruct) -> TokenStream {
             type Target = #id_ty;
 
             fn deref(&self) -> &Self::Target {
-                &self.inner
+                self.as_ref()
             }
         }
 
@@ -330,46 +350,35 @@ fn expand_owned_id(input: &ItemStruct) -> TokenStream {
         #[automatically_derived]
         impl #impl_generics From<&'_ #id_ty> for #owned_ty {
             fn from(id: &#id_ty) -> #owned_ty {
-                #owned { inner: id.into() }
+                Self::new(id.as_bytes().into())
             }
         }
 
         #[automatically_derived]
         impl #impl_generics From<Box<#id_ty>> for #owned_ty {
             fn from(b: Box<#id_ty>) -> #owned_ty {
-                Self { inner: b.into() }
+                Self::new(<#id_ty>::into_owned(b))
             }
         }
 
         #[automatically_derived]
         impl #impl_generics From<std::sync::Arc<#id_ty>> for #owned_ty {
             fn from(a: std::sync::Arc<#id_ty>) -> #owned_ty {
-                Self {
-                    #[cfg(not(any(ruma_identifiers_storage = "Arc")))]
-                    inner: a.as_ref().into(),
-                    #[cfg(ruma_identifiers_storage = "Arc")]
-                    inner: a,
-                }
+                Self::new(a.as_bytes().into()) //TODO
             }
         }
 
         #[automatically_derived]
         impl #impl_generics From<#owned_ty> for Box<#id_ty> {
             fn from(a: #owned_ty) -> Box<#id_ty> {
-                #[cfg(not(any(ruma_identifiers_storage = "Arc")))]
-                { a.inner }
-                #[cfg(ruma_identifiers_storage = "Arc")]
-                { a.inner.as_ref().into() }
+                { Box::from(<#id_ty>::from_borrowed(a.as_str())) }
             }
         }
 
         #[automatically_derived]
         impl #impl_generics From<#owned_ty> for std::sync::Arc<#id_ty> {
             fn from(a: #owned_ty) -> std::sync::Arc<#id_ty> {
-                #[cfg(not(any(ruma_identifiers_storage = "Arc")))]
-                { a.inner.into() }
-                #[cfg(ruma_identifiers_storage = "Arc")]
-                { a.inner }
+                { std::sync::Arc::from(<#id_ty>::from_borrowed(a.as_str())) }
             }
         }
 
@@ -468,19 +477,18 @@ fn expand_owned_id(input: &ItemStruct) -> TokenStream {
 }
 
 fn expand_checked_impls(input: &ItemStruct, validate: Path) -> TokenStream {
-    let id = &input.ident;
-    let owned = format_ident!("Owned{id}");
-
     let (impl_generics, ty_generics, _where_clause) = input.generics.split_for_impl();
     let generic_params = &input.generics.params;
+
+    let id = &input.ident;
+    let owned = format_ident!("Owned{id}");
+    let id_ty = quote! { #id #ty_generics };
+    let owned_ty = quote! { #owned #ty_generics };
 
     let parse_doc_header = format!("Try parsing a `&str` into an `Owned{id}`.");
     let parse_box_doc_header = format!("Try parsing a `&str` into a `Box<{id}>`.");
     let parse_rc_docs = format!("Try parsing a `&str` into an `Rc<{id}>`.");
     let parse_arc_docs = format!("Try parsing a `&str` into an `Arc<{id}>`.");
-
-    let id_ty = quote! { #id #ty_generics };
-    let owned_ty = quote! { #owned #ty_generics };
 
     quote! {
         #[automatically_derived]
@@ -493,9 +501,8 @@ fn expand_checked_impls(input: &ItemStruct, validate: Path) -> TokenStream {
             pub fn parse(
                 s: impl AsRef<str>,
             ) -> Result<#owned_ty, crate::IdParseError> {
-                let s = s.as_ref();
-                #validate(s)?;
-                Ok(#id::from_borrowed(s).to_owned())
+                #validate(s.as_ref())?;
+                Ok((<#id_ty>::from_borrowed(s.as_ref())).to_owned())
             }
 
             #[inline]
@@ -507,7 +514,7 @@ fn expand_checked_impls(input: &ItemStruct, validate: Path) -> TokenStream {
                 s: impl AsRef<str> + Into<Box<str>>,
             ) -> Result<Box<Self>, crate::IdParseError> {
                 #validate(s.as_ref())?;
-                Ok(#id::from_box(s.into()))
+                Ok(<#id_ty>::from_box(s.into()))
             }
 
             #[inline]
@@ -516,7 +523,7 @@ fn expand_checked_impls(input: &ItemStruct, validate: Path) -> TokenStream {
                 s: impl AsRef<str> + Into<std::rc::Rc<str>>,
             ) -> Result<std::rc::Rc<Self>, crate::IdParseError> {
                 #validate(s.as_ref())?;
-                Ok(#id::from_rc(s.into()))
+                Ok(<#id_ty>::from_rc(s.into()))
             }
 
             #[inline]
@@ -525,7 +532,7 @@ fn expand_checked_impls(input: &ItemStruct, validate: Path) -> TokenStream {
                 s: impl AsRef<str> + Into<std::sync::Arc<str>>,
             ) -> Result<std::sync::Arc<Self>, crate::IdParseError> {
                 #validate(s.as_ref())?;
-                Ok(#id::from_arc(s.into()))
+                Ok(<#id_ty>::from_arc(s.into()))
             }
         }
 
@@ -539,7 +546,7 @@ fn expand_checked_impls(input: &ItemStruct, validate: Path) -> TokenStream {
 
                 let s = String::deserialize(deserializer)?;
 
-                match #id::parse_box(s) {
+                match <#id_ty>::parse_box(s) {
                     Ok(o) => Ok(o),
                     Err(e) => Err(D::Error::custom(e)),
                 }
@@ -556,7 +563,7 @@ fn expand_checked_impls(input: &ItemStruct, validate: Path) -> TokenStream {
 
                 let s = String::deserialize(deserializer)?;
 
-                match #id::parse(s) {
+                match <#id_ty>::parse(s) {
                     Ok(o) => Ok(o),
                     Err(e) => Err(D::Error::custom(e)),
                 }
@@ -649,7 +656,7 @@ fn expand_checked_impls(input: &ItemStruct, validate: Path) -> TokenStream {
             type Error = crate::IdParseError;
 
             fn try_from(s: String) -> Result<Self, Self::Error> {
-                <#id_ty>::parse_box(s)
+                <#id_ty>::parse_box(s.into_boxed_str())
             }
         }
 
@@ -683,97 +690,103 @@ fn expand_checked_impls(input: &ItemStruct, validate: Path) -> TokenStream {
 }
 
 fn expand_unchecked_impls(input: &ItemStruct) -> TokenStream {
+    let (impl_generics, ty_generics, _where_clause) = input.generics.split_for_impl();
+    let generic_params = &input.generics.params;
+
     let id = &input.ident;
     let owned = format_ident!("Owned{id}");
+    let id_ty = quote! { #id #ty_generics };
+    let owned_ty = quote! { #owned #ty_generics };
 
     quote! {
         #[automatically_derived]
-        impl<'a> From<&'a str> for &'a #id {
+        impl<'a, #generic_params> From<&'a str> for &'a #id_ty {
             fn from(s: &'a str) -> Self {
-                #id::from_borrowed(s)
+                <#id_ty>::from_borrowed(s)
             }
         }
 
         #[automatically_derived]
-        impl From<&str> for #owned {
+        impl #impl_generics From<&str> for #owned_ty {
             fn from(s: &str) -> Self {
-                <&#id>::from(s).into()
+                <&#id_ty>::from(s).into()
             }
         }
 
         #[automatically_derived]
-        impl From<Box<str>> for #owned {
+        impl #impl_generics From<Box<str>> for #owned_ty {
             fn from(s: Box<str>) -> Self {
-                <&#id>::from(&*s).into()
+                let s: String = s.into();
+                Self::from(s)
             }
         }
 
         #[automatically_derived]
-        impl From<String> for #owned {
+        impl #impl_generics From<String> for #owned_ty {
             fn from(s: String) -> Self {
-                <&#id>::from(s.as_str()).into()
+                Self::new(s.into_bytes().into())
             }
         }
 
         #[automatically_derived]
-        impl From<&str> for Box<#id> {
+        impl #impl_generics From<&str> for Box<#id_ty> {
             fn from(s: &str) -> Self {
-                #id::from_box(s.into())
+                Self::from(s.to_owned().into_boxed_str())
             }
         }
 
         #[automatically_derived]
-        impl From<Box<str>> for Box<#id> {
+        impl #impl_generics From<Box<str>> for Box<#id_ty> {
             fn from(s: Box<str>) -> Self {
-                #id::from_box(s)
+                <#id_ty>::from_box(s)
             }
         }
 
         #[automatically_derived]
-        impl From<String> for Box<#id> {
+        impl #impl_generics From<String> for Box<#id_ty> {
             fn from(s: String) -> Self {
-                #id::from_box(s.into())
+                let s = s.into_boxed_str();
+                Self::from(s)
             }
         }
 
         #[automatically_derived]
-        impl From<Box<#id>> for Box<str> {
-            fn from(id: Box<#id>) -> Self {
-                id.into_owned()
+        impl #impl_generics From<Box<#id_ty>> for Box<str> {
+            fn from(id: Box<#id_ty>) -> Self {
+                <#id_ty>::into_box(id)
             }
         }
 
         #[automatically_derived]
-        impl<'de> serde::Deserialize<'de> for Box<#id> {
+        impl<'de, #generic_params> serde::Deserialize<'de> for Box<#id_ty> {
             fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
             where
                 D: serde::Deserializer<'de>,
             {
-                Box::<str>::deserialize(deserializer).map(#id::from_box)
+                Box::<str>::deserialize(deserializer).map(<#id_ty>::from_box)
             }
         }
 
         #[automatically_derived]
-        impl<'de> serde::Deserialize<'de> for #owned {
+        impl<'de, #generic_params> serde::Deserialize<'de> for #owned_ty {
             fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
             where
                 D: serde::Deserializer<'de>,
             {
                 // FIXME: Deserialize inner, convert that
-                Box::<str>::deserialize(deserializer).map(#id::from_box).map(Into::into)
+                Box::<str>::deserialize(deserializer).map(<#id_ty>::from_box).map(Into::into)
             }
         }
 
         #[automatically_derived]
-        impl<'de> serde::Deserialize<'de> for &'de #id {
+        impl<'de, #generic_params> serde::Deserialize<'de> for &'de #id_ty {
             fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
             where
                 D: serde::Deserializer<'de>,
             {
-                <&'de str>::deserialize(deserializer).map(<#id>::from_borrowed).map(Into::into)
+                <&'de str>::deserialize(deserializer).map(<#id_ty>::from_borrowed).map(Into::into)
             }
         }
-
     }
 }
 
@@ -823,8 +836,7 @@ fn expand_partial_eq_string(ty: TokenStream, impl_generics: &ImplGenerics<'_>) -
             #[automatically_derived]
             impl #impl_generics PartialEq<#rhs> for #lhs {
                 fn eq(&self, other: &#rhs) -> bool {
-                    AsRef::<str>::as_ref(self)
-                        == AsRef::<str>::as_ref(other)
+                    AsRef::<str>::as_ref(self) == AsRef::<str>::as_ref(other)
                 }
             }
         }
@@ -834,11 +846,13 @@ fn expand_partial_eq_string(ty: TokenStream, impl_generics: &ImplGenerics<'_>) -
 
 mod kw {
     syn::custom_keyword!(validate);
+    syn::custom_keyword!(inline_bytes);
 }
 
 #[derive(Default)]
 struct IdDstMeta {
     validate: Option<Path>,
+    inline_bytes: Option<usize>,
 }
 
 impl IdDstMeta {
@@ -853,7 +867,17 @@ impl IdDstMeta {
             }
         };
 
-        Ok(Self { validate })
+        let inline_bytes = match (self.inline_bytes, other.inline_bytes) {
+            (None, None) => None,
+            (Some(val), None) | (None, Some(val)) => Some(val),
+            (Some(a), Some(b)) => {
+                let mut error = syn::Error::new_spanned(b, "duplicate attribute argument");
+                error.combine(syn::Error::new_spanned(a, "note: first one here"));
+                return Err(error);
+            }
+        };
+
+        Ok(Self { validate, inline_bytes })
     }
 }
 
@@ -862,6 +886,15 @@ impl Parse for IdDstMeta {
         let _: kw::validate = input.parse()?;
         let _: Token![=] = input.parse()?;
         let validate = Some(input.parse()?);
-        Ok(Self { validate })
+
+        let _: Option<Token![,]> = input.parse()?;
+
+        let _: Option<kw::inline_bytes> = input.parse()?;
+        let _: Option<Token![=]> = input.parse()?;
+        let inline_bytes: Option<syn::LitInt> = input.parse()?;
+        let inline_bytes =
+            inline_bytes.map(|ib| ib.base10_digits().parse().expect("inline_bytes is an integer"));
+
+        Ok(Self { validate, inline_bytes })
     }
 }
