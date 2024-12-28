@@ -21,7 +21,7 @@ use super::{IdParseError, MatrixToUri, MatrixUri, ServerName, matrix_uri::UriAct
 /// [user ID]: https://spec.matrix.org/latest/appendices/#user-identifiers
 #[repr(transparent)]
 #[derive(PartialEq, Eq, PartialOrd, Ord, Hash, IdDst)]
-#[ruma_id(validate = ruma_identifiers_validation::user_id::validate)]
+#[ruma_id(validate = ruma_identifiers_validation::user_id::validate, inline_bytes = 40)]
 pub struct UserId(str);
 
 impl UserId {
@@ -48,13 +48,13 @@ impl UserId {
     /// localpart, not the localpart plus the `@` prefix, or the localpart plus server name without
     /// the `@` prefix.
     pub fn parse_with_server_name(
-        id: impl AsRef<str> + Into<Box<str>>,
+        id: impl AsRef<str> + Into<String>,
         server_name: &ServerName,
     ) -> Result<OwnedUserId, IdParseError> {
         let id_str = id.as_ref();
 
         if id_str.starts_with('@') {
-            Self::parse(id)
+            Self::parse_into_owned(id.into())
         } else {
             localpart_is_backwards_compatible(id_str)?;
             Ok(Self::from_borrowed(&format!("@{id_str}:{server_name}")).to_owned())
@@ -96,11 +96,13 @@ impl UserId {
     }
 
     /// Returns the user's localpart.
+    #[inline]
     pub fn localpart(&self) -> &str {
         &self.as_str()[1..self.colon_idx()]
     }
 
     /// Returns the server name of the user ID.
+    #[inline]
     pub fn server_name(&self) -> &ServerName {
         ServerName::from_borrowed(&self.as_str()[self.colon_idx() + 1..])
     }
@@ -125,6 +127,7 @@ impl UserId {
     /// deprecated.
     ///
     /// [strict grammar]: https://spec.matrix.org/latest/appendices/#user-identifiers
+    #[inline]
     pub fn validate_strict(&self) -> Result<(), IdParseError> {
         let is_fully_conforming = self.validate_fully_conforming()?;
 
@@ -140,6 +143,7 @@ impl UserId {
     /// the latest grammar.
     ///
     /// [historical grammar]: https://spec.matrix.org/latest/appendices/#historical-user-ids
+    #[inline]
     pub fn validate_historical(&self) -> Result<(), IdParseError> {
         self.validate_fully_conforming()?;
         Ok(())
@@ -151,6 +155,7 @@ impl UserId {
     /// ID grammar but is still accepted because it was previously allowed.
     ///
     /// [historical user ID]: https://spec.matrix.org/latest/appendices/#historical-user-ids
+    #[inline]
     pub fn is_historical(&self) -> bool {
         self.validate_fully_conforming().is_ok_and(|is_fully_conforming| !is_fully_conforming)
     }
@@ -168,6 +173,7 @@ impl UserId {
     ///     display_name = "jplatte",
     /// );
     /// ```
+    #[inline]
     pub fn matrix_to_uri(&self) -> MatrixToUri {
         MatrixToUri::new(self.into(), Vec::new())
     }
@@ -188,6 +194,7 @@ impl UserId {
     ///     display_name = "jplatte",
     /// );
     /// ```
+    #[inline]
     pub fn matrix_uri(&self, chat: bool) -> MatrixUri {
         MatrixUri::new(self.into(), Vec::new(), Some(UriAction::Chat).filter(|_| chat))
     }

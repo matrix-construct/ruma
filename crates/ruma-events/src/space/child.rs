@@ -304,7 +304,7 @@ mod tests {
     fn space_child_serialization() {
         let content = SpaceChildEventContent {
             via: vec![server_name!("example.com").to_owned()],
-            order: Some(SpaceChildOrder::parse("uwu").unwrap()),
+            order: Some(SpaceChildOrder::parse("uwu").unwrap().to_owned()),
             suggested: false,
         };
 
@@ -411,7 +411,8 @@ mod tests {
         origin_server_ts: UInt,
     ) -> HierarchySpaceChildEvent {
         let mut content = SpaceChildEventContent::new(vec![owned_server_name!("example.org")]);
-        content.order = order.and_then(|order| SpaceChildOrder::parse(order).ok());
+        content.order =
+            order.and_then(|order| SpaceChildOrder::parse(order).ok()).map(ToOwned::to_owned);
 
         HierarchySpaceChildEvent {
             content,

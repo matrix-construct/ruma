@@ -13,7 +13,7 @@ use super::{
     EventId, OwnedEventId, OwnedRoomAliasId, OwnedRoomId, OwnedRoomOrAliasId, OwnedServerName,
     OwnedUserId, RoomAliasId, RoomId, RoomOrAliasId, UserId,
 };
-use crate::{PrivOwnedStr, ServerName, percent_encode::PATH_PERCENT_ENCODE_SET};
+use crate::{PrivOwnedStr, percent_encode::PATH_PERCENT_ENCODE_SET};
 
 const MATRIX_TO_BASE_URL: &str = "https://matrix.to/#/";
 const MATRIX_SCHEME: &str = "matrix";
@@ -315,7 +315,7 @@ impl MatrixToUri {
                 query_parts
                     .map(|(key, value)| {
                         if key == "via" {
-                            ServerName::parse(&value)
+                            value.parse::<OwnedServerName>()
                         } else {
                             Err(MatrixToError::UnknownArgument.into())
                         }

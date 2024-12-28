@@ -21,7 +21,7 @@ use crate::RoomOrAliasId;
 /// [room ID]: https://spec.matrix.org/latest/appendices/#room-ids
 #[repr(transparent)]
 #[derive(PartialEq, Eq, PartialOrd, Ord, Hash, IdDst)]
-#[ruma_id(validate = ruma_identifiers_validation::room_id::validate)]
+#[ruma_id(validate = ruma_identifiers_validation::room_id::validate, inline_bytes = 48)]
 pub struct RoomId(str);
 
 impl RoomId {
@@ -36,6 +36,7 @@ impl RoomId {
     /// [`RoomIdFormatVersion::V2`]: crate::room_version_rules::RoomIdFormatVersion::V2
     /// [`RoomVersionRules`]: crate::room_version_rules::RoomVersionRules
     #[cfg(feature = "rand")]
+    #[inline]
     pub fn new_v1(server_name: &ServerName) -> OwnedRoomId {
         Self::from_borrowed(&format!("!{}:{server_name}", super::generate_localpart(18))).to_owned()
     }
@@ -52,8 +53,9 @@ impl RoomId {
     /// [`RoomIdFormatVersion::V1`]: crate::room_version_rules::RoomIdFormatVersion::V1
     /// [`RoomIdFormatVersion::V2`]: crate::room_version_rules::RoomIdFormatVersion::V2
     /// [`RoomVersionRules`]: crate::room_version_rules::RoomVersionRules
+    #[inline]
     pub fn new_v2(room_create_reference_hash: &str) -> Result<OwnedRoomId, IdParseError> {
-        Self::parse(format!("!{room_create_reference_hash}"))
+        Self::parse(&format!("!{room_create_reference_hash}")).map(ToOwned::to_owned)
     }
 
     /// Returns the room ID without the initial `!` sigil.
@@ -62,6 +64,7 @@ impl RoomId {
     /// `m.room.create` event of the room.
     ///
     /// [`RoomIdFormatVersion::V2`]: crate::room_version_rules::RoomIdFormatVersion::V2
+    #[inline]
     pub fn strip_sigil(&self) -> &str {
         self.as_str().strip_prefix('!').expect("sigil should be checked during construction")
     }
@@ -71,6 +74,8 @@ impl RoomId {
     /// This should only return `Some(_)` for room versions using [`RoomIdFormatVersion::V1`].
     ///
     /// [`RoomIdFormatVersion::V1`]: crate::room_version_rules::RoomIdFormatVersion::V1
+    /// Returns the server name of the room ID.
+    #[inline]
     pub fn server_name(&self) -> Option<&ServerName> {
         <&RoomOrAliasId>::from(self).server_name()
     }
