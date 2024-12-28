@@ -143,7 +143,7 @@ impl FromStr for CallMemberStateKeyEnum {
                         if has_underscore {
                             Err(KeyParseError::LeadingUnderscoreNoMemberId)
                         } else {
-                            Ok(CallMemberStateKeyEnum::new(user_id, None, has_underscore))
+                            Ok(CallMemberStateKeyEnum::new(user_id.into(), None, has_underscore))
                         }
                     }
                     Err(err) => Err(KeyParseError::InvalidUser {
@@ -162,7 +162,11 @@ impl FromStr for CallMemberStateKeyEnum {
                 if member_id.is_empty() {
                     return Err(KeyParseError::EmptyMemberId);
                 }
-                Ok(CallMemberStateKeyEnum::new(user_id, Some(member_id.to_owned()), has_underscore))
+                Ok(CallMemberStateKeyEnum::new(
+                    user_id.into(),
+                    Some(member_id.to_owned()),
+                    has_underscore,
+                ))
             }
             Err(err) => Err(KeyParseError::InvalidUser { user_id: user_id.to_owned(), error: err }),
         }
