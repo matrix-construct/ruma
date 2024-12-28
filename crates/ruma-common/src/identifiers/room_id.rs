@@ -36,6 +36,7 @@ impl RoomId {
     /// [`RoomIdFormatVersion::V2`]: crate::room_version_rules::RoomIdFormatVersion::V2
     /// [`RoomVersionRules`]: crate::room_version_rules::RoomVersionRules
     #[cfg(feature = "rand")]
+    #[inline]
     pub fn new_v1(server_name: &ServerName) -> OwnedRoomId {
         OwnedRoomId::from_string_unchecked(format!(
             "!{}:{server_name}",
@@ -55,6 +56,7 @@ impl RoomId {
     /// [`RoomIdFormatVersion::V1`]: crate::room_version_rules::RoomIdFormatVersion::V1
     /// [`RoomIdFormatVersion::V2`]: crate::room_version_rules::RoomIdFormatVersion::V2
     /// [`RoomVersionRules`]: crate::room_version_rules::RoomVersionRules
+    #[inline]
     pub fn new_v2(room_create_reference_hash: &str) -> Result<OwnedRoomId, IdParseError> {
         OwnedRoomId::try_from(format!("!{room_create_reference_hash}"))
     }
@@ -65,6 +67,7 @@ impl RoomId {
     /// `m.room.create` event of the room.
     ///
     /// [`RoomIdFormatVersion::V2`]: crate::room_version_rules::RoomIdFormatVersion::V2
+    #[inline]
     pub fn strip_sigil(&self) -> &str {
         self.as_str().strip_prefix('!').expect("sigil should be checked during construction")
     }
@@ -74,6 +77,8 @@ impl RoomId {
     /// This should only return `Some(_)` for room versions using [`RoomIdFormatVersion::V1`].
     ///
     /// [`RoomIdFormatVersion::V1`]: crate::room_version_rules::RoomIdFormatVersion::V1
+    /// Returns the server name of the room ID.
+    #[inline]
     pub fn server_name(&self) -> Option<&ServerName> {
         <&RoomOrAliasId>::from(self).server_name()
     }

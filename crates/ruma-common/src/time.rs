@@ -14,6 +14,7 @@ pub struct MilliSecondsSinceUnixEpoch(pub UInt);
 impl MilliSecondsSinceUnixEpoch {
     /// Creates a new `MilliSecondsSinceUnixEpoch` from the given `SystemTime`, if it is not before
     /// the unix epoch, or too large to be represented.
+    #[inline]
     pub fn from_system_time(time: SystemTime) -> Option<Self> {
         let duration = time.duration_since(UNIX_EPOCH).ok()?;
         let millis = duration.as_millis().try_into().ok()?;
@@ -21,21 +22,25 @@ impl MilliSecondsSinceUnixEpoch {
     }
 
     /// The current system time in milliseconds since the unix epoch.
+    #[inline]
     pub fn now() -> Self {
         Self::from_system_time(SystemTime::now()).expect("date out of range")
     }
 
     /// Creates a new `SystemTime` from `self`, if it can be represented.
+    #[inline]
     pub fn to_system_time(self) -> Option<SystemTime> {
         UNIX_EPOCH.checked_add(Duration::from_millis(self.0.into()))
     }
 
     /// Get the time since the unix epoch in milliseconds.
+    #[inline]
     pub fn get(&self) -> UInt {
         self.0
     }
 
     /// Get time since the unix epoch in seconds.
+    #[inline]
     pub fn as_secs(&self) -> UInt {
         self.0 / uint!(1000)
     }
@@ -77,6 +82,7 @@ pub struct SecondsSinceUnixEpoch(pub UInt);
 impl SecondsSinceUnixEpoch {
     /// Creates a new `MilliSecondsSinceUnixEpoch` from the given `SystemTime`, if it is not before
     /// the unix epoch, or too large to be represented.
+    #[inline]
     pub fn from_system_time(time: SystemTime) -> Option<Self> {
         let duration = time.duration_since(UNIX_EPOCH).ok()?;
         let millis = duration.as_secs().try_into().ok()?;
@@ -84,16 +90,19 @@ impl SecondsSinceUnixEpoch {
     }
 
     /// The current system-time as seconds since the unix epoch.
+    #[inline]
     pub fn now() -> Self {
         Self::from_system_time(SystemTime::now()).expect("date out of range")
     }
 
     /// Creates a new `SystemTime` from `self`, if it can be represented.
+    #[inline]
     pub fn to_system_time(self) -> Option<SystemTime> {
         UNIX_EPOCH.checked_add(Duration::from_secs(self.0.into()))
     }
 
     /// Get time since the unix epoch in seconds.
+    #[inline]
     pub fn get(&self) -> UInt {
         self.0
     }
