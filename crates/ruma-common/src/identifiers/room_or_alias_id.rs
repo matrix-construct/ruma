@@ -31,7 +31,7 @@ use super::{server_name::ServerName, OwnedRoomAliasId, OwnedRoomId, RoomAliasId,
 /// [room alias ID]: https://spec.matrix.org/latest/appendices/#room-aliases
 #[repr(transparent)]
 #[derive(PartialEq, Eq, PartialOrd, Ord, Hash, IdDst)]
-#[ruma_id(validate = ruma_identifiers_validation::room_id_or_alias_id::validate)]
+#[ruma_id(validate = ruma_identifiers_validation::room_id_or_alias_id::validate, inline_bytes = 48)]
 pub struct RoomOrAliasId(str);
 
 impl RoomOrAliasId {
