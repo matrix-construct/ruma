@@ -226,27 +226,27 @@ mod tests {
 
     #[test]
     fn algorithm_and_key_name_are_correctly_extracted() {
-        let key_id = DeviceKeyId::parse("ed25519:MYDEVICE").expect("Should parse correctly");
+        let key_id = DeviceKeyId::parse_ref("ed25519:MYDEVICE").expect("Should parse correctly");
         assert_eq!(key_id.algorithm().as_str(), "ed25519");
         assert_eq!(key_id.key_name(), "MYDEVICE");
     }
 
     #[test]
     fn empty_key_name_is_correctly_extracted() {
-        let key_id = DeviceKeyId::parse("ed25519:").expect("Should parse correctly");
+        let key_id = DeviceKeyId::parse_ref("ed25519:").expect("Should parse correctly");
         assert_eq!(key_id.algorithm().as_str(), "ed25519");
         assert_eq!(key_id.key_name(), "");
     }
 
     #[test]
     fn missing_colon_fails_to_parse() {
-        let error = DeviceKeyId::parse("ed25519_MYDEVICE").expect_err("Should fail to parse");
+        let error = DeviceKeyId::parse_ref("ed25519_MYDEVICE").expect_err("Should fail to parse");
         assert_matches!(error, Error::MissingColon);
     }
 
     #[test]
     fn empty_algorithm_fails_to_parse() {
-        let error = DeviceKeyId::parse(":MYDEVICE").expect_err("Should fail to parse");
+        let error = DeviceKeyId::parse_ref(":MYDEVICE").expect_err("Should fail to parse");
         // Weirdly, this also reports MissingColon
         assert_matches!(error, Error::MissingColon);
     }
