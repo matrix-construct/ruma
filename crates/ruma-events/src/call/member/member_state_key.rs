@@ -149,7 +149,7 @@ impl FromStr for CallMemberStateKeyEnum {
                         if underscore {
                             Err(KeyParseError::LeadingUnderscoreNoDevice)
                         } else {
-                            Ok(CallMemberStateKeyEnum::new(user_id, None, underscore))
+                            Ok(CallMemberStateKeyEnum::new(user_id.into(), None, underscore))
                         }
                     }
                     Err(err) => Err(KeyParseError::InvalidUser {
@@ -168,7 +168,7 @@ impl FromStr for CallMemberStateKeyEnum {
                 if device_id.as_str().is_empty() {
                     return Err(KeyParseError::EmptyDevice);
                 }
-                Ok(CallMemberStateKeyEnum::new(user_id, Some(device_id), underscore))
+                Ok(CallMemberStateKeyEnum::new(user_id.into(), Some(device_id), underscore))
             }
             (Err(err), _) => {
                 Err(KeyParseError::InvalidUser { user_id: user_id.to_owned(), error: err })
