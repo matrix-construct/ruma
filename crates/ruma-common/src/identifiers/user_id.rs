@@ -59,11 +59,13 @@ impl UserId {
     }
 
     /// Returns the user's localpart.
+    #[inline]
     pub fn localpart(&self) -> &str {
         super::find_localpart(self.as_str())
     }
 
     /// Returns the server name of the user ID.
+    #[inline]
     pub fn server_name(&self) -> &ServerName {
         super::find_server_name_unchecked(self.as_str()).expect("user ID should contain a colon")
     }
@@ -88,6 +90,7 @@ impl UserId {
     /// deprecated.
     ///
     /// [strict grammar]: https://spec.matrix.org/v1.19/appendices/#user-identifiers
+    #[inline]
     pub fn validate_strict(&self) -> Result<(), IdParseError> {
         let is_fully_conforming = self.validate_fully_conforming()?;
 
@@ -103,6 +106,7 @@ impl UserId {
     /// the latest grammar.
     ///
     /// [historical grammar]: https://spec.matrix.org/v1.19/appendices/#historical-user-ids
+    #[inline]
     pub fn validate_historical(&self) -> Result<(), IdParseError> {
         self.validate_fully_conforming()?;
         Ok(())
@@ -114,6 +118,7 @@ impl UserId {
     /// ID grammar but is still accepted because it was previously allowed.
     ///
     /// [historical user ID]: https://spec.matrix.org/v1.19/appendices/#historical-user-ids
+    #[inline]
     pub fn is_historical(&self) -> bool {
         self.validate_fully_conforming().is_ok_and(|is_fully_conforming| !is_fully_conforming)
     }
@@ -131,6 +136,7 @@ impl UserId {
     ///     display_name = "jplatte",
     /// );
     /// ```
+    #[inline]
     pub fn matrix_to_uri(&self) -> MatrixToUri {
         MatrixToUri::new(self.into(), Vec::new())
     }
@@ -151,6 +157,7 @@ impl UserId {
     ///     display_name = "jplatte",
     /// );
     /// ```
+    #[inline]
     pub fn matrix_uri(&self, chat: bool) -> MatrixUri {
         MatrixUri::new(self.into(), Vec::new(), chat.then_some(UriAction::Chat))
     }
