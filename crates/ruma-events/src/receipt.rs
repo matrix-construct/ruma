@@ -200,7 +200,7 @@ where
             None => Self::Unthreaded,
             Some(s) => match s.as_ref() {
                 "main" => Self::Main,
-                s_ref if s_ref.starts_with('$') => Self::Thread(EventId::parse(s_ref)?),
+                s_ref if s_ref.starts_with('$') => Self::Thread(EventId::parse(s_ref)?.into()),
                 _ => Self::_Custom(PrivOwnedStr(s.into())),
             },
         };
