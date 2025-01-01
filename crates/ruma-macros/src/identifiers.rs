@@ -60,6 +60,8 @@ pub fn expand_id_dst(input: ItemStruct) -> syn::Result<TokenStream> {
     let as_str_docs = format!("Creates a string slice from this `{id}`.");
     let as_bytes_docs = format!("Creates a byte slice from this `{id}`.");
     let max_bytes_docs = format!("Maximum byte length for any `{id}`.");
+    let len_docs = format!("Get the string length of {id}.");
+    let is_empty_docs = format!("Returns true if {id} has zero length.");
 
     let as_str_impl = match &input.fields {
         Fields::Named(_) | Fields::Unit => {
@@ -121,16 +123,27 @@ pub fn expand_id_dst(input: ItemStruct) -> syn::Result<TokenStream> {
                 unsafe { Box::from_raw(Box::into_raw(s) as _) }
             }
 
-            #[doc = #as_str_docs]
             #[inline]
-            pub fn as_str(&self) -> &str {
-                #as_str_impl
+            #[doc = #is_empty_docs]
+            pub fn is_empty(&self) -> bool {
+                self.as_str().is_empty()
+            }
+
+            #[inline]
+            #[doc = #len_docs]
+            pub fn len(&self) -> usize {
+                self.as_str().len()
             }
 
             #[doc = #as_bytes_docs]
             #[inline]
             pub fn as_bytes(&self) -> &[u8] {
                 self.as_str().as_bytes()
+            }
+            #[doc = #as_str_docs]
+            #[inline]
+            pub fn as_str(&self) -> &str {
+                #as_str_impl
             }
         }
 
@@ -290,6 +303,7 @@ fn expand_owned_id(input: &ItemStruct, inline_bytes: usize) -> TokenStream {
     let partial_eq_string = expand_partial_eq_string(owned_ty.clone(), &impl_generics);
 
     let doc_header = format!("Owned variant of {id}");
+    let capacity_doc = format!("Get the size of the buffer backing {id}");
 
     quote! {
         #[doc = #doc_header]
@@ -305,6 +319,12 @@ fn expand_owned_id(input: &ItemStruct, inline_bytes: usize) -> TokenStream {
                     inner,
                     #phantom_impl
                 }
+            }
+
+            #[inline]
+            #[doc = #capacity_doc]
+            pub fn capacity(&self) -> usize {
+                self.inner.capacity()
             }
         }
 
