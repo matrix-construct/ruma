@@ -81,6 +81,8 @@ impl IdDst {
 
         let as_str_docs = format!("Extracts a string slice from this `{ident}`.");
         let as_bytes_docs = format!("Extracts a byte slice from this `{ident}`.");
+        let len_docs = format!("Returns the byte length of this `{ident}`.");
+        let is_empty_docs = format!("Returns `true` if this `{ident}` has zero length.");
 
         quote! {
             impl #impl_generics #id {
@@ -94,6 +96,18 @@ impl IdDst {
                 #[inline]
                 pub fn as_bytes(&self) -> &#bytes {
                     self.as_str().as_bytes()
+                }
+
+                #[doc = #len_docs]
+                #[inline]
+                pub fn len(&self) -> ::std::primitive::usize {
+                    self.as_str().len()
+                }
+
+                #[doc = #is_empty_docs]
+                #[inline]
+                pub fn is_empty(&self) -> ::std::primitive::bool {
+                    self.as_str().is_empty()
                 }
             }
 
