@@ -394,6 +394,13 @@ impl IdDst {
             }
 
             #[automatically_derived]
+            impl #impl_generics ::std::convert::From<&#owned_id> for #owned_id {
+                fn from(id: &#owned_id) -> Self {
+                    id.clone()
+                }
+            }
+
+            #[automatically_derived]
             impl #impl_generics ::std::convert::From<#owned_id> for #box_str {
                 fn from(id: #owned_id) -> Self {
                     // SAFETY: validated as UTF-8 on construction.
