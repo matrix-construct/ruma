@@ -413,6 +413,13 @@ fn expand_owned_id(input: &ItemStruct, inline_bytes: usize) -> TokenStream {
         }
 
         #[automatically_derived]
+        impl #impl_generics From<&'_ #owned_ty> for #owned_ty {
+            fn from(id: &#owned_ty) -> #owned_ty {
+                id.clone()
+            }
+        }
+
+        #[automatically_derived]
         impl #impl_generics From<Box<#id_ty>> for #owned_ty {
             fn from(b: Box<#id_ty>) -> #owned_ty {
                 Self::new(<#id_ty>::into_owned(b))
