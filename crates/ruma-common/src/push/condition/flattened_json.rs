@@ -29,7 +29,7 @@ impl FlattenedJson {
     }
 
     /// Flatten and insert the `value` at `path`.
-    #[instrument(skip(self, value))]
+    #[instrument(level = "debug", skip(self, value))]
     fn flatten_value(&mut self, value: JsonValue, path: String) {
         match value {
             JsonValue::Object(fields) => {
