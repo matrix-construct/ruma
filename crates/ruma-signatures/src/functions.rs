@@ -156,7 +156,7 @@ where
 /// }"#;
 ///
 /// let object = serde_json::from_str(input).unwrap();
-/// let canonical = ruma_signatures::canonical_json(&object).unwrap();
+/// let canonical = ruma_signatures::canonical_json(object).unwrap();
 ///
 /// assert_eq!(canonical, r#"{"日":1,"本":2}"#);
 /// ```
@@ -212,7 +212,7 @@ pub fn canonical_json(object: &CanonicalJsonObject) -> Result<String, Error> {
 /// public_key_map.insert("domain".into(), public_key_set);
 ///
 /// // Verify at least one signature for each entity in `public_key_map`.
-/// assert!(ruma_signatures::verify_json(&public_key_map, &object).is_ok());
+/// assert!(ruma_signatures::verify_json(&public_key_map, object).is_ok());
 /// ```
 pub fn verify_json(
     public_key_map: &PublicKeyMap,
