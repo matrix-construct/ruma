@@ -48,6 +48,7 @@ pub mod v1 {
         /// pushkeys and remove the associated pushers. It may not necessarily be the notification
         /// in the request that failed: it could be that a previous notification to the same
         /// pushkey failed. May be empty.
+        #[serde(default)]
         pub rejected: Vec<String>,
     }
 
