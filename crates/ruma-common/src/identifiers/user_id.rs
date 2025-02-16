@@ -51,7 +51,7 @@ impl UserId {
         let id_str = id.as_ref();
 
         if id_str.starts_with('@') {
-            Self::parse_into_owned(id.into())
+            Self::parse(id_str)
         } else {
             localpart_is_backwards_compatible(id_str)?;
             Ok(OwnedUserId::from_string_unchecked(format!("@{id_str}:{server_name}")))
