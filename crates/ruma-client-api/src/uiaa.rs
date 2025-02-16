@@ -730,3 +730,38 @@ impl OutgoingResponse for UiaaResponse {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use assert_matches2::assert_matches;
+    use serde;
+
+    #[test]
+    fn test_empty_uiaa_serialization() {
+        let input = "{}";
+        let result = serde_json::from_str::<super::AuthData>(input);
+        assert!(result.is_err());
+    }
+
+    #[derive(Debug, Default, serde::Serialize, serde::Deserialize)]
+    #[serde()]
+    struct Request {
+        /// Additional authentication information for the user-interactive authentication API.
+        #[serde(deserialize_with = "ruma_common::serde::or_empty")]
+        pub auth: Option<super::AuthData>,
+    }
+
+    #[test]
+    fn test_option_uiaa_serialization() {
+        let input = r#"{"auth": {}}"#;
+        let result = serde_json::from_str::<Request>(input).unwrap();
+        assert_matches!(result.auth, None);
+    }
+
+    #[test]
+    fn test_fail_uiaa_serialization() {
+        let input = r#"{"auth": "aaw"}"#;
+        let result = serde_json::from_str::<Request>(input);
+        assert!(result.is_err());
+    }
+}
