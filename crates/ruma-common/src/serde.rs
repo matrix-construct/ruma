@@ -75,6 +75,19 @@ pub fn is_true(b: &bool) -> bool {
     *b
 }
 
+/// Returns None if the serialization fails
+pub fn or_empty<'de, D: Deserializer<'de>, T: Deserialize<'de>>(
+        deserializer: D,
+    ) -> Result<Option<T>, D::Error> {
+        #[derive(serde::Deserialize)]
+        #[serde(untagged)]
+        enum OrEmpty<T> {
+            NotEmpty(T),
+            Empty {},
+        }
+        let res = <Option<OrEmpty<T>> as Deserialize<'de>>::deserialize(deserializer)?;
+        Ok(res.and_then(|res| if let OrEmpty::NotEmpty(a) = res { Some(a) } else { None }))
+    }
 /// Helper function for `serde_json::value::RawValue` deserialization.
 #[inline(never)]
 pub fn from_raw_json_value<'a, T, E>(val: &'a RawJsonValue) -> Result<T, E>
