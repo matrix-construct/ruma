@@ -27,26 +27,13 @@ pub mod v3 {
         }
     }
 
-    fn or_empty<'de, D: serde::Deserializer<'de>, T: serde::Deserialize<'de>>(
-        deserializer: D,
-    ) -> Result<Option<T>, D::Error> {
-        #[derive(serde::Deserialize)]
-        #[serde(untagged)]
-        enum OrEmpty<T> {
-            NotEmpty(T),
-            Empty {},
-        }
-        let res = <Option<OrEmpty<T>> as serde::Deserialize<'de>>::deserialize(deserializer)?;
-        Ok(res.and_then(|res| if let OrEmpty::NotEmpty(a) = res { Some(a) } else { None }))
-    }
-
     /// Request type for the `upload_signing_keys` endpoint.
     #[request(error = UiaaResponse)]
     #[derive(Default)]
     pub struct Request {
         /// Additional authentication information for the user-interactive authentication API.
         #[serde(skip_serializing_if = "Option::is_none")]
-        #[serde(deserialize_with = "or_empty")]
+        #[serde(deserialize_with = "ruma_common::serde::or_empty")]
         #[serde(default)]
         pub auth: Option<AuthData>,
 

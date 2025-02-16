@@ -425,7 +425,7 @@ mod tests {
     ) -> HierarchySpaceChildEvent {
         let mut content = SpaceChildEventContent::new(vec![owned_server_name!("example.org")]);
         content.order =
-            order.and_then(|order| SpaceChildOrder::parse(order).ok()).map(ToOwned::to_owned);
+            order.and_then(|order| SpaceChildOrder::parse_ref(order).ok()).map(ToOwned::to_owned);
 
         HierarchySpaceChildEvent {
             content,

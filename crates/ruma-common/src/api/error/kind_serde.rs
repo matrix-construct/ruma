@@ -244,7 +244,7 @@ impl<'de> Visitor<'de> for ErrorKindVisitor {
             ErrorCode::DuplicateAnnotation => ErrorKind::DuplicateAnnotation,
             ErrorCode::Exclusive => ErrorKind::Exclusive,
             ErrorCode::FeatureDisabled => ErrorKind::FeatureDisabled,
-            ErrorCode::Forbidden => ErrorKind::forbidden(),
+            ErrorCode::Forbidden => ErrorKind::Forbidden,
             ErrorCode::GuestAccessForbidden => ErrorKind::GuestAccessForbidden,
             ErrorCode::IncompatibleRoomVersion => {
                 ErrorKind::IncompatibleRoomVersion(IncompatibleRoomVersionErrorData {
@@ -491,6 +491,7 @@ impl Serialize for ErrorKind {
             | Self::ConnectionTimeout
             | Self::DuplicateAnnotation
             | Self::Exclusive
+            | Self::FeatureDisabled
             | Self::Forbidden
             | Self::GuestAccessForbidden
             | Self::InvalidParam
@@ -504,6 +505,7 @@ impl Serialize for ErrorKind {
             | Self::MissingParam
             | Self::MissingToken
             | Self::NotFound
+            | Self::NotImplemented
             | Self::NotJson
             | Self::NotYetUploaded
             | Self::ProfileTooLarge
