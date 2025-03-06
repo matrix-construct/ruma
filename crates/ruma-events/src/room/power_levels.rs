@@ -32,7 +32,6 @@ pub struct RoomPowerLevelsEventContent {
     /// The level required to ban a user.
     #[serde(
         default = "default_power_level",
-        skip_serializing_if = "is_default_power_level",
         deserialize_with = "ruma_common::serde::deserialize_v1_powerlevel"
     )]
     pub ban: Int,
@@ -42,31 +41,21 @@ pub struct RoomPowerLevelsEventContent {
     /// This is a mapping from event type to power level required.
     #[serde(
         default,
-        skip_serializing_if = "BTreeMap::is_empty",
         deserialize_with = "ruma_common::serde::btreemap_deserialize_v1_powerlevel_values"
     )]
     pub events: BTreeMap<TimelineEventType, Int>,
 
     /// The default level required to send message events.
-    #[serde(
-        default,
-        skip_serializing_if = "ruma_common::serde::is_default",
-        deserialize_with = "ruma_common::serde::deserialize_v1_powerlevel"
-    )]
+    #[serde(default, deserialize_with = "ruma_common::serde::deserialize_v1_powerlevel")]
     pub events_default: Int,
 
     /// The level required to invite a user.
-    #[serde(
-        default,
-        skip_serializing_if = "ruma_common::serde::is_default",
-        deserialize_with = "ruma_common::serde::deserialize_v1_powerlevel"
-    )]
+    #[serde(default, deserialize_with = "ruma_common::serde::deserialize_v1_powerlevel")]
     pub invite: Int,
 
     /// The level required to kick a user.
     #[serde(
         default = "default_power_level",
-        skip_serializing_if = "is_default_power_level",
         deserialize_with = "ruma_common::serde::deserialize_v1_powerlevel"
     )]
     pub kick: Int,
@@ -74,7 +63,6 @@ pub struct RoomPowerLevelsEventContent {
     /// The level required to redact an event.
     #[serde(
         default = "default_power_level",
-        skip_serializing_if = "is_default_power_level",
         deserialize_with = "ruma_common::serde::deserialize_v1_powerlevel"
     )]
     pub redact: Int,
@@ -82,7 +70,6 @@ pub struct RoomPowerLevelsEventContent {
     /// The default level required to send state events.
     #[serde(
         default = "default_power_level",
-        skip_serializing_if = "is_default_power_level",
         deserialize_with = "ruma_common::serde::deserialize_v1_powerlevel"
     )]
     pub state_default: Int,
@@ -92,23 +79,18 @@ pub struct RoomPowerLevelsEventContent {
     /// This is a mapping from `user_id` to power level for that user.
     #[serde(
         default,
-        skip_serializing_if = "BTreeMap::is_empty",
         deserialize_with = "ruma_common::serde::btreemap_deserialize_v1_powerlevel_values"
     )]
     pub users: BTreeMap<OwnedUserId, Int>,
 
     /// The default power level for every user in the room.
-    #[serde(
-        default,
-        skip_serializing_if = "ruma_common::serde::is_default",
-        deserialize_with = "ruma_common::serde::deserialize_v1_powerlevel"
-    )]
+    #[serde(default, deserialize_with = "ruma_common::serde::deserialize_v1_powerlevel")]
     pub users_default: Int,
 
     /// The power level requirements for specific notification types.
     ///
     /// This is a mapping from `key` to power level for that notifications key.
-    #[serde(default, skip_serializing_if = "NotificationPowerLevels::is_default")]
+    #[serde(default)]
     pub notifications: NotificationPowerLevels,
 }
 
@@ -174,12 +156,6 @@ impl RedactContent for RoomPowerLevelsEventContent {
     }
 }
 
-/// Used with `#[serde(skip_serializing_if)]` to omit default power levels.
-#[allow(clippy::trivially_copy_pass_by_ref)]
-fn is_default_power_level(l: &Int) -> bool {
-    *l == int!(50)
-}
-
 impl RoomPowerLevelsEvent {
     /// Obtain the effective power levels, regardless of whether this event is redacted.
     pub fn power_levels(
@@ -226,7 +202,6 @@ pub struct RedactedRoomPowerLevelsEventContent {
     /// The level required to ban a user.
     #[serde(
         default = "default_power_level",
-        skip_serializing_if = "is_default_power_level",
         deserialize_with = "ruma_common::serde::deserialize_v1_powerlevel"
     )]
     pub ban: Int,
@@ -236,34 +211,24 @@ pub struct RedactedRoomPowerLevelsEventContent {
     /// This is a mapping from event type to power level required.
     #[serde(
         default,
-        skip_serializing_if = "BTreeMap::is_empty",
         deserialize_with = "ruma_common::serde::btreemap_deserialize_v1_powerlevel_values"
     )]
     pub events: BTreeMap<TimelineEventType, Int>,
 
     /// The default level required to send message events.
-    #[serde(
-        default,
-        skip_serializing_if = "ruma_common::serde::is_default",
-        deserialize_with = "ruma_common::serde::deserialize_v1_powerlevel"
-    )]
+    #[serde(default, deserialize_with = "ruma_common::serde::deserialize_v1_powerlevel")]
     pub events_default: Int,
 
     /// The level required to invite a user.
     ///
     /// This field was redacted in room versions 1 through 10. Starting from room version 11 it is
     /// preserved.
-    #[serde(
-        default,
-        skip_serializing_if = "ruma_common::serde::is_default",
-        deserialize_with = "ruma_common::serde::deserialize_v1_powerlevel"
-    )]
+    #[serde(default, deserialize_with = "ruma_common::serde::deserialize_v1_powerlevel")]
     pub invite: Int,
 
     /// The level required to kick a user.
     #[serde(
         default = "default_power_level",
-        skip_serializing_if = "is_default_power_level",
         deserialize_with = "ruma_common::serde::deserialize_v1_powerlevel"
     )]
     pub kick: Int,
@@ -271,7 +236,6 @@ pub struct RedactedRoomPowerLevelsEventContent {
     /// The level required to redact an event.
     #[serde(
         default = "default_power_level",
-        skip_serializing_if = "is_default_power_level",
         deserialize_with = "ruma_common::serde::deserialize_v1_powerlevel"
     )]
     pub redact: Int,
@@ -279,7 +243,6 @@ pub struct RedactedRoomPowerLevelsEventContent {
     /// The default level required to send state events.
     #[serde(
         default = "default_power_level",
-        skip_serializing_if = "is_default_power_level",
         deserialize_with = "ruma_common::serde::deserialize_v1_powerlevel"
     )]
     pub state_default: Int,
@@ -289,17 +252,12 @@ pub struct RedactedRoomPowerLevelsEventContent {
     /// This is a mapping from `user_id` to power level for that user.
     #[serde(
         default,
-        skip_serializing_if = "BTreeMap::is_empty",
         deserialize_with = "ruma_common::serde::btreemap_deserialize_v1_powerlevel_values"
     )]
     pub users: BTreeMap<OwnedUserId, Int>,
 
     /// The default power level for every user in the room.
-    #[serde(
-        default,
-        skip_serializing_if = "ruma_common::serde::is_default",
-        deserialize_with = "ruma_common::serde::deserialize_v1_powerlevel"
-    )]
+    #[serde(default, deserialize_with = "ruma_common::serde::deserialize_v1_powerlevel")]
     pub users_default: Int,
 }
 
