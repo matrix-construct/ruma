@@ -8,7 +8,8 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     CrossSigningOrDeviceSignatures, DeviceSignatures, EventEncryptionAlgorithm,
-    OwnedCrossSigningKeyId, OwnedDeviceId, OwnedDeviceKeyId, OwnedUserId, PrivOwnedStr,
+    MilliSecondsSinceUnixEpoch, OwnedCrossSigningKeyId, OwnedDeviceId, OwnedDeviceKeyId,
+    OwnedUserId, PrivOwnedStr,
     serde::{Base64, StringEnum},
 };
 
@@ -33,12 +34,19 @@ pub struct DeviceKeys {
     pub keys: BTreeMap<OwnedDeviceKeyId, String>,
 
     /// Signatures for the device key object.
+    ///
+    /// serde default is because synapse doesn't seem to mandate this field
+    #[serde(default)]
     pub signatures: CrossSigningOrDeviceSignatures,
 
     /// Additional data added to the device key information by intermediate servers, and
     /// not covered by the signatures.
     #[serde(default, skip_serializing_if = "UnsignedDeviceInfo::is_empty")]
     pub unsigned: UnsignedDeviceInfo,
+
+    /// unspecced legacy synapse/client field?
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub valid_until_ts: Option<MilliSecondsSinceUnixEpoch>,
 }
 
 impl DeviceKeys {
@@ -50,8 +58,17 @@ impl DeviceKeys {
         algorithms: Vec<EventEncryptionAlgorithm>,
         keys: BTreeMap<OwnedDeviceKeyId, String>,
         signatures: CrossSigningOrDeviceSignatures,
+        valid_until_ts: Option<MilliSecondsSinceUnixEpoch>,
     ) -> Self {
-        Self { user_id, device_id, algorithms, keys, signatures, unsigned: Default::default() }
+        Self {
+            user_id,
+            device_id,
+            algorithms,
+            keys,
+            signatures,
+            unsigned: Default::default(),
+            valid_until_ts,
+        }
     }
 }
 
