@@ -43,7 +43,7 @@ pub mod v1 {
         pub from: Option<String>,
 
         /// Which thread roots are of interest to the caller.
-        #[serde(skip_serializing_if = "ruma_common::serde::is_default")]
+        #[serde(default)]
         #[ruma_api(query)]
         pub include: IncludeThreads,
 
