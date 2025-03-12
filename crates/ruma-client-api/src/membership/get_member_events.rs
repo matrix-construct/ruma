@@ -98,6 +98,9 @@ pub mod v3 {
         /// The user has been banned.
         Ban,
 
+        /// The user has knocked.
+        Knock,
+
         #[doc(hidden)]
         _Custom(PrivOwnedStr),
     }
