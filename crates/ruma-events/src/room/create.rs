@@ -124,18 +124,16 @@ pub struct PreviousRoom {
     pub room_id: OwnedRoomId,
 
     /// The event ID of the last known event in the old room.
-    #[deprecated = "\
-        This field should be sent by servers when possible for backwards compatibility \
-        but clients should not rely on it."]
+    /// conduwuit makes this optional because Synapse allows an empty event_id
+    /// and there are no issues with this.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub event_id: Option<OwnedEventId>,
 }
 
 impl PreviousRoom {
-    /// Creates a new `PreviousRoom` from the given room ID.
-    pub fn new(room_id: OwnedRoomId) -> Self {
-        #[allow(deprecated)]
-        Self { room_id, event_id: None }
+    /// Creates a new `PreviousRoom` from the given room and event IDs.
+    pub fn new(room_id: OwnedRoomId, event_id: Option<OwnedEventId>) -> Self {
+        Self { room_id, event_id }
     }
 }
 
