@@ -56,7 +56,7 @@ pub mod v3 {
         /// If any remote homeservers could not be reached, they are recorded here.
         ///
         /// The names of the properties are the names of the unreachable servers.
-        #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+        #[serde(default)]
         pub failures: BTreeMap<String, JsonValue>,
 
         /// Information on the queried devices.
