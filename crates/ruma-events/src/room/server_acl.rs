@@ -49,20 +49,64 @@ pub struct RoomServerAclEventContent {
 impl RoomServerAclEventContent {
     /// Creates a new `RoomServerAclEventContent` with the given IP literal allowance flag, allowed
     /// and denied servers.
+    #[inline]
     pub fn new(allow_ip_literals: bool, allow: Vec<String>, deny: Vec<String>) -> Self {
         Self { allow_ip_literals, allow, deny }
     }
 
     /// Returns true if and only if the server is allowed by the ACL rules.
+    #[inline]
     pub fn is_allowed(&self, server_name: &ServerName) -> bool {
         if !self.allow_ip_literals && server_name.is_ip_literal() {
             return false;
         }
 
         let host = server_name.host();
+        !self.deny_matches(host) && self.allow_matches(host)
+    }
 
-        self.deny.iter().all(|d| !WildMatch::new(d).matches(host))
-            && self.allow.iter().any(|a| WildMatch::new(a).matches(host))
+    /// Returns true if the input matches a pattern in the allow list specifically
+    #[inline]
+    pub fn allow_matches(&self, host: &str) -> bool {
+        Self::matches(&self.allow, host)
+    }
+
+    /// Returns true if the input matches a pattern in the deny list specifically
+    #[inline]
+    pub fn deny_matches(&self, host: &str) -> bool {
+        Self::matches(&self.deny, host)
+    }
+
+    /// Returns true if the input is equal to a string in the allow list specifically
+    #[inline]
+    pub fn allow_contains(&self, host: &str) -> bool {
+        Self::contains(&self.allow, host)
+    }
+
+    /// Returns true if the input is equal to a string in the deny list specifically
+    #[inline]
+    pub fn deny_contains(&self, host: &str) -> bool {
+        Self::contains(&self.deny, host)
+    }
+
+    /// Returns true if the allow list is empty
+    #[inline]
+    pub fn allow_is_empty(&self) -> bool {
+        self.allow.is_empty()
+    }
+
+    /// Returns true if the deny list is empty
+    #[inline]
+    pub fn deny_is_empty(&self) -> bool {
+        self.deny.is_empty()
+    }
+
+    fn matches(a: &[String], s: &str) -> bool {
+        a.iter().map(String::as_str).any(|a| WildMatch::new(a).matches(s))
+    }
+
+    fn contains(a: &[String], s: &str) -> bool {
+        a.iter().map(String::as_str).any(|a| a == s)
     }
 }
 
