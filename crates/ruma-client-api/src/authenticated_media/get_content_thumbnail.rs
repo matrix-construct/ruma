@@ -25,8 +25,8 @@ pub mod v1 {
         rate_limited: true,
         authentication: AccessToken,
         history: {
-            unstable => "/_matrix/client/unstable/org.matrix.msc3916/media/thumbnail/:server_name/:media_id",
-            1.11 => "/_matrix/client/v1/media/thumbnail/:server_name/:media_id",
+            unstable => "/_matrix/client/unstable/org.matrix.msc3916/media/thumbnail/{server_name}/{media_id}",
+            1.11 => "/_matrix/client/v1/media/thumbnail/{server_name}/{media_id}",
         }
     };
 

@@ -24,9 +24,9 @@ pub mod v3 {
         rate_limited: false,
         authentication: None,
         history: {
-            unstable => "/_matrix/client/unstable/uk.tcpip.msc4133/profile/:user_id",
-            1.0 => "/_matrix/client/r0/profile/:user_id",
-            1.1 => "/_matrix/client/v3/profile/:user_id",
+            unstable => "/_matrix/client/unstable/uk.tcpip.msc4133/profile/{user_id}",
+            1.0 => "/_matrix/client/r0/profile/{user_id}",
+            1.1 => "/_matrix/client/v3/profile/{user_id}",
         }
     };
 

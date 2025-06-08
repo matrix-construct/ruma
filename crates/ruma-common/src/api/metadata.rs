@@ -106,7 +106,7 @@ impl Metadata {
         assert!(first_segment.is_empty(), "endpoint paths must start with '/'");
 
         for segment in segments {
-            if segment.starts_with(':') {
+            if segment.starts_with('{') && segment.ends_with('}') {
                 let arg = path_args
                     .next()
                     .expect("number of placeholders must match number of arguments")
@@ -133,7 +133,7 @@ impl Metadata {
     #[doc(hidden)]
     pub fn _path_parameters(&self) -> Vec<&'static str> {
         let path = self.history.all_paths().next().unwrap();
-        path.split('/').filter_map(|segment| segment.strip_prefix(':')).collect()
+        path.split('/').filter_map(|segment| segment.strip_prefix('{')?.strip_suffix('}')).collect()
     }
 }
 
@@ -431,7 +431,7 @@ impl VersionHistory {
     ///
     /// This will return an endpoint in the following format;
     /// - `/_matrix/client/versions`
-    /// - `/_matrix/client/hello/:world` (`:world` is a path replacement parameter)
+    /// - `/_matrix/client/hello/{world}` (`{world}` is a path replacement parameter)
     ///
     /// Note: This will not keep in mind endpoint removals, check with
     /// [`versioning_decision_for`](VersionHistory::versioning_decision_for) to see if this endpoint
@@ -837,14 +837,14 @@ mod tests {
 
     #[test]
     fn make_endpoint_url_with_path_args() {
-        let meta = stable_only_metadata(&[(V1_0, "/s/:x")]);
+        let meta = stable_only_metadata(&[(V1_0, "/s/{x}")]);
         let url = meta.make_endpoint_url(&[V1_0], "https://example.org", &[&"123"], "").unwrap();
         assert_eq!(url, "https://example.org/s/123");
     }
 
     #[test]
     fn make_endpoint_url_with_path_args_with_dash() {
-        let meta = stable_only_metadata(&[(V1_0, "/s/:x")]);
+        let meta = stable_only_metadata(&[(V1_0, "/s/{x}")]);
         let url =
             meta.make_endpoint_url(&[V1_0], "https://example.org", &[&"my-path"], "").unwrap();
         assert_eq!(url, "https://example.org/s/my-path");
@@ -852,7 +852,7 @@ mod tests {
 
     #[test]
     fn make_endpoint_url_with_path_args_with_reserved_char() {
-        let meta = stable_only_metadata(&[(V1_0, "/s/:x")]);
+        let meta = stable_only_metadata(&[(V1_0, "/s/{x}")]);
         let url = meta.make_endpoint_url(&[V1_0], "https://example.org", &[&"#path"], "").unwrap();
         assert_eq!(url, "https://example.org/s/%23path");
     }
@@ -867,7 +867,7 @@ mod tests {
     #[test]
     #[should_panic]
     fn make_endpoint_url_wrong_num_path_args() {
-        let meta = stable_only_metadata(&[(V1_0, "/s/:x")]);
+        let meta = stable_only_metadata(&[(V1_0, "/s/{x}")]);
         _ = meta.make_endpoint_url(&[V1_0], "https://example.org", &[], "");
     }
 

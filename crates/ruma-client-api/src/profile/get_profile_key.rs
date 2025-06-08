@@ -20,8 +20,8 @@ pub mod unstable {
         rate_limited: false,
         authentication: None,
         history: {
-            unstable => "/_matrix/client/unstable/uk.tcpip.msc4133/profile/:user_id/:key_name",
-            1.13 => "/_matrix/client/v3/profile/:user_id/:key_name",
+            unstable => "/_matrix/client/unstable/uk.tcpip.msc4133/profile/{user_id}/{key_name}",
+            1.13 => "/_matrix/client/v3/profile/{user_id}/{key_name}",
         }
     };
 

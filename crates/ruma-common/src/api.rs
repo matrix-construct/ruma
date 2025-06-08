@@ -155,7 +155,7 @@ macro_rules! metadata {
 ///     #     rate_limited: false,
 ///     #     authentication: None,
 ///     #     history: {
-///     #         unstable => "/_matrix/some/endpoint/:room_id",
+///     #         unstable => "/_matrix/some/endpoint/{room_id}",
 ///     #     },
 ///     # };
 ///
@@ -191,7 +191,7 @@ macro_rules! metadata {
 ///     #     rate_limited: false,
 ///     #     authentication: None,
 ///     #     history: {
-///     #         unstable => "/_matrix/some/endpoint/:file_name",
+///     #         unstable => "/_matrix/some/endpoint/{file_name}",
 ///     #     },
 ///     # };
 ///

@@ -23,8 +23,8 @@ pub mod v1 {
         rate_limited: true,
         authentication: AccessToken,
         history: {
-            unstable => "/_matrix/client/unstable/org.matrix.msc3916/media/download/:server_name/:media_id/:filename",
-            1.11 => "/_matrix/client/v1/media/download/:server_name/:media_id/:filename",
+            unstable => "/_matrix/client/unstable/org.matrix.msc3916/media/download/{server_name}/{media_id}/{filename}",
+            1.11 => "/_matrix/client/v1/media/download/{server_name}/{media_id}/{filename}",
         }
     };
 
