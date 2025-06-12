@@ -63,6 +63,22 @@ pub mod v1 {
         /// The version format depends on the implementation.
         #[serde(skip_serializing_if = "Option::is_none")]
         pub version: Option<String>,
+
+        /// Sourcecode version.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub commit: Option<String>,
+
+        /// Compiler version.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub compiler: Option<String>,
+
+        /// System version.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub kernel: Option<String>,
+
+        /// Hardware architecture.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub arch: Option<String>,
     }
 
     impl Server {
