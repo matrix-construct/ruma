@@ -150,6 +150,9 @@ pub mod v3 {
         /// Token-based login.
         Token(Token),
 
+        /// JSON Web Token
+        Jwt(Token),
+
         /// Application Service-specific login.
         ApplicationService(ApplicationService),
 
@@ -174,6 +177,9 @@ pub mod v3 {
                     Self::Password(serde_json::from_value(JsonValue::Object(data))?)
                 }
                 "m.login.token" => Self::Token(serde_json::from_value(JsonValue::Object(data))?),
+                "org.matrix.login.jwt" => {
+                    Self::Jwt(serde_json::from_value(JsonValue::Object(data))?)
+                }
                 "m.login.application_service" => {
                     Self::ApplicationService(serde_json::from_value(JsonValue::Object(data))?)
                 }
@@ -188,6 +194,7 @@ pub mod v3 {
             match self {
                 Self::Password(inner) => inner.fmt(f),
                 Self::Token(inner) => inner.fmt(f),
+                Self::Jwt(inner) => inner.fmt(f),
                 Self::ApplicationService(inner) => inner.fmt(f),
                 Self::_Custom(inner) => inner.fmt(f),
             }
@@ -212,6 +219,7 @@ pub mod v3 {
             match login_type {
                 "m.login.password" => from_json_value(json).map(Self::Password),
                 "m.login.token" => from_json_value(json).map(Self::Token),
+                "org.matrix.login.jwt" => from_json_value(json).map(Self::Jwt),
                 "m.login.application_service" => {
                     from_json_value(json).map(Self::ApplicationService)
                 }
