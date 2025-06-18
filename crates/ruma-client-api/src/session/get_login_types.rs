@@ -68,6 +68,9 @@ pub mod v3 {
         /// Token-based login.
         Token(TokenLoginType),
 
+        /// JSON Web Token type.
+        Jwt(JwtLoginType),
+
         /// SSO-based login.
         Sso(SsoLoginType),
 
@@ -93,6 +96,7 @@ pub mod v3 {
             Ok(match login_type {
                 "m.login.password" => Self::Password(from_json_object(data)?),
                 "m.login.token" => Self::Token(from_json_object(data)?),
+                "org.matrix.login.jwt" => Self::Jwt(from_json_object(data)?),
                 "m.login.sso" => Self::Sso(from_json_object(data)?),
                 "m.login.application_service" => Self::ApplicationService(from_json_object(data)?),
                 _ => {
@@ -106,6 +110,7 @@ pub mod v3 {
             match self {
                 Self::Password(_) => "m.login.password",
                 Self::Token(_) => "m.login.token",
+                Self::Jwt(_) => "org.matrix.login.jwt",
                 Self::Sso(_) => "m.login.sso",
                 Self::ApplicationService(_) => "m.login.application_service",
                 Self::_Custom(c) => &c.type_,
@@ -127,6 +132,7 @@ pub mod v3 {
             match self {
                 Self::Password(d) => Cow::Owned(serialize(d)),
                 Self::Token(d) => Cow::Owned(serialize(d)),
+                Self::Jwt(d) => Cow::Owned(serialize(d)),
                 Self::Sso(d) => Cow::Owned(serialize(d)),
                 Self::ApplicationService(d) => Cow::Owned(serialize(d)),
                 Self::_Custom(c) => Cow::Borrowed(&c.data),
@@ -161,6 +167,19 @@ pub mod v3 {
         /// Creates a new `TokenLoginType`.
         pub fn new() -> Self {
             Self { get_login_token: false }
+        }
+    }
+
+    /// The payload for JWT-based login.
+    #[derive(Clone, Debug, Default, Deserialize, Serialize)]
+    #[cfg_attr(not(ruma_unstable_exhaustive_types), non_exhaustive)]
+    #[serde(tag = "type", rename = "org.matrix.login.jwt")]
+    pub struct JwtLoginType {}
+
+    impl JwtLoginType {
+        /// Creates a new `JwtLoginType`.
+        pub fn new() -> Self {
+            Self {}
         }
     }
 
@@ -312,6 +331,7 @@ pub mod v3 {
                 Ok(match type_.as_ref() {
                     "m.login.password" => Self::Password(from_raw_json_value(&json)?),
                     "m.login.token" => Self::Token(from_raw_json_value(&json)?),
+                    "org.matrix.login.jwt" => Self::Jwt(from_raw_json_value(&json)?),
                     "m.login.sso" => Self::Sso(from_raw_json_value(&json)?),
                     "m.login.application_service" => {
                         Self::ApplicationService(from_raw_json_value(&json)?)
