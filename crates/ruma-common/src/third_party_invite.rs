@@ -86,6 +86,12 @@ impl PartialEq<str> for IdentityServerBase64PublicKey {
     }
 }
 
+impl PartialEq<Base64> for IdentityServerBase64PublicKey {
+    fn eq(&self, other: &Base64) -> bool {
+        self.0.as_bytes().eq(other.as_bytes())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::IdentityServerBase64PublicKey;
