@@ -9,7 +9,7 @@ use serde_json::{value::RawValue as RawJsonValue, Value as JsonValue};
 
 use crate::{
     serde::{from_raw_json_value, StringEnum},
-    EventEncryptionAlgorithm, OwnedMxcUri, OwnedRoomAliasId, OwnedRoomId, PrivOwnedStr,
+    EventEncryptionAlgorithm, OwnedMxcUri, OwnedRoomAliasId, OwnedRoomId, PrivOwnedStr, RoomId,
     RoomVersionId,
 };
 
@@ -88,6 +88,24 @@ impl JoinRule {
             JoinRule::Public => "public",
             JoinRule::_Custom(rule) => &rule.0,
         }
+    }
+
+    /// Iterates room_id's for all AllowRules for the JoinRule variants Restricted and
+    /// KnockRestricted. For other variants no items are produced.
+    #[inline]
+    pub fn allowed_room_ids(&self) -> impl Iterator<Item = &RoomId> {
+        self.allow_rules()
+            .filter_map(|allow| as_variant!(allow, AllowRule::RoomMembership))
+            .map(|room_membership| room_membership.room_id.as_ref())
+    }
+
+    /// Iterates AllowRules for JoinRule variants Restricted and KnockRestricted. For other variants
+    /// no items are produced.
+    #[inline]
+    pub fn allow_rules(&self) -> impl Iterator<Item = &AllowRule> {
+        as_variant!(self, Self::Restricted | Self::KnockRestricted)
+            .into_iter()
+            .flat_map(|restricted| restricted.allow.iter())
     }
 }
 
@@ -465,6 +483,16 @@ impl JoinRuleSummary {
             Self::Public => "public",
             Self::_Custom(rule) => &rule.0,
         }
+    }
+
+    /// Iterates allowed room_id's for Restricted and KnockRestricted rooms. All other variants
+    /// produce no items.
+    #[inline]
+    pub fn allowed_room_ids(&self) -> impl Iterator<Item = &RoomId> {
+        as_variant!(self, Self::Restricted | Self::KnockRestricted)
+            .into_iter()
+            .flat_map(|summary| summary.allowed_room_ids.iter())
+            .map(AsRef::as_ref)
     }
 }
 
