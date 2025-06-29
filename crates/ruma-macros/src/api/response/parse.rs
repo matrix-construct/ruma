@@ -206,13 +206,6 @@ impl TryFrom<syn::Field> for ResponseField {
     type Error = syn::Error;
 
     fn try_from(inner: syn::Field) -> syn::Result<Self> {
-        if inner.ty.has_lifetime() {
-            return Err(syn::Error::new_spanned(
-                inner,
-                "lifetimes on response fields cannot be supported until GAT are stable",
-            ));
-        }
-
         let mut field = ResponseField { inner, kind: Default::default() };
 
         let api_attrs = field
