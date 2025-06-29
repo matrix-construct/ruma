@@ -30,7 +30,7 @@ pub struct PresenceEvent {
 /// Informs the room of members presence.
 ///
 /// This is the only type a `PresenceEvent` can contain as its `content` field.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 #[cfg_attr(not(ruma_unstable_exhaustive_types), non_exhaustive)]
 pub struct PresenceEventContent {
     /// The current avatar URL for this user.

@@ -193,6 +193,7 @@ pub mod v3 {
             match self {
                 LoginInfo::Password(_) => "m.login.password",
                 LoginInfo::Token(_) => "m.login.token",
+                LoginInfo::Jwt(_) => "org.matrix.login.jwt",
                 LoginInfo::ApplicationService(_) => "m.login.application_service",
                 LoginInfo::_Custom(c) => &c.login_type,
             }
@@ -213,6 +214,7 @@ pub mod v3 {
             match self {
                 Self::Password(d) => Cow::Owned(serialize(d)),
                 Self::Token(d) => Cow::Owned(serialize(d)),
+                Self::Jwt(d) => Cow::Owned(serialize(d)),
                 Self::ApplicationService(d) => Cow::Owned(serialize(d)),
                 Self::_Custom(c) => Cow::Borrowed(&c.data),
             }

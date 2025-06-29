@@ -9,7 +9,7 @@ pub mod v3 {
 
     use ruma_common::{
         OwnedRoomId,
-        api::{Metadata, request, response},
+        api::{auth_scheme::AccessToken, request, response},
         metadata,
         serde::Raw,
     };
@@ -20,7 +20,7 @@ pub mod v3 {
 
     use crate::room::Visibility;
 
-    const METADATA: Metadata = metadata! {
+    metadata! {
         method: GET,
         rate_limited: false,
         authentication: AccessToken,
@@ -28,10 +28,10 @@ pub mod v3 {
             1.0 => "/_matrix/client/r0/rooms/{room_id}/initialSync",
             1.1 => "/_matrix/client/v3/rooms/{room_id}/initialSync",
         }
-    };
+    }
 
     /// Request type for the `get_room_event` endpoint.
-    #[request(error = crate::Error)]
+    #[request]
     pub struct Request {
         /// The ID of the room.
         #[ruma_api(path)]
@@ -44,7 +44,7 @@ pub mod v3 {
     }
 
     /// Response type for the `get_room_event` endpoint.
-    #[response(error = crate::Error)]
+    #[response]
     pub struct Response {
         /// The private data that this user has attached to this room.
         #[serde(skip_serializing_if = "Option::is_none")]
