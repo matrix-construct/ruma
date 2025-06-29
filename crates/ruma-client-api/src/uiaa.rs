@@ -626,7 +626,7 @@ impl fmt::Debug for ThirdpartyIdCredentials {
 
 /// Information about available authentication flows and status for User-Interactive Authenticiation
 /// API.
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
 #[cfg_attr(not(ruma_unstable_exhaustive_types), non_exhaustive)]
 pub struct UiaaInfo {
     /// List of authentication flows available for this endpoint.
