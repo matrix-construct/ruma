@@ -458,9 +458,11 @@ impl Response {
 pub mod response {
     use ruma_common::OneTimeKeyAlgorithm;
     use ruma_events::{
-        receipt::SyncReceiptEvent, typing::SyncTypingEvent, AnyGlobalAccountDataEvent,
+        receipt::SyncReceiptEvent, AnyGlobalAccountDataEvent,
         AnyRoomAccountDataEvent, AnyToDeviceEvent,
     };
+
+    pub use ruma_events::typing::SyncTypingEvent
 
     use super::{
         super::DeviceLists, AnyStrippedStateEvent, AnySyncStateEvent, AnySyncTimelineEvent,
