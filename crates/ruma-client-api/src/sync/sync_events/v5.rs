@@ -462,7 +462,7 @@ pub mod response {
         AnyRoomAccountDataEvent, AnyToDeviceEvent,
     };
 
-    pub use ruma_events::typing::SyncTypingEvent
+    pub use ruma_events::typing::SyncTypingEvent;
 
     use super::{
         super::DeviceLists, AnyStrippedStateEvent, AnySyncStateEvent, AnySyncTimelineEvent,
