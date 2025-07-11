@@ -428,6 +428,7 @@ impl IdDst {
         let cow_str = &self.types.cow_str;
         let id = &self.types.id;
         let owned_id = &self.types.owned_id;
+        let inline_bytes = self.inline_bytes;
 
         Some(quote! {
             #[automatically_derived]
