@@ -314,11 +314,21 @@ fn expand_owned_id(input: &ItemStruct, inline_bytes: usize) -> TokenStream {
 
         #[automatically_derived]
         impl #impl_generics #owned_ty {
+            #[inline]
             fn new(inner: #sv_decl) -> Self {
                 Self {
                     inner,
                     #phantom_impl
                 }
+            }
+
+            #[inline]
+            fn from_iov(iov: &[&str]) -> Result<Self, std::io::Error> {
+                use std::io::Write;
+                let len = iov.iter().map(|s| s.len()).fold(0_usize, usize::saturating_add);
+                let mut s = Self::new(<#sv_decl>::with_capacity(len));
+                iov.iter().try_for_each(|part| s.inner.write_all(part.as_bytes()))?;
+                Ok(s)
             }
 
             #[inline]
@@ -571,6 +581,7 @@ fn expand_checked_impls(input: &ItemStruct, validate: Path) -> TokenStream {
     let parse_box_doc_header = format!("Try parsing a `&str` into a `Box<{id}>`.");
     let parse_rc_docs = format!("Try parsing a `&str` into an `Rc<{id}>`.");
     let parse_arc_docs = format!("Try parsing a `&str` into an `Arc<{id}>`.");
+    let from_parts_docs = format!("Try parsing parts of an {id} into an `Owned{id}`.");
 
     quote! {
         #[automatically_derived]
@@ -582,6 +593,28 @@ fn expand_checked_impls(input: &ItemStruct, validate: Path) -> TokenStream {
                 S: Into<String> + Sized,
             {
                 <#id_ty>::parse_owned(s.into())
+            }
+
+            #[inline]
+            #[doc = #from_parts_docs]
+            pub fn from_parts(
+                sigil: char,
+                local: &str,
+                domain: Option<&str>,
+            ) -> Result<#owned_ty, crate::IdParseError> {
+                let mut buf: [u8; 4] = Default::default();
+                let iov = [
+                    sigil.encode_utf8(&mut buf),
+                    local,
+                    domain.clone().map(|_| ":").unwrap_or(""),
+                    domain.unwrap_or(""),
+                ];
+
+                let s = Self::from_iov(&iov)
+                    .expect("failed to gather into identifier buffer");
+
+                #validate(s.as_ref())?;
+                Ok(s)
             }
         }
 
