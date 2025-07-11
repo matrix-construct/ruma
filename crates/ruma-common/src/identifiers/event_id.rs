@@ -105,6 +105,15 @@ mod tests {
         );
     }
 
+    #[test]
+    fn valid_url_safe_base64_event_id_from_parts() {
+        assert_eq!(
+            OwnedEventId::from_parts('$', "Rqnc-F-dvnEYJTyHq_iKxU2bZ1CI92-kuZq3a5lr5Zg", None)
+                .expect("Failed to create OwnedEventId."),
+            "$Rqnc-F-dvnEYJTyHq_iKxU2bZ1CI92-kuZq3a5lr5Zg"
+        );
+    }
+
     #[cfg(feature = "rand")]
     #[test]
     fn generate_random_valid_event_id() {
