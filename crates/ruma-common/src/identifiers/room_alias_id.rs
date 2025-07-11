@@ -78,6 +78,15 @@ mod tests {
     }
 
     #[test]
+    fn valid_room_alias_id_from_parts() {
+        assert_eq!(
+            OwnedRoomAliasId::from_parts('#', "ruma", Some("example.com"))
+                .expect("Failed to create OwnedRoomAliasId."),
+            "#ruma:example.com"
+        );
+    }
+
+    #[test]
     fn empty_localpart() {
         assert_eq!(
             <&RoomAliasId>::try_from("#:myhomeserver.io").expect("Failed to create RoomAliasId."),
