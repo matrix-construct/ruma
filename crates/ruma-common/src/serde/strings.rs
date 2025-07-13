@@ -304,7 +304,8 @@ where
                 res.push((k, v));
             }
 
-            res.sort_unstable();
+            res.sort();
+            res.reverse();
             res.dedup_by(|a, b| a.0 == b.0);
 
             Ok(res)
@@ -353,7 +354,8 @@ where
                 res.push(item);
             }
 
-            res.sort_unstable();
+            res.sort();
+            res.reverse();
             res.dedup_by(|a, b| a.0 == b.0);
 
             Ok(res)
@@ -404,7 +406,8 @@ where
                 res.push(item);
             }
 
-            res.sort_unstable_by(|a, b| a.0.cmp(&b.0));
+            res.sort_by(|a, b| a.0.cmp(&b.0));
+            res.reverse();
             res.dedup_by(|a, b| a.0 == b.0);
 
             Ok(res)
