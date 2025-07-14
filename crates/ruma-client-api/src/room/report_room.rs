@@ -18,6 +18,7 @@ pub mod v3 {
         authentication: AccessToken,
         history: {
             unstable => "/_matrix/client/unstable/org.matrix.msc4151/rooms/{room_id}/report",
+            1.0 => "/_matrix/client/r0/rooms/{room_id}/report",
             1.13 => "/_matrix/client/v3/rooms/{room_id}/report",
         }
     };
