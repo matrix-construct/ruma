@@ -80,6 +80,12 @@ impl RoomId {
         <&RoomOrAliasId>::from(self).server_name()
     }
 
+    /// Returns the `RoomId` as an `OwnedEventId` for ['RoomIdFormatVersion::V2'].
+    #[inline]
+    pub fn as_event_id(&self) -> Result<OwnedEventId, IdParseError> {
+        OwnedEventId::from_parts('$', self.strip_sigil(), None)
+    }
+
     /// Create a `matrix.to` URI for this room ID.
     ///
     /// Note that it is recommended to provide servers that should know the room to be able to find
