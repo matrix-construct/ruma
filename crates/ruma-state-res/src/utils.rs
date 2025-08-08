@@ -1,4 +1,4 @@
-use ruma_common::{EventId, IdParseError, OwnedEventId, RoomId};
+use ruma_common::{IdParseError, OwnedEventId, RoomId};
 
 /// Convenience extension trait for [`RoomId`].
 pub(crate) trait RoomIdExt {
@@ -12,6 +12,6 @@ where
     T: AsRef<RoomId>,
 {
     fn room_create_event_id(&self) -> Result<OwnedEventId, IdParseError> {
-        EventId::parse(format!("${}", self.as_ref().strip_sigil()))
+        OwnedEventId::from_parts('$', self.as_ref().strip_sigil(), None)
     }
 }
