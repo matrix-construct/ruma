@@ -204,6 +204,13 @@ fn generate_enum(
         }
 
         #[allow(deprecated)]
+        impl<'a> ::std::convert::From<std::borrow::Cow<'a, ::std::primitive::str>> for #ident {
+            fn from(s: std::borrow::Cow<'a, ::std::primitive::str>) -> Self {
+                Self::from(s.as_ref())
+            }
+        }
+
+        #[allow(deprecated)]
         impl<'de> #serde::Deserialize<'de> for #ident {
             fn deserialize<D>(deserializer: D) -> ::std::result::Result<Self, D::Error>
             where
