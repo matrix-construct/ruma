@@ -12,6 +12,6 @@ where
     T: AsRef<RoomId>,
 {
     fn room_create_event_id(&self) -> Result<OwnedEventId, IdParseError> {
-        OwnedEventId::parse(format!("${}", self.as_ref().strip_sigil()))
+        OwnedEventId::from_parts('$', self.as_ref().strip_sigil(), None)
     }
 }
