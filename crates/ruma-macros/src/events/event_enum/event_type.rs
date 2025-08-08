@@ -310,6 +310,13 @@ impl EventTypeEnum<'_> {
                 }
             }
 
+            #[allow(deprecated)]
+            impl<'a> ::std::convert::From<::std::borrow::Cow<'a, ::std::primitive::str>> for #ident {
+                fn from(s: ::std::borrow::Cow<'a, ::std::primitive::str>) -> Self {
+                    Self::from(s.as_ref())
+                }
+            }
+
             #[cfg(feature = "unstable-uniffi")]
             #[uniffi::export]
             /// Construct a variant of the enum from a string.
