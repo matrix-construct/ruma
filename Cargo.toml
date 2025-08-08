@@ -55,6 +55,7 @@ unexpected_cfgs = { level = "warn", check-cfg = [
 unreachable_pub = "warn"
 unused_import_braces = "warn"
 unused_qualifications = "warn"
+deprecated = "allow"
 
 [workspace.lints.clippy]
 branches_sharing_code = "warn"
