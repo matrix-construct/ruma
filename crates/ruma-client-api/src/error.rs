@@ -494,6 +494,12 @@ impl ErrorKind {
     }
 }
 
+impl fmt::Display for ErrorKind {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.errcode())
+    }
+}
+
 #[doc(hidden)]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Extra(BTreeMap<String, JsonValue>);
