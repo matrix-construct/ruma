@@ -1,4 +1,4 @@
-use std::str::FromStr;
+use std::{fmt, str::FromStr};
 
 use as_variant::as_variant;
 use ruma_common::{
@@ -406,6 +406,12 @@ pub enum ErrorKind {
 }
 
 impl ErrorKind {
+    /// Convenience constructor for `Forbidden`.
+    #[inline]
+    pub fn forbidden() -> Self {
+        Self::Forbidden
+    }
+
     /// Get the [`ErrorCode`] for this `ErrorKind`.
     pub fn errcode(&self) -> ErrorCode {
         match self {
@@ -479,6 +485,12 @@ impl ErrorKind {
     /// Get the JSON data for this `ErrorKind`, if it uses a custom error code.
     pub fn custom_json_data(&self) -> Option<&JsonObject> {
         as_variant!(self, Self::_Custom(error_kind) => &error_kind.data)
+    }
+}
+
+impl fmt::Display for ErrorKind {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.errcode())
     }
 }
 
