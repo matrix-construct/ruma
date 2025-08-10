@@ -27,9 +27,6 @@ Breaking changes:
   still possible to bypass that bound by using the corresponding methods of
   `Raw` with an `_unchecked` suffix.
 - Rename `state::get_state_events_for_key` to `state::get_state_event_for_key`.
-- Allow specifying the event format for `state::get_state_event_for_key`, meaning the response may
-  either be `Raw<AnyStateEvent>` or `Raw<AnyStateEventContent>`, depending on the format specified
-  in the request.
 - Use `StrippedState` instead of `AnyStrippedStateEvent`, to allow non-stripped events to be
   represented for `sync_events`.
 - `sync_events::v3::State` is now an enum, to prepare for the stabilization of MSC4222. The state
