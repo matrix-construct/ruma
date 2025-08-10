@@ -30,6 +30,8 @@ Breaking changes:
 - Allow specifying the event format for `state::get_state_event_for_key`, meaning the response may
   either be `Raw<AnyStateEvent>` or `Raw<AnyStateEventContent>`, depending on the format specified
   in the request.
+- Use `StrippedState` instead of `AnyStrippedStateEvent`, to allow non-stripped events to be
+  represented for `sync_events`.
 - `sync_events::v3::State` is now an enum, to prepare for the stabilization of MSC4222. The state
   before the timeline, corresponding to the `state` field in the Matrix specification, is available
   in the `Before` variant, and the struct representing its content was renamed to `StateEvents`. 
