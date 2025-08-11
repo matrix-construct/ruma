@@ -10,9 +10,9 @@ use crate::EmptyStateKey;
 /// The content of an `org.matrix.room.preview_urls` event.
 ///
 /// An event to indicate whether URL previews are disabled by default for the room or not.
-#[non_exhaustive]
 #[derive(Clone, Debug, Deserialize, Serialize, EventContent)]
 #[ruma_event(type = "org.matrix.room.preview_urls", kind = State, state_key_type = EmptyStateKey)]
+#[cfg_attr(not(ruma_unstable_exhaustive_types), non_exhaustive)]
 pub struct RoomPreviewUrlsEventContent {
     /// Whether URL previews are disabled for the entire room
     #[serde(default)]
