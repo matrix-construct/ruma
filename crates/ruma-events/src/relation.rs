@@ -294,7 +294,7 @@ impl BundledStateRelations {
 #[doc = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/doc/string_enum.md"))]
 #[derive(Clone, PartialEq, Eq, StringEnum)]
 #[ruma_enum(rename_all = "m.snake_case")]
-#[non_exhaustive]
+#[cfg_attr(not(ruma_unstable_exhaustive_types), non_exhaustive)]
 pub enum RelationType {
     /// `m.annotation`, an annotation, principally used by reactions.
     Annotation,

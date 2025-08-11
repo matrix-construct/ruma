@@ -37,7 +37,7 @@ impl JsonCastable<MediaPreviewConfigEventContent> for UnstableMediaPreviewConfig
 /// The configuration that handles if media previews should be shown in the timeline.
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord, StringEnum, Default)]
 #[ruma_enum(rename_all = "lowercase")]
-#[non_exhaustive]
+#[cfg_attr(not(ruma_unstable_exhaustive_types), non_exhaustive)]
 pub enum MediaPreviews {
     /// Media previews should be hidden.
     Off,
@@ -56,7 +56,7 @@ pub enum MediaPreviews {
 /// The configuration to handle if avatars should be shown in invites.
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord, StringEnum, Default)]
 #[ruma_enum(rename_all = "lowercase")]
-#[non_exhaustive]
+#[cfg_attr(not(ruma_unstable_exhaustive_types), non_exhaustive)]
 pub enum InviteAvatars {
     /// Avatars in invites should be hidden.
     Off,
