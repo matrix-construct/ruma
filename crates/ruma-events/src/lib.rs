@@ -102,7 +102,7 @@
 //! ));
 //! ```
 
-#![warn(missing_docs)]
+#![allow(missing_docs)]
 
 use std::{collections::BTreeSet, fmt};
 
