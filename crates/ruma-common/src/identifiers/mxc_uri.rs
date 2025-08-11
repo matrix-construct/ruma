@@ -20,8 +20,8 @@ type Result<T, E = MxcUriError> = std::result::Result<T, E>;
 pub struct MxcUri(str);
 
 /// Structured MXC URI which may reference strings from separate sources without serialization
-#[non_exhaustive]
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[cfg_attr(not(ruma_unstable_exhaustive_types), non_exhaustive)]
 pub struct Mxc<'a> {
     /// ServerName part of the MXC URI
     pub server_name: &'a ServerName,
