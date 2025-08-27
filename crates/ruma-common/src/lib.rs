@@ -2,7 +2,6 @@
 #![doc(html_logo_url = "https://ruma.dev/images/logo.png")]
 //! Common types for the Ruma crates.
 
-#![recursion_limit = "1024"]
 #![warn(missing_docs)]
 // https://github.com/rust-lang/rust-clippy/issues/9029
 #![allow(clippy::derive_partial_eq_without_eq)]
