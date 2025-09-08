@@ -56,6 +56,10 @@ pub enum AuthType {
     #[ruma_enum(rename = "m.login.registration_token")]
     RegistrationToken,
 
+    /// JSON Web Token authentication (`org.matrix.login.jwt`).
+    #[ruma_enum(rename = "org.matrix.login.jwt")]
+    Jwt,
+
     /// Terms of service (`m.login.terms`).
     ///
     /// This type is only valid during account registration.
