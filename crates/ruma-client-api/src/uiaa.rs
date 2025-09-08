@@ -50,6 +50,9 @@ pub enum AuthData {
     /// Registration token-based authentication (`m.login.registration_token`).
     RegistrationToken(RegistrationToken),
 
+    /// JSON Web Token authentication (`org.matrix.login.jwt`)
+    Jwt(Jwt),
+
     /// Fallback acknowledgement.
     FallbackAcknowledgement(FallbackAcknowledgement),
 
@@ -95,6 +98,7 @@ impl AuthData {
             "m.login.msisdn" => Self::Msisdn(deserialize_variant(session, data)?),
             "m.login.dummy" => Self::Dummy(deserialize_variant(session, data)?),
             "m.registration_token" => Self::RegistrationToken(deserialize_variant(session, data)?),
+            "org.matrix.login.jwt" => Self::Jwt(deserialize_variant(session, data)?),
             "m.login.terms" => Self::Terms(deserialize_variant(session, data)?),
             _ => {
                 Self::_Custom(CustomAuthData { auth_type: auth_type.into(), session, extra: data })
@@ -117,6 +121,7 @@ impl AuthData {
             Self::Dummy(_) => Some(AuthType::Dummy),
             Self::RegistrationToken(_) => Some(AuthType::RegistrationToken),
             Self::FallbackAcknowledgement(_) => None,
+            Self::Jwt(_) => Some(AuthType::Jwt),
             Self::Terms(_) => Some(AuthType::Terms),
             Self::_Custom(c) => Some(AuthType::_Custom(PrivOwnedStr(c.auth_type.as_str().into()))),
         }
@@ -132,6 +137,7 @@ impl AuthData {
             Self::Dummy(x) => x.session.as_deref(),
             Self::RegistrationToken(x) => x.session.as_deref(),
             Self::FallbackAcknowledgement(x) => Some(&x.session),
+            Self::Jwt(x) => x.session.as_deref(),
             Self::Terms(x) => x.session.as_deref(),
             Self::_Custom(x) => x.session.as_deref(),
         }
@@ -173,6 +179,7 @@ impl AuthData {
             Self::RegistrationToken(x) => {
                 Cow::Owned(serialize(RegistrationToken { token: x.token.clone(), session: None }))
             }
+            Self::Jwt(x) => Cow::Owned(serialize(Jwt { token: x.token.clone(), session: None })),
             // Dummy, fallback acknowledgement, and terms of service have no associated data
             Self::Dummy(_) | Self::FallbackAcknowledgement(_) | Self::Terms(_) => {
                 Cow::Owned(JsonObject::default())
@@ -192,6 +199,7 @@ impl fmt::Debug for AuthData {
             Self::Msisdn(inner) => inner.fmt(f),
             Self::Dummy(inner) => inner.fmt(f),
             Self::RegistrationToken(inner) => inner.fmt(f),
+            Self::Jwt(inner) => inner.fmt(f),
             Self::FallbackAcknowledgement(inner) => inner.fmt(f),
             Self::Terms(inner) => inner.fmt(f),
             Self::_Custom(inner) => inner.fmt(f),
@@ -225,6 +233,7 @@ impl<'de> Deserialize<'de> for AuthData {
             Some("m.login.registration_token") => {
                 from_raw_json_value(&json).map(Self::RegistrationToken)
             }
+            Some("org.matrix.login.jwt") => from_raw_json_value(&json).map(Self::Jwt),
             Some("m.login.terms") => from_raw_json_value(&json).map(Self::Terms),
             None => from_raw_json_value(&json).map(Self::FallbackAcknowledgement),
             Some(_) => from_raw_json_value(&json).map(Self::_Custom),
@@ -264,6 +273,10 @@ pub enum AuthType {
     /// Registration token-based authentication (`m.login.registration_token`).
     #[ruma_enum(rename = "m.login.registration_token")]
     RegistrationToken,
+
+    /// JSON Web Token authentication (`org.matrix.login.jwt`)
+    #[ruma_enum(rename = "org.matrix.login.jwt")]
+    Jwt,
 
     /// Terms of service (`m.login.terms`).
     ///
@@ -430,6 +443,25 @@ impl fmt::Debug for RegistrationToken {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let Self { token: _, session } = self;
         f.debug_struct("RegistrationToken").field("session", session).finish_non_exhaustive()
+    }
+}
+
+/// The payload for JWT-based login.
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
+#[cfg_attr(not(ruma_unstable_exhaustive_types), non_exhaustive)]
+#[serde(tag = "type", rename = "org.matrix.login.jwt")]
+pub struct Jwt {
+    /// The JSON Web Token
+    pub token: String,
+
+    /// The value of the session key given by the homeserver, if any.
+    pub session: Option<String>,
+}
+
+impl Jwt {
+    /// Creates a new `Jwt` login token`.
+    pub fn new(token: String) -> Self {
+        Self { token, session: None }
     }
 }
 
