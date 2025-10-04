@@ -131,6 +131,7 @@ impl From<v4::Request> for Request {
 /// HTTP types related to a [`Request`].
 pub mod request {
     use ruma_common::{RoomId, directory::RoomTypeFilter, serde::deserialize_cow_str};
+    use ruma_events::tag::TagName;
     use serde::de::Error as _;
 
     #[cfg(feature = "unstable-msc4308")]
@@ -156,8 +157,7 @@ pub mod request {
         pub filters: Option<ListFilters>,
     }
 
-    /// The conversion is lossy: the `exclude` field of the required state and the `spaces`,
-    /// `tags` and `not_tags` filters are dropped.
+    /// The conversion is lossy: the `exclude` field of the required state is dropped.
     ///
     /// A missing `range` becomes a range covering all the rooms.
     impl From<v4::request::List> for List {
@@ -209,23 +209,46 @@ pub mod request {
         /// `not_room_types` wins and the corresponding rooms are not included.
         #[serde(default, skip_serializing_if = "<[_]>::is_empty")]
         pub not_room_types: Vec<RoomTypeFilter>,
+
+        /// Filter a room based on its room tags.
+        ///
+        /// If multiple tags are present, a room can match any of the tags.
+        #[serde(default, skip_serializing_if = "<[_]>::is_empty")]
+        pub tags: Vec<TagName>,
+
+        /// Filter a room based on its room tags.
+        ///
+        /// Takes priority over `tags`. If a tag is listed in both `tags` and `not_tags`,
+        /// `not_tags` wins and the corresponding rooms are not included.
+        #[serde(default, skip_serializing_if = "<[_]>::is_empty")]
+        pub not_tags: Vec<TagName>,
+
+        /// Filter a room based on the space it belongs to according to m.space.child events.
+        ///
+        /// If multiple spaces are present, a room can be part of any one of the listed spaces. The
+        /// server will not navigate subspaces. The client must give a complete list of spaces to
+        /// navigate.
+        #[serde(default, skip_serializing_if = "<[_]>::is_empty")]
+        pub spaces: Vec<OwnedRoomId>,
     }
 
-    /// The conversion is lossy: the `spaces`, `tags` and `not_tags` filters are dropped.
     impl From<v4::request::ListFilters> for ListFilters {
         fn from(value: v4::request::ListFilters) -> Self {
             let v4::request::ListFilters {
                 is_dm,
-                spaces: _,
+                spaces,
                 is_encrypted,
                 is_invited,
                 room_types,
                 not_room_types,
-                tags: _,
-                not_tags: _,
+                tags,
+                not_tags,
             } = value;
 
             Self {
+                spaces,
+                tags,
+                not_tags,
                 is_dm: is_dm.into(),
                 is_encrypted: is_encrypted.into(),
                 is_invite: is_invited.into(),

@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Add `tags`, `not_tags`, and `spaces` fields to `sync_events::v5::request::ListFilters` as
+  specified in MSC4186 `SlidingRoomFilter` properties.
+
 ## 0.26.0
 
 Breaking changes:
