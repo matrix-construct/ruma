@@ -20,6 +20,7 @@ use ruma_common::{
 };
 use ruma_events::{AnySyncStateEvent, AnySyncTimelineEvent, StateEventType};
 use serde::{Deserialize, Serialize};
+use smallstr::SmallString;
 
 use super::UnreadNotificationsCount;
 
@@ -33,6 +34,18 @@ metadata! {
     }
 }
 
+/// Connection ID string type for connections.
+pub type ConnId = SmallString<[u8; 16]>;
+
+/// List ID string type for list names.
+pub type ListId = SmallString<[u8; 16]>;
+
+/// Transaction ID string type used by `Request::txn_id`.
+pub type TxnId = SmallString<[u8; 32]>;
+
+/// Since string type for batch tokens i.e. `pos`.
+pub type Since = SmallString<[u8; 16]>;
+
 /// Request type for the `/sync` endpoint.
 #[request]
 #[derive(Default)]
@@ -44,7 +57,7 @@ pub struct Request {
     /// it can be costly)
     #[serde(skip_serializing_if = "Option::is_none")]
     #[ruma_api(query)]
-    pub pos: Option<String>,
+    pub pos: Option<Since>,
 
     /// A unique string identifier for this connection to the server.
     ///
@@ -57,12 +70,12 @@ pub struct Request {
     /// Limitation: it must not contain more than 16 chars, due to it being
     /// required with every request.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub conn_id: Option<String>,
+    pub conn_id: Option<ConnId>,
 
     /// Allows clients to know what request params reached the server,
     /// functionally similar to txn IDs on `/send` for events.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub txn_id: Option<String>,
+    pub txn_id: Option<TxnId>,
 
     /// The maximum time to poll before responding to this request.
     ///
@@ -80,7 +93,7 @@ pub struct Request {
 
     /// Lists of rooms we are interested by, represented by ranges.
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
-    pub lists: BTreeMap<String, request::List>,
+    pub lists: BTreeMap<ListId, request::List>,
 
     /// Specific rooms we are interested by.
     ///
@@ -107,7 +120,9 @@ pub mod request {
     use ruma_events::tag::TagName;
     use serde::de::Error as _;
 
-    use super::{BTreeMap, Deserialize, OwnedRoomId, Serialize, StateEventType, UInt};
+    use super::{
+        BTreeMap, Deserialize, ListId, OwnedRoomId, Serialize, Since, StateEventType, UInt,
+    };
 
     /// A sliding sync list request (see [`super::Request::lists`]).
     #[derive(Clone, Debug, Default, Serialize, Deserialize)]
@@ -343,7 +358,7 @@ pub mod request {
 
         /// Give messages since this token only.
         #[serde(skip_serializing_if = "Option::is_none")]
-        pub since: Option<String>,
+        pub since: Option<Since>,
     }
 
     impl ToDevice {
@@ -419,7 +434,7 @@ pub mod request {
         /// If not defined, will be enabled for *all* the lists appearing in the
         /// request. If defined and empty, will be disabled for all the lists.
         #[serde(skip_serializing_if = "Option::is_none")]
-        pub lists: Option<Vec<String>>,
+        pub lists: Option<Vec<ListId>>,
 
         /// List of room names for which account data should be enabled.
         ///
@@ -454,7 +469,7 @@ pub mod request {
         /// If not defined, will be enabled for *all* the lists appearing in the
         /// request. If defined and empty, will be disabled for all the lists.
         #[serde(skip_serializing_if = "Option::is_none")]
-        pub lists: Option<Vec<String>>,
+        pub lists: Option<Vec<ListId>>,
 
         /// List of room names for which receipts should be enabled.
         ///
@@ -488,7 +503,7 @@ pub mod request {
         /// If not defined, will be enabled for *all* the lists appearing in the
         /// request. If defined and empty, will be disabled for all the lists.
         #[serde(skip_serializing_if = "Option::is_none")]
-        pub lists: Option<Vec<String>>,
+        pub lists: Option<Vec<ListId>>,
 
         /// List of room names for which typing notifications should be enabled.
         ///
@@ -579,15 +594,15 @@ pub mod request {
 pub struct Response {
     /// Matches the `txn_id` sent by the request (see [`Request::txn_id`]).
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub txn_id: Option<String>,
+    pub txn_id: Option<TxnId>,
 
     /// The token to supply in the `pos` parameter of the next `/sync` request
     /// (see [`Request::pos`]).
-    pub pos: String,
+    pub pos: Since,
 
     /// Resulting details of the lists.
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
-    pub lists: BTreeMap<String, response::List>,
+    pub lists: BTreeMap<ListId, response::List>,
 
     /// The updated rooms.
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
@@ -600,7 +615,7 @@ pub struct Response {
 
 impl Response {
     /// Creates a new `Response` with the given `pos`.
-    pub fn new(pos: String) -> Self {
+    pub fn new(pos: Since) -> Self {
         Self {
             txn_id: None,
             pos,
@@ -625,7 +640,7 @@ pub mod response {
 
     use super::{
         super::DeviceLists, AnySyncStateEvent, AnySyncTimelineEvent, BTreeMap, Deserialize,
-        JsOption, OwnedMxcUri, OwnedRoomId, OwnedUserId, Raw, Serialize, UInt,
+        JsOption, OwnedMxcUri, OwnedRoomId, OwnedUserId, Raw, Serialize, Since, UInt,
         UnreadNotificationsCount,
     };
     #[cfg(feature = "unstable-msc4308")]
@@ -696,7 +711,7 @@ pub mod response {
         /// The `prev_batch` allowing you to paginate through the messages
         /// before the given ones.
         #[serde(skip_serializing_if = "Option::is_none")]
-        pub prev_batch: Option<String>,
+        pub prev_batch: Option<Since>,
 
         /// True if the number of events returned was limited by the limit on
         /// the filter.
@@ -1020,7 +1035,7 @@ pub mod response {
         ///
         /// Only set when there are more changes to fetch.
         #[serde(skip_serializing_if = "Option::is_none")]
-        pub prev_batch: Option<String>,
+        pub prev_batch: Option<Since>,
     }
 
     #[cfg(feature = "unstable-msc4308")]
