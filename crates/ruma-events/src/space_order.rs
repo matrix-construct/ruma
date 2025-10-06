@@ -66,7 +66,7 @@ mod tests {
 
     #[test]
     fn serialize() {
-        let space_order = SpaceOrderEventContent::new(SpaceChildOrder::parse("a").unwrap());
+        let space_order = SpaceOrderEventContent::new(SpaceChildOrder::parse("a").unwrap().into());
         let space_order_account_data = RoomAccountDataEvent { content: space_order };
         assert_to_canonical_json_eq!(
             space_order_account_data,
