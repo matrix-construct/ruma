@@ -900,7 +900,8 @@ pub mod response {
     #[cfg(feature = "unstable-msc4308")]
     use ruma_common::OwnedEventId;
     use ruma_events::{
-        AnyStrippedStateEvent, AnyToDeviceEvent, receipt::SyncReceiptEvent, typing::SyncTypingEvent,
+        AnyStrippedStateEvent, AnyToDeviceEvent, receipt::SyncReceiptEvent,
+        room::member::MembershipState, typing::SyncTypingEvent,
     };
     use serde_json::{json, value::to_raw_value as to_raw_json_value};
 
@@ -1019,6 +1020,15 @@ pub mod response {
         /// Heroes of the room.
         #[serde(skip_serializing_if = "Option::is_none")]
         pub heroes: Option<Vec<Hero>>,
+
+        /// The current membership of the user, or omitted if user not in room (for peeking).
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub membership: Option<MembershipState>,
+
+        /// The name of the lists that match this room. The field is omitted if it doesn't match
+        /// any list and is included only due to a subscription.
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        pub lists: Vec<String>,
     }
 
     impl Room {
@@ -1028,11 +1038,11 @@ pub mod response {
         }
     }
 
-    /// The conversion is lossy: `membership`, `lists`, `expanded_timeline`, deleted state
+    /// The conversion is lossy: `expanded_timeline`, deleted state
     /// entries and the removal of the room name are dropped.
     impl From<v4::response::Room> for Room {
         fn from(value: v4::response::Room) -> Self {
-            let v4::response::Room { bump_stamp, membership: _, lists: _, data } = value;
+            let v4::response::Room { bump_stamp, membership, lists, data } = value;
 
             match data {
                 v4::response::RoomData::Full(data) => {
@@ -1058,6 +1068,8 @@ pub mod response {
                         initial: initial.then_some(true),
                         is_dm,
                         invite_state: None,
+                        membership,
+                        lists,
                         unread_notifications: UnreadNotificationsCount::new(),
                         timeline,
                         required_state: required_state
@@ -1078,7 +1090,13 @@ pub mod response {
                 v4::response::RoomData::Stripped(data) => {
                     let v4::response::StrippedRoomData { stripped_state } = data;
 
-                    Self { invite_state: Some(stripped_state), bump_stamp, ..Default::default() }
+                    Self {
+                        invite_state: Some(stripped_state),
+                        membership,
+                        lists,
+                        bump_stamp,
+                        ..Default::default()
+                    }
                 }
             }
         }
