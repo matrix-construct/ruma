@@ -56,8 +56,12 @@ pub struct Request {
     /// response. A `None` value asks the server to start a new _session_ (mind
     /// it can be costly)
     #[serde(skip_serializing_if = "Option::is_none")]
-    #[ruma_api(query)]
     pub pos: Option<Since>,
+
+    /// Compat for `pos` if it appears in the query string.
+    #[serde(skip_serializing_if = "Option::is_none", rename = "pos")]
+    #[ruma_api(query)]
+    pub pos_qrs_: Option<Since>,
 
     /// A unique string identifier for this connection to the server.
     ///
@@ -81,14 +85,17 @@ pub struct Request {
     ///
     /// `None` means no timeout, so virtually an infinite wait from the server.
     #[serde(with = "opt_ms", default, skip_serializing_if = "Option::is_none")]
-    #[ruma_api(query)]
     pub timeout: Option<Duration>,
+
+    /// Compat for `timeout` if it appears in the query string.
+    #[serde(with = "opt_ms", default, skip_serializing_if = "Option::is_none", rename = "timeout")]
+    #[ruma_api(query)]
+    pub timeout_qrs_: Option<Duration>,
 
     /// Controls whether the client is automatically marked as online by polling this API.
     ///
     /// Defaults to `PresenceState::Online`.
     #[serde(default, skip_serializing_if = "ruma_common::serde::is_default")]
-    #[ruma_api(query)]
     pub set_presence: PresenceState,
 
     /// Lists of rooms we are interested by, represented by ranges.
