@@ -1948,6 +1948,7 @@ dependencies = [
  "serde_html_form",
  "serde_json",
  "smallstr",
+ "smallvec",
  "strass",
  "thiserror",
  "url",
