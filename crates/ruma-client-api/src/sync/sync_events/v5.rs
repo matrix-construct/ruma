@@ -21,6 +21,7 @@ use ruma_common::{
 use ruma_events::{AnySyncStateEvent, AnySyncTimelineEvent, StateEventType};
 use serde::{Deserialize, Serialize};
 use smallstr::SmallString;
+use smallvec::SmallVec;
 
 use super::UnreadNotificationsCount;
 
@@ -45,6 +46,21 @@ pub type TxnId = SmallString<[u8; 32]>;
 
 /// Since string type for batch tokens i.e. `pos`.
 pub type Since = SmallString<[u8; 16]>;
+
+/// Opinionated room or hero name.
+pub type DisplayName = SmallString<[u8; 32]>;
+
+/// Opinionated state_key.
+pub type StateKey = SmallString<[u8; 48]>;
+
+/// Opinionated vector of ListId's.
+pub type ListIds = SmallVec<[ListId; 1]>;
+
+/// Opinionated vector of Ranges.
+pub type Ranges = SmallVec<[Range; 1]>;
+
+/// Window range.
+pub type Range = (UInt, UInt);
 
 /// Request type for the `/sync` endpoint.
 #[request(error = crate::Error)]
@@ -121,7 +137,8 @@ pub mod request {
     use serde::de::Error as _;
 
     use super::{
-        BTreeMap, Deserialize, ListId, OwnedRoomId, Serialize, Since, StateEventType, UInt,
+        BTreeMap, Deserialize, ListIds, OwnedRoomId, Ranges, Serialize, Since, StateEventType,
+        StateKey, UInt,
     };
 
     /// A sliding sync list request (see [`super::Request::lists`]).
@@ -129,7 +146,7 @@ pub mod request {
     #[cfg_attr(not(ruma_unstable_exhaustive_types), non_exhaustive)]
     pub struct List {
         /// The ranges of rooms we're interested in.
-        pub ranges: Vec<(UInt, UInt)>,
+        pub ranges: Ranges,
 
         /// The details to be included per room.
         #[serde(flatten)]
@@ -204,7 +221,7 @@ pub mod request {
         /// Required state for each returned room. An array of event type and
         /// state key tuples.
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
-        pub required_state: Vec<(StateEventType, String)>,
+        pub required_state: Vec<(StateEventType, StateKey)>,
 
         /// The maximum number of timeline events to return per room.
         pub timeline_limit: UInt,
@@ -216,7 +233,7 @@ pub mod request {
     pub struct RoomDetails {
         /// Required state for each returned room. An array of event type and state key tuples.
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
-        pub required_state: Vec<(StateEventType, String)>,
+        pub required_state: Vec<(StateEventType, StateKey)>,
 
         /// The maximum number of timeline events to return per room.
         pub timeline_limit: UInt,
@@ -369,7 +386,7 @@ pub mod request {
         /// If not defined, will be enabled for *all* the lists appearing in the
         /// request. If defined and empty, will be disabled for all the lists.
         #[serde(skip_serializing_if = "Option::is_none")]
-        pub lists: Option<Vec<ListId>>,
+        pub lists: Option<ListIds>,
 
         /// List of room names for which account data should be enabled.
         ///
@@ -404,7 +421,7 @@ pub mod request {
         /// If not defined, will be enabled for *all* the lists appearing in the
         /// request. If defined and empty, will be disabled for all the lists.
         #[serde(skip_serializing_if = "Option::is_none")]
-        pub lists: Option<Vec<ListId>>,
+        pub lists: Option<ListIds>,
 
         /// List of room names for which receipts should be enabled.
         ///
@@ -438,7 +455,7 @@ pub mod request {
         /// If not defined, will be enabled for *all* the lists appearing in the
         /// request. If defined and empty, will be disabled for all the lists.
         #[serde(skip_serializing_if = "Option::is_none")]
-        pub lists: Option<Vec<ListId>>,
+        pub lists: Option<ListIds>,
 
         /// List of room names for which typing notifications should be enabled.
         ///
@@ -534,13 +551,19 @@ pub mod response {
 
     use super::{
         super::DeviceLists, AnySyncStateEvent, AnySyncTimelineEvent, BTreeMap, Deserialize,
-        JsOption, OwnedMxcUri, OwnedRoomId, OwnedUserId, Raw, Serialize, Since, UInt,
-        UnreadNotificationsCount,
+        DisplayName, JsOption, ListIds, OwnedMxcUri, OwnedRoomId, OwnedUserId, Raw, Serialize,
+        Since, SmallVec, UInt, UnreadNotificationsCount,
     };
     #[cfg(feature = "unstable-msc4308")]
     use crate::threads::get_thread_subscriptions_changes::unstable::{
         ThreadSubscription, ThreadUnsubscription,
     };
+
+    /// Optimistic vector of heroes.
+    pub type Heroes = SmallVec<[Hero; 2]>;
+
+    /// Optimistic vector of timeline events.
+    pub type Timeline = SmallVec<[Raw<AnySyncTimelineEvent>; 1]>;
 
     /// A sliding sync response updates to joiend rooms (see
     /// [`super::Response::lists`]).
@@ -557,7 +580,7 @@ pub mod response {
     pub struct Room {
         /// The name as calculated by the server.
         #[serde(skip_serializing_if = "Option::is_none")]
-        pub name: Option<String>,
+        pub name: Option<DisplayName>,
 
         /// The avatar.
         #[serde(default, skip_serializing_if = "JsOption::is_undefined")]
@@ -581,8 +604,8 @@ pub mod response {
         pub unread_notifications: UnreadNotificationsCount,
 
         /// Message-like events and live state events.
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
-        pub timeline: Vec<Raw<AnySyncTimelineEvent>>,
+        #[serde(default, skip_serializing_if = "<[_]>::is_empty")]
+        pub timeline: Timeline,
 
         /// State events as configured by the request.
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -623,7 +646,7 @@ pub mod response {
 
         /// Heroes of the room.
         #[serde(skip_serializing_if = "Option::is_none")]
-        pub heroes: Option<Vec<Hero>>,
+        pub heroes: Option<Heroes>,
 
         /// The current membership of the user, or omitted if user not in room (for peeking).
         #[serde(skip_serializing_if = "Option::is_none")]
@@ -631,8 +654,8 @@ pub mod response {
 
         /// The name of the lists that match this room. The field is omitted if it doesn't match
         /// any list and is included only due to a subscription.
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
-        pub lists: Vec<String>,
+        #[serde(default, skip_serializing_if = "ListIds::is_empty")]
+        pub lists: ListIds,
     }
 
     impl Room {
@@ -651,7 +674,7 @@ pub mod response {
 
         /// The name.
         #[serde(rename = "displayname", skip_serializing_if = "Option::is_none")]
-        pub name: Option<String>,
+        pub name: Option<DisplayName>,
 
         /// The avatar.
         #[serde(rename = "avatar_url", skip_serializing_if = "Option::is_none")]
@@ -719,7 +742,7 @@ pub mod response {
     #[cfg_attr(not(ruma_unstable_exhaustive_types), non_exhaustive)]
     pub struct ToDevice {
         /// Fetch the next batch from this entry.
-        pub next_batch: String,
+        pub next_batch: Since,
 
         /// The to-device events.
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
