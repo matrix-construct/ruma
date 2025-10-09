@@ -115,7 +115,7 @@ pub struct Request {
     /// It is useful to receive updates from rooms that are possibly
     /// out-of-range of all the lists (see [`Self::lists`]).
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
-    pub room_subscriptions: BTreeMap<OwnedRoomId, request::RoomSubscription>,
+    pub room_subscriptions: BTreeMap<OwnedRoomId, request::ListConfig>,
 
     /// Extensions.
     #[serde(default, skip_serializing_if = "request::Extensions::is_empty")]
@@ -182,7 +182,7 @@ pub mod request {
 
         /// The details to be included per room.
         #[serde(flatten)]
-        pub room_details: RoomDetails,
+        pub room_details: ListConfig,
 
         /// Filters to apply to the list before sorting.
         #[serde(skip_serializing_if = "Option::is_none")]
@@ -198,7 +198,7 @@ pub mod request {
 
             Self {
                 ranges: [range.unwrap_or((UInt::MIN, UInt::MAX))].into(),
-                room_details: RoomDetails {
+                room_details: ListConfig {
                     required_state: required_state_from_v4(required_state),
                     timeline_limit,
                 },
@@ -290,21 +290,8 @@ pub mod request {
         }
     }
 
-    /// Sliding sync request room subscription (see [`super::Request::room_subscriptions`]).
-    #[derive(Clone, Debug, Default, Serialize, Deserialize)]
-    #[cfg_attr(not(ruma_unstable_exhaustive_types), non_exhaustive)]
-    pub struct RoomSubscription {
-        /// Required state for each returned room. An array of event type and
-        /// state key tuples.
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
-        pub required_state: Vec<(StateEventType, StateKey)>,
-
-        /// The maximum number of timeline events to return per room.
-        pub timeline_limit: UInt,
-    }
-
     /// The conversion is lossy: the `exclude` field of the required state is dropped.
-    impl From<v4::request::RoomSubscription> for RoomSubscription {
+    impl From<v4::request::RoomSubscription> for ListConfig {
         fn from(value: v4::request::RoomSubscription) -> Self {
             let v4::request::RoomSubscription { required_state, timeline_limit } = value;
             Self { required_state: required_state_from_v4(required_state), timeline_limit }
@@ -334,10 +321,10 @@ pub mod request {
         required_state
     }
 
-    /// Sliding sync request room details (see [`List::room_details`]).
+    /// Sliding sync request room config (see [`List::room_details`]).
     #[derive(Clone, Debug, Default, Serialize, Deserialize)]
     #[cfg_attr(not(ruma_unstable_exhaustive_types), non_exhaustive)]
-    pub struct RoomDetails {
+    pub struct ListConfig {
         /// Required state for each returned room. An array of event type and state key tuples.
         #[serde(default, skip_serializing_if = "Vec::is_empty")]
         pub required_state: Vec<(StateEventType, StateKey)>,
