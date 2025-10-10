@@ -49,9 +49,6 @@ pub type Since = SmallString<[u8; 16]>;
 /// Opinionated room or hero name.
 pub type DisplayName = SmallString<[u8; 32]>;
 
-/// Opinionated state_key.
-pub type StateKey = SmallString<[u8; 48]>;
-
 /// Opinionated vector of ListId's.
 pub type ListIds = SmallVec<[ListId; 1]>;
 
@@ -160,7 +157,7 @@ impl From<v4::Request> for Request {
 /// HTTP types related to a [`Request`].
 pub mod request {
     use ruma_common::{RoomId, directory::RoomTypeFilter, serde::deserialize_cow_str};
-    use ruma_events::tag::TagName;
+    use ruma_events::{StateKey, tag::TagName};
     use serde::de::Error as _;
 
     pub use super::v4::request::E2EE;
@@ -170,7 +167,7 @@ pub mod request {
     pub use super::v4::request::Threads;
     use super::{
         BTreeMap, Deserialize, ListIds, OwnedRoomId, Ranges, Serialize, Since, StateEventType,
-        StateKey, UInt, v4,
+        UInt, v4,
     };
 
     /// A sliding sync list request (see [`super::Request::lists`]).

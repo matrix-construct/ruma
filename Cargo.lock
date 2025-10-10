@@ -2015,6 +2015,7 @@ dependencies = [
  "ruma-macros",
  "serde",
  "serde_json",
+ "smallstr",
  "smallvec",
  "strass",
  "thiserror",

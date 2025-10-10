@@ -98,9 +98,9 @@ impl Event {
                 quote! { ::std::boxed::Box<#serde_json::value::RawValue> }
             } else if *field_ident == "state_key" && self.variation == EventVariation::Initial {
                 // Because the state key is allowed to be missing if it is empty when sending an
-                // initial state event during creation, we default to deserializing a string first
-                // so we can default to an empty string if it is missing.
-                quote! { ::std::string::String }
+                // initial state event during creation, we default to deserializing a `StateKey`
+                // first so we can default to an empty value if it is missing.
+                quote! { #ruma_events::StateKey }
             } else {
                 let field_type = &field.inner.ty;
                 quote! { #field_type }
@@ -134,12 +134,16 @@ impl Event {
                     }
                 } else if *field_ident == "state_key" && self.variation == EventVariation::Initial {
                     // The state key is allowed to be missing if it is empty, when sending an
-                    // initial state event during creation.
+                    // initial state event during creation. Deserialize the typed field via the
+                    // string slice borrowed out of our intermediate `StateKey`, defaulting to an
+                    // empty SmallString rather than `Default::default()` (which is unavailable
+                    // for arrays larger than 32).
                     let field_type = &field.inner.ty;
                     quote! {
+                        let state_key = state_key.unwrap_or_else(<#ruma_events::StateKey>::new);
                         let state_key = <#field_type as #serde::de::Deserialize>::deserialize(
                             #serde::de::IntoDeserializer::<A::Error>::into_deserializer(
-                                state_key.unwrap_or_default(),
+                                state_key.as_str(),
                             ),
                         )?;
                     }
