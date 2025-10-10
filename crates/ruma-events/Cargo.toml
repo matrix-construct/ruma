@@ -93,6 +93,7 @@ ruma-identifiers-validation = { workspace = true }
 ruma-macros = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true, features = ["raw_value"] }
+smallstr = { workspace = true }
 smallvec = { workspace = true }
 thiserror = { workspace = true }
 tracing = { workspace = true, features = ["attributes"] }

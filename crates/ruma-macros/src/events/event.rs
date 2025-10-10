@@ -87,6 +87,8 @@ fn expand_deserialize_event(
         })
         .collect();
 
+    let state_key_ty = quote! { ruma_events::StateKey };
+
     let deserialize_var_types: Vec<_> = fields
         .iter()
         .map(|field| {
@@ -98,7 +100,7 @@ fn expand_deserialize_event(
                     quote! { #content_type }
                 }
             } else if name == "state_key" && var == EventVariation::Initial {
-                quote! { ::std::string::String }
+                quote! { #state_key_ty }
             } else {
                 let ty = &field.ty;
                 quote! { #ty }
@@ -127,9 +129,9 @@ fn expand_deserialize_event(
             } else if name == "state_key" && var == EventVariation::Initial {
                 let ty = &field.ty;
                 quote! {
-                    let state_key: ::std::string::String = state_key.unwrap_or_default();
+                    let state_key: #state_key_ty = state_key.unwrap_or(<#state_key_ty>::new());
                     let state_key: #ty = <#ty as #serde::de::Deserialize>::deserialize(
-                        #serde::de::IntoDeserializer::<A::Error>::into_deserializer(state_key),
+                        #serde::de::IntoDeserializer::<A::Error>::into_deserializer(state_key.as_bytes()),
                     )?;
                 }
             } else {

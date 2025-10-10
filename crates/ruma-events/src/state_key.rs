@@ -4,6 +4,12 @@ use serde::{
     },
     Serialize, Serializer,
 };
+use smallstr::SmallString;
+
+/// Opinionated value-oriented optimized String type for a state_key.
+pub type StateKey = SmallString<[u8; STATE_KEY_INLINE_BYTES]>;
+
+const STATE_KEY_INLINE_BYTES: usize = 48;
 
 /// A type that can be used as the `state_key` for event types where that field is always empty.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, PartialOrd, Ord)]
