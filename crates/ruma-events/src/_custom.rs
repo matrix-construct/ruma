@@ -80,7 +80,7 @@ impl RedactedMessageLikeEventContent for CustomMessageLikeEventContent {
 
 custom_room_event_content!(CustomStateEventContent, StateEventType);
 impl StateEventContent for CustomStateEventContent {
-    type StateKey = String;
+    type StateKey = super::StateKey;
 
     fn event_type(&self) -> StateEventType {
         self.event_type[..].into()
@@ -94,14 +94,14 @@ impl StaticStateEventContent for CustomStateEventContent {
     type PossiblyRedacted = Self;
 }
 impl PossiblyRedactedStateEventContent for CustomStateEventContent {
-    type StateKey = String;
+    type StateKey = super::StateKey;
 
     fn event_type(&self) -> StateEventType {
         self.event_type[..].into()
     }
 }
 impl RedactedStateEventContent for CustomStateEventContent {
-    type StateKey = String;
+    type StateKey = super::StateKey;
 
     fn event_type(&self) -> StateEventType {
         self.event_type[..].into()

@@ -1974,6 +1974,7 @@ dependencies = [
  "ruma-macros",
  "serde",
  "serde_json",
+ "smallstr",
  "smallvec",
  "thiserror",
  "tracing",
