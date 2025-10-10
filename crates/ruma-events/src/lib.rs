@@ -210,7 +210,7 @@ pub use self::{
     enums::*,
     kinds::*,
     relation::{BundledMessageLikeRelations, BundledStateRelations},
-    state_key::EmptyStateKey,
+    state_key::{EmptyStateKey, StateKey},
     unsigned::{MessageLikeUnsigned, RedactedUnsigned, StateUnsigned, UnsignedRoomRedactionEvent},
 };
 
