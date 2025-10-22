@@ -104,7 +104,6 @@ pub struct Request {
     ///
     /// Defaults to `PresenceState::Online`.
     #[serde(default, skip_serializing_if = "ruma_common::serde::is_default")]
-    #[ruma_api(query)]
     pub set_presence: PresenceState,
 
     /// Lists of rooms we are interested by, represented by ranges.
