@@ -18,6 +18,8 @@ use std::hash::{Hash, Hasher};
 
 use indexmap::{Equivalent, IndexSet};
 use serde::{Deserialize, Serialize};
+use smallstr::SmallString;
+use smallvec::SmallVec;
 use thiserror::Error;
 use tracing::instrument;
 
@@ -45,6 +47,18 @@ pub use self::{
         PredefinedUnderrideRuleId,
     },
 };
+
+/// Push rule ID.
+pub type RuleId = SmallString<[u8; 32]>;
+
+/// Opinionated vector of push actions.
+pub type Actions = SmallVec<[Action; 3]>;
+
+/// Opinionated vector of push conditions.
+pub type PushConditions = SmallVec<[PushCondition; 3]>;
+
+/// String type for patterns in some condition types.
+pub type Pattern = SmallString<[u8; 32]>;
 
 /// A push ruleset scopes a set of rules according to some criteria.
 ///
@@ -267,7 +281,7 @@ impl Ruleset {
         &mut self,
         kind: RuleKind,
         rule_id: impl AsRef<str>,
-        actions: Vec<Action>,
+        actions: Actions,
     ) -> Result<(), RuleNotFoundError> {
         let rule_id = rule_id.as_ref();
 
@@ -412,7 +426,7 @@ impl Ruleset {
 #[cfg_attr(not(ruma_unstable_exhaustive_types), non_exhaustive)]
 pub struct SimplePushRule<T> {
     /// Actions to determine if and how a notification is delivered for events matching this rule.
-    pub actions: Vec<Action>,
+    pub actions: Actions,
 
     /// Whether this is a default rule, or has been set explicitly.
     pub default: bool,
@@ -434,7 +448,7 @@ pub struct SimplePushRule<T> {
 #[allow(clippy::exhaustive_structs)]
 pub struct SimplePushRuleInit<T> {
     /// Actions to determine if and how a notification is delivered for events matching this rule.
-    pub actions: Vec<Action>,
+    pub actions: Actions,
 
     /// Whether this is a default rule, or has been set explicitly.
     pub default: bool,
@@ -497,7 +511,7 @@ where
 #[cfg_attr(not(ruma_unstable_exhaustive_types), non_exhaustive)]
 pub struct ConditionalPushRule {
     /// Actions to determine if and how a notification is delivered for events matching this rule.
-    pub actions: Vec<Action>,
+    pub actions: Actions,
 
     /// Whether this is a default rule, or has been set explicitly.
     pub default: bool,
@@ -506,14 +520,14 @@ pub struct ConditionalPushRule {
     pub enabled: bool,
 
     /// The ID of this rule.
-    pub rule_id: String,
+    pub rule_id: RuleId,
 
     /// The conditions that must hold true for an event in order for a rule to be applied to an
     /// event.
     ///
     /// A rule with no conditions always matches.
     #[serde(default)]
-    pub conditions: Vec<PushCondition>,
+    pub conditions: PushConditions,
 }
 
 impl ConditionalPushRule {
@@ -577,7 +591,7 @@ impl ConditionalPushRule {
 #[allow(clippy::exhaustive_structs)]
 pub struct ConditionalPushRuleInit {
     /// Actions to determine if and how a notification is delivered for events matching this rule.
-    pub actions: Vec<Action>,
+    pub actions: Actions,
 
     /// Whether this is a default rule, or has been set explicitly.
     pub default: bool,
@@ -586,13 +600,13 @@ pub struct ConditionalPushRuleInit {
     pub enabled: bool,
 
     /// The ID of this rule.
-    pub rule_id: String,
+    pub rule_id: RuleId,
 
     /// The conditions that must hold true for an event in order for a rule to be applied to an
     /// event.
     ///
     /// A rule with no conditions always matches.
-    pub conditions: Vec<PushCondition>,
+    pub conditions: PushConditions,
 }
 
 impl From<ConditionalPushRuleInit> for ConditionalPushRule {
@@ -621,7 +635,7 @@ impl Eq for ConditionalPushRule {}
 
 impl Equivalent<ConditionalPushRule> for str {
     fn equivalent(&self, key: &ConditionalPushRule) -> bool {
-        self == key.rule_id
+        self == &*key.rule_id
     }
 }
 
@@ -635,7 +649,7 @@ impl Equivalent<ConditionalPushRule> for str {
 #[cfg_attr(not(ruma_unstable_exhaustive_types), non_exhaustive)]
 pub struct PatternedPushRule {
     /// Actions to determine if and how a notification is delivered for events matching this rule.
-    pub actions: Vec<Action>,
+    pub actions: Actions,
 
     /// Whether this is a default rule, or has been set explicitly.
     pub default: bool,
@@ -644,10 +658,10 @@ pub struct PatternedPushRule {
     pub enabled: bool,
 
     /// The ID of this rule.
-    pub rule_id: String,
+    pub rule_id: RuleId,
 
     /// The glob-style pattern to match against.
-    pub pattern: String,
+    pub pattern: Pattern,
 }
 
 impl PatternedPushRule {
@@ -687,7 +701,7 @@ impl PatternedPushRule {
 #[allow(clippy::exhaustive_structs)]
 pub struct PatternedPushRuleInit {
     /// Actions to determine if and how a notification is delivered for events matching this rule.
-    pub actions: Vec<Action>,
+    pub actions: Actions,
 
     /// Whether this is a default rule, or has been set explicitly.
     pub default: bool,
@@ -696,10 +710,10 @@ pub struct PatternedPushRuleInit {
     pub enabled: bool,
 
     /// The ID of this rule.
-    pub rule_id: String,
+    pub rule_id: RuleId,
 
     /// The glob-style pattern to match against.
-    pub pattern: String,
+    pub pattern: Pattern,
 }
 
 impl From<PatternedPushRuleInit> for PatternedPushRule {
@@ -728,7 +742,7 @@ impl Eq for PatternedPushRule {}
 
 impl Equivalent<PatternedPushRule> for str {
     fn equivalent(&self, key: &PatternedPushRule) -> bool {
-        self == key.rule_id
+        self == &*key.rule_id
     }
 }
 
@@ -866,12 +880,12 @@ pub struct NewSimplePushRule<T> {
 
     /// Actions to determine if and how a notification is delivered for events matching this
     /// rule.
-    pub actions: Vec<Action>,
+    pub actions: Actions,
 }
 
 impl<T> NewSimplePushRule<T> {
     /// Creates a `NewSimplePushRule` with the given ID and actions.
-    pub fn new(rule_id: T, actions: Vec<Action>) -> Self {
+    pub fn new(rule_id: T, actions: Actions) -> Self {
         Self { rule_id, actions }
     }
 }
@@ -888,19 +902,19 @@ impl<T> From<NewSimplePushRule<T>> for SimplePushRule<T> {
 #[cfg_attr(not(ruma_unstable_exhaustive_types), non_exhaustive)]
 pub struct NewPatternedPushRule {
     /// The ID of this rule.
-    pub rule_id: String,
+    pub rule_id: RuleId,
 
     /// The glob-style pattern to match against.
-    pub pattern: String,
+    pub pattern: Pattern,
 
     /// Actions to determine if and how a notification is delivered for events matching this
     /// rule.
-    pub actions: Vec<Action>,
+    pub actions: Actions,
 }
 
 impl NewPatternedPushRule {
     /// Creates a `NewPatternedPushRule` with the given ID, pattern and actions.
-    pub fn new(rule_id: String, pattern: String, actions: Vec<Action>) -> Self {
+    pub fn new(rule_id: RuleId, pattern: Pattern, actions: Actions) -> Self {
         Self { rule_id, pattern, actions }
     }
 }
@@ -917,23 +931,23 @@ impl From<NewPatternedPushRule> for PatternedPushRule {
 #[cfg_attr(not(ruma_unstable_exhaustive_types), non_exhaustive)]
 pub struct NewConditionalPushRule {
     /// The ID of this rule.
-    pub rule_id: String,
+    pub rule_id: RuleId,
 
     /// The conditions that must hold true for an event in order for a rule to be applied to an
     /// event.
     ///
     /// A rule with no conditions always matches.
     #[serde(default)]
-    pub conditions: Vec<PushCondition>,
+    pub conditions: PushConditions,
 
     /// Actions to determine if and how a notification is delivered for events matching this
     /// rule.
-    pub actions: Vec<Action>,
+    pub actions: Actions,
 }
 
 impl NewConditionalPushRule {
     /// Creates a `NewConditionalPushRule` with the given ID, conditions and actions.
-    pub fn new(rule_id: String, conditions: Vec<PushCondition>, actions: Vec<Action>) -> Self {
+    pub fn new(rule_id: RuleId, conditions: PushConditions, actions: Actions) -> Self {
         Self { rule_id, conditions, actions }
     }
 }
@@ -1063,8 +1077,9 @@ mod tests {
             conditions: vec![PushCondition::EventMatch {
                 key: "type".into(),
                 pattern: "m.call.invite".into(),
-            }],
-            actions: vec![Action::Notify, Action::SetTweak(Tweak::Highlight(true))],
+            }]
+            .into(),
+            actions: vec![Action::Notify, Action::SetTweak(Tweak::Highlight(true))].into(),
             rule_id: ".m.rule.call".into(),
             enabled: true,
             default: true,
@@ -1112,8 +1127,9 @@ mod tests {
             conditions: vec![PushCondition::EventMatch {
                 key: "room_id".into(),
                 pattern: "!roomid:matrix.org".into(),
-            }],
-            actions: vec![],
+            }]
+            .into(),
+            actions: Default::default(),
             rule_id: "!roomid:matrix.org".into(),
             enabled: true,
             default: false,
@@ -1121,8 +1137,8 @@ mod tests {
         assert!(added);
 
         let added = set.override_.insert(ConditionalPushRule {
-            conditions: vec![],
-            actions: vec![],
+            conditions: Default::default(),
+            actions: Default::default(),
             rule_id: ".m.rule.suppress_notices".into(),
             enabled: false,
             default: true,
@@ -1161,7 +1177,7 @@ mod tests {
     #[test]
     fn serialize_conditional_push_rule() {
         let rule = ConditionalPushRule {
-            actions: vec![Action::Notify, Action::SetTweak(Tweak::Highlight(true))],
+            actions: vec![Action::Notify, Action::SetTweak(Tweak::Highlight(true))].into(),
             default: true,
             enabled: true,
             rule_id: ".m.rule.call".into(),
@@ -1171,7 +1187,8 @@ mod tests {
                 PushCondition::ContainsDisplayName,
                 PushCondition::RoomMemberCount { is: RoomMemberCountIs::gt(uint!(2)) },
                 PushCondition::SenderNotificationPermission { key: "room".into() },
-            ],
+            ]
+            .into(),
         };
 
         let rule_value: JsonValue = to_json_value(rule).unwrap();
@@ -1212,7 +1229,7 @@ mod tests {
     #[test]
     fn serialize_simple_push_rule() {
         let rule = SimplePushRule {
-            actions: vec![Action::Notify],
+            actions: vec![Action::Notify].into(),
             default: false,
             enabled: false,
             rule_id: owned_room_id!("!roomid:server.name"),
@@ -1242,7 +1259,8 @@ mod tests {
                     name: "dance".into(),
                     value: RawJsonValue::from_string("true".into()).unwrap(),
                 }),
-            ],
+            ]
+            .into(),
             default: true,
             enabled: true,
             pattern: "user_id".into(),
@@ -1280,12 +1298,14 @@ mod tests {
             conditions: vec![
                 PushCondition::RoomMemberCount { is: RoomMemberCountIs::from(uint!(2)) },
                 PushCondition::EventMatch { key: "type".into(), pattern: "m.room.message".into() },
-            ],
+            ]
+            .into(),
             actions: vec![
                 Action::Notify,
                 Action::SetTweak(Tweak::Sound("default".into())),
                 Action::SetTweak(Tweak::Highlight(false)),
-            ],
+            ]
+            .into(),
             rule_id: ".m.rule.room_one_to_one".into(),
             enabled: true,
             default: true,
@@ -1295,7 +1315,8 @@ mod tests {
                 Action::Notify,
                 Action::SetTweak(Tweak::Sound("default".into())),
                 Action::SetTweak(Tweak::Highlight(true)),
-            ],
+            ]
+            .into(),
             rule_id: ".m.rule.contains_user_name".into(),
             pattern: "user_id".into(),
             enabled: true,
@@ -1613,13 +1634,14 @@ mod tests {
 
         let mut set = Ruleset::new();
         let disabled = ConditionalPushRule {
-            actions: vec![Action::Notify],
+            actions: vec![Action::Notify].into(),
             default: false,
             enabled: false,
             rule_id: "disabled".into(),
             conditions: vec![PushCondition::RoomMemberCount {
                 is: RoomMemberCountIs::from(uint!(2)),
-            }],
+            }]
+            .into(),
         };
         set.underride.insert(disabled);
 
@@ -1627,11 +1649,11 @@ mod tests {
         assert_matches!(test_set.get_actions(&message, &CONTEXT_ONE_TO_ONE).await, []);
 
         let no_conditions = ConditionalPushRule {
-            actions: vec![Action::SetTweak(Tweak::Highlight(true))],
+            actions: vec![Action::SetTweak(Tweak::Highlight(true))].into(),
             default: false,
             enabled: true,
             rule_id: "no.conditions".into(),
-            conditions: vec![],
+            conditions: vec![].into(),
         };
         set.underride.insert(no_conditions);
 
@@ -1642,7 +1664,7 @@ mod tests {
         );
 
         let sender = SimplePushRule {
-            actions: vec![Action::Notify],
+            actions: vec![Action::Notify].into(),
             default: false,
             enabled: true,
             rule_id: owned_user_id!("@rantanplan:server.name"),
@@ -1656,7 +1678,7 @@ mod tests {
         );
 
         let room = SimplePushRule {
-            actions: vec![Action::SetTweak(Tweak::Highlight(true))],
+            actions: vec![Action::SetTweak(Tweak::Highlight(true))].into(),
             default: false,
             enabled: true,
             rule_id: owned_room_id!("!dm:server.name"),
@@ -1670,7 +1692,7 @@ mod tests {
         );
 
         let content = PatternedPushRule {
-            actions: vec![Action::SetTweak(Tweak::Sound("content".into()))],
+            actions: vec![Action::SetTweak(Tweak::Sound("content".into()))].into(),
             default: false,
             enabled: true,
             rule_id: "content".into(),
@@ -1686,7 +1708,7 @@ mod tests {
         assert_eq!(sound, "content");
 
         let three_conditions = ConditionalPushRule {
-            actions: vec![Action::SetTweak(Tweak::Sound("three".into()))],
+            actions: vec![Action::SetTweak(Tweak::Sound("three".into()))].into(),
             default: false,
             enabled: true,
             rule_id: "three.conditions".into(),
@@ -1698,7 +1720,8 @@ mod tests {
                     key: "room_id".into(),
                     pattern: "!dm:server.name".into(),
                 },
-            ],
+            ]
+            .into(),
         };
         set.override_.insert(three_conditions);
 
@@ -1732,15 +1755,16 @@ mod tests {
     async fn old_mentions_apply() {
         let mut set = Ruleset::new();
         set.content.insert(PatternedPushRule {
-            rule_id: PredefinedContentRuleId::ContainsUserName.to_string(),
+            rule_id: PredefinedContentRuleId::ContainsUserName.to_string().into(),
             enabled: true,
             default: true,
-            pattern: "jolly_jumper".to_owned(),
+            pattern: "jolly_jumper".into(),
             actions: vec![
                 Action::Notify,
                 Action::SetTweak(Tweak::Sound("default".into())),
                 Action::SetTweak(Tweak::Highlight(true)),
-            ],
+            ]
+            .into(),
         });
         set.override_.extend([
             ConditionalPushRule {
@@ -1748,24 +1772,26 @@ mod tests {
                     Action::Notify,
                     Action::SetTweak(Tweak::Sound("default".into())),
                     Action::SetTweak(Tweak::Highlight(true)),
-                ],
+                ]
+                .into(),
                 default: true,
                 enabled: true,
-                rule_id: PredefinedOverrideRuleId::ContainsDisplayName.to_string(),
-                conditions: vec![PushCondition::ContainsDisplayName],
+                rule_id: PredefinedOverrideRuleId::ContainsDisplayName.to_string().into(),
+                conditions: vec![PushCondition::ContainsDisplayName].into(),
             },
             ConditionalPushRule {
-                actions: vec![Action::Notify, Action::SetTweak(Tweak::Highlight(true))],
+                actions: vec![Action::Notify, Action::SetTweak(Tweak::Highlight(true))].into(),
                 default: true,
                 enabled: true,
-                rule_id: PredefinedOverrideRuleId::RoomNotif.to_string(),
+                rule_id: PredefinedOverrideRuleId::RoomNotif.to_string().into(),
                 conditions: vec![
                     PushCondition::EventMatch {
                         key: "content.body".into(),
                         pattern: "@room".into(),
                     },
                     PushCondition::SenderNotificationPermission { key: "room".into() },
-                ],
+                ]
+                .into(),
             },
         ]);
 

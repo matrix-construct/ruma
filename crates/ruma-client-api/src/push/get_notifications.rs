@@ -12,11 +12,12 @@ pub mod v3 {
         MilliSecondsSinceUnixEpoch, OwnedRoomId,
         api::{auth_scheme::AccessToken, request, response},
         metadata,
-        push::Action,
+        push::Actions,
         serde::Raw,
     };
     use ruma_events::AnySyncTimelineEvent;
     use serde::{Deserialize, Serialize};
+    use smallstr::SmallString;
 
     metadata! {
         method: GET,
@@ -28,6 +29,15 @@ pub mod v3 {
         }
     }
 
+    /// Pagination token tuned string type.
+    pub type BatchToken = SmallString<[u8; 16]>;
+
+    /// Only-filter tuned string type.
+    pub type OnlyFilter = SmallString<[u8; 24]>;
+
+    /// Only-filter tuned string type.
+    pub type ProfileTag = SmallString<[u8; 24]>;
+
     /// Request type for the `get_notifications` endpoint.
     #[request(error = crate::Error)]
     #[derive(Default)]
@@ -35,7 +45,7 @@ pub mod v3 {
         /// Pagination token given to retrieve the next set of events.
         #[ruma_api(query)]
         #[serde(skip_serializing_if = "Option::is_none")]
-        pub from: Option<String>,
+        pub from: Option<BatchToken>,
 
         /// Limit on the number of events to return in this request.
         #[ruma_api(query)]
@@ -48,7 +58,7 @@ pub mod v3 {
         /// tweak set.
         #[ruma_api(query)]
         #[serde(skip_serializing_if = "Option::is_none")]
-        pub only: Option<String>,
+        pub only: Option<OnlyFilter>,
     }
 
     /// Response type for the `get_notifications` endpoint.
@@ -59,7 +69,7 @@ pub mod v3 {
         ///
         /// If this is absent, there are no more results.
         #[serde(skip_serializing_if = "Option::is_none")]
-        pub next_token: Option<String>,
+        pub next_token: Option<BatchToken>,
 
         /// The list of events that triggered notifications.
         pub notifications: Vec<Notification>,
@@ -84,14 +94,14 @@ pub mod v3 {
     #[cfg_attr(not(ruma_unstable_exhaustive_types), non_exhaustive)]
     pub struct Notification {
         /// The actions to perform when the conditions for this rule are met.
-        pub actions: Vec<Action>,
+        pub actions: Actions,
 
         /// The event that triggered the notification.
         pub event: Raw<AnySyncTimelineEvent>,
 
         /// The profile tag of the rule that matched this event.
         #[serde(skip_serializing_if = "Option::is_none")]
-        pub profile_tag: Option<String>,
+        pub profile_tag: Option<ProfileTag>,
 
         /// Indicates whether the user has sent a read receipt indicating that they have read this
         /// message.
@@ -108,7 +118,7 @@ pub mod v3 {
         /// Creates a new `Notification` with the given actions, event, read flag, room ID and
         /// timestamp.
         pub fn new(
-            actions: Vec<Action>,
+            actions: Actions,
             event: Raw<AnySyncTimelineEvent>,
             read: bool,
             room_id: OwnedRoomId,

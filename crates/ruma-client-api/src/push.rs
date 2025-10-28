@@ -4,13 +4,14 @@ use std::{error::Error, fmt};
 pub use ruma_common::push::RuleKind;
 use ruma_common::{
     push::{
-        Action, AnyPushRule, AnyPushRuleRef, ConditionalPushRule, ConditionalPushRuleInit,
-        HttpPusherData, PatternedPushRule, PatternedPushRuleInit, PushCondition, SimplePushRule,
-        SimplePushRuleInit,
+        Actions, AnyPushRule, AnyPushRuleRef, ConditionalPushRule, ConditionalPushRuleInit,
+        HttpPusherData, Pattern, PatternedPushRule, PatternedPushRuleInit, PushConditions, RuleId,
+        SimplePushRule, SimplePushRuleInit,
     },
     serde::JsonObject,
 };
 use serde::{Deserialize, Serialize};
+use smallstr::SmallString;
 
 pub mod delete_pushrule;
 pub mod get_notifications;
@@ -34,7 +35,7 @@ pub mod set_pushrule_enabled;
 #[cfg_attr(not(ruma_unstable_exhaustive_types), non_exhaustive)]
 pub struct PushRule {
     /// The actions to perform when this rule is matched.
-    pub actions: Vec<Action>,
+    pub actions: Actions,
 
     /// Whether this is a default rule, or has been set explicitly.
     pub default: bool,
@@ -43,21 +44,30 @@ pub struct PushRule {
     pub enabled: bool,
 
     /// The ID of this rule.
-    pub rule_id: String,
+    pub rule_id: RuleId,
 
     /// The conditions that must hold true for an event in order for a rule to be applied to an
     /// event.
     ///
     /// A rule with no conditions always matches. Only applicable to underride and override rules.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub conditions: Option<Vec<PushCondition>>,
+    pub conditions: Option<PushConditions>,
 
     /// The glob-style pattern to match against.
     ///
     /// Only applicable to content rules.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub pattern: Option<String>,
+    pub pattern: Option<Pattern>,
 }
+
+/// This string determines which set of device specific rules this pusher executes.
+pub type ProfileTag = SmallString<[u8; 24]>;
+
+/// Tuned string type for displayname and app_display_name.
+pub type DisplayName = SmallString<[u8; 40]>;
+
+/// The preferred language for receiving notifications (e.g. 'en' or 'en-US').
+pub type Lang = SmallString<[u8; 8]>;
 
 impl<T> From<SimplePushRule<T>> for PushRule
 where
@@ -66,7 +76,7 @@ where
     fn from(push_rule: SimplePushRule<T>) -> Self {
         let SimplePushRule { actions, default, enabled, rule_id, .. } = push_rule;
         let rule_id = rule_id.into();
-        Self { actions, default, enabled, rule_id, conditions: None, pattern: None }
+        Self { actions, default, enabled, rule_id: rule_id.into(), conditions: None, pattern: None }
     }
 }
 
@@ -91,7 +101,7 @@ where
     fn from(init: SimplePushRuleInit<T>) -> Self {
         let SimplePushRuleInit { actions, default, enabled, rule_id } = init;
         let rule_id = rule_id.into();
-        Self { actions, default, enabled, rule_id, pattern: None, conditions: None }
+        Self { actions, default, enabled, rule_id: rule_id.into(), pattern: None, conditions: None }
     }
 }
 
@@ -139,7 +149,7 @@ where
 
     fn try_from(push_rule: PushRule) -> Result<Self, Self::Error> {
         let PushRule { actions, default, enabled, rule_id, .. } = push_rule;
-        let rule_id = T::try_from(rule_id)?;
+        let rule_id = T::try_from(rule_id.as_str().into())?;
         Ok(SimplePushRuleInit { actions, default, enabled, rule_id }.into())
     }
 }
@@ -217,17 +227,17 @@ pub struct Pusher {
     pub kind: PusherKind,
 
     /// A string that will allow the user to identify what application owns this pusher.
-    pub app_display_name: String,
+    pub app_display_name: DisplayName,
 
     /// A string that will allow the user to identify what device owns this pusher.
-    pub device_display_name: String,
+    pub device_display_name: DisplayName,
 
     /// Determines which set of device specific rules this pusher executes.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub profile_tag: Option<String>,
+    pub profile_tag: Option<ProfileTag>,
 
     /// The preferred language for receiving notifications (e.g. 'en' or 'en-US')
-    pub lang: String,
+    pub lang: Lang,
 }
 
 /// Initial set of fields of `Pusher`.
@@ -244,16 +254,16 @@ pub struct PusherInit {
     pub kind: PusherKind,
 
     /// A string that will allow the user to identify what application owns this pusher.
-    pub app_display_name: String,
+    pub app_display_name: DisplayName,
 
     /// A string that will allow the user to identify what device owns this pusher.
-    pub device_display_name: String,
+    pub device_display_name: DisplayName,
 
     /// Determines which set of device-specific rules this pusher executes.
-    pub profile_tag: Option<String>,
+    pub profile_tag: Option<ProfileTag>,
 
     /// The preferred language for receiving notifications (e.g. 'en' or 'en-US').
-    pub lang: String,
+    pub lang: Lang,
 }
 
 impl From<PusherInit> for Pusher {

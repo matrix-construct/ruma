@@ -10,7 +10,7 @@ pub mod v3 {
     use ruma_common::{
         api::{Metadata, auth_scheme::AccessToken, response},
         metadata,
-        push::{Action, NewPushRule, PushCondition},
+        push::{Actions, NewPushRule, Pattern, PushConditions},
     };
     use serde::{Deserialize, Serialize};
 
@@ -114,7 +114,7 @@ pub mod v3 {
             S: AsRef<str>,
         {
             use ruma_common::push::{
-                NewConditionalPushRule, NewPatternedPushRule, NewSimplePushRule,
+                NewConditionalPushRule, NewPatternedPushRule, NewSimplePushRule, RuleId,
             };
 
             // Exhaustive enum to fail deserialization on unknown variants.
@@ -136,7 +136,7 @@ pub mod v3 {
 
             Self::check_request_method(request.method())?;
 
-            let (kind, rule_id): (RuleKind, String) =
+            let (kind, rule_id): (RuleKind, RuleId) =
                 Deserialize::deserialize(serde::de::value::SeqDeserializer::<
                     _,
                     serde::de::value::Error,
@@ -163,13 +163,13 @@ pub mod v3 {
                 RuleKind::Sender => {
                     let SimpleRequestBody { actions } =
                         serde_json::from_slice(request.body().as_ref())?;
-                    let rule_id = rule_id.try_into()?;
+                    let rule_id = rule_id.as_str().try_into()?;
                     NewPushRule::Sender(NewSimplePushRule::new(rule_id, actions))
                 }
                 RuleKind::Room => {
                     let SimpleRequestBody { actions } =
                         serde_json::from_slice(request.body().as_ref())?;
-                    let rule_id = rule_id.try_into()?;
+                    let rule_id = rule_id.as_str().try_into()?;
                     NewPushRule::Room(NewSimplePushRule::new(rule_id, actions))
                 }
                 RuleKind::Content => {
@@ -204,21 +204,21 @@ pub mod v3 {
 
     #[derive(Debug, Serialize, Deserialize)]
     struct SimpleRequestBody {
-        actions: Vec<Action>,
+        actions: Actions,
     }
 
     #[derive(Debug, Serialize, Deserialize)]
     struct PatternedRequestBody {
-        actions: Vec<Action>,
+        actions: Actions,
 
-        pattern: String,
+        pattern: Pattern,
     }
 
     #[derive(Debug, Serialize, Deserialize)]
     struct ConditionalRequestBody {
-        actions: Vec<Action>,
+        actions: Actions,
 
-        conditions: Vec<PushCondition>,
+        conditions: PushConditions,
     }
 
     impl From<NewPushRule> for RequestBody {

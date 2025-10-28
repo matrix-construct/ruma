@@ -19,6 +19,7 @@ use ruma_events::{
     presence::PresenceEvent,
 };
 use serde::{Deserialize, Serialize};
+use smallstr::SmallString;
 
 mod response_serde;
 
@@ -35,6 +36,9 @@ metadata! {
     }
 }
 
+/// Since string type for batch tokens.
+pub type Since = SmallString<[u8; 16]>;
+
 /// Request type for the `sync` endpoint.
 #[request(error = crate::Error)]
 #[derive(Default)]
@@ -50,7 +54,7 @@ pub struct Request {
     /// request.
     #[serde(skip_serializing_if = "Option::is_none")]
     #[ruma_api(query)]
-    pub since: Option<String>,
+    pub since: Option<Since>,
 
     /// Controls whether to include the full state for all rooms the user is a member of.
     #[serde(default, skip_serializing_if = "ruma_common::serde::is_default")]
@@ -84,7 +88,7 @@ pub struct Request {
 #[response(error = crate::Error)]
 pub struct Response {
     /// The batch token to supply in the `since` param of the next `/sync` request.
-    pub next_batch: String,
+    pub next_batch: Since,
 
     /// Updates to rooms.
     #[serde(default, skip_serializing_if = "Rooms::is_empty")]
@@ -130,7 +134,7 @@ impl Request {
 
 impl Response {
     /// Creates a new `Response` with the given batch token.
-    pub fn new(next_batch: String) -> Self {
+    pub fn new(next_batch: Since) -> Self {
         Self {
             next_batch,
             rooms: Default::default(),
@@ -750,8 +754,8 @@ mod client_tests {
             features: Default::default(),
         };
         let req: http::Request<Vec<u8>> = Request {
-            filter: Some(Filter::FilterId("66696p746572".to_owned())),
-            since: Some("s72594_4483_1934".to_owned()),
+            filter: Some(Filter::FilterId("66696p746572".into())),
+            since: Some("s72594_4483_1934".into()),
             full_state: true,
             set_presence: PresenceState::Offline,
             timeout: Some(Duration::from_millis(30000)),
@@ -1122,7 +1126,7 @@ mod server_tests {
         let left_room_id = owned_room_id!("!left:localhost");
         let event = sync_state_event();
 
-        let mut response = Response::new("aaa".to_owned());
+        let mut response = Response::new("aaa".into());
 
         let mut joined_room = JoinedRoom::new();
         joined_room.timeline.events.push(event.clone().cast());
@@ -1168,7 +1172,7 @@ mod server_tests {
         let left_room_id = owned_room_id!("!left:localhost");
         let event = sync_state_event();
 
-        let mut response = Response::new("aaa".to_owned());
+        let mut response = Response::new("aaa".into());
 
         let mut joined_room = JoinedRoom::new();
         joined_room.state = State::Before(vec![event.clone()].into());
@@ -1213,7 +1217,7 @@ mod server_tests {
         let joined_room_id = owned_room_id!("!joined:localhost");
         let left_room_id = owned_room_id!("!left:localhost");
 
-        let mut response = Response::new("aaa".to_owned());
+        let mut response = Response::new("aaa".into());
 
         let mut joined_room = JoinedRoom::new();
         joined_room.state = State::After(Default::default());
@@ -1251,7 +1255,7 @@ mod server_tests {
         let left_room_id = owned_room_id!("!left:localhost");
         let event = sync_state_event();
 
-        let mut response = Response::new("aaa".to_owned());
+        let mut response = Response::new("aaa".into());
 
         let mut joined_room = JoinedRoom::new();
         joined_room.state = State::After(vec![event.clone()].into());
