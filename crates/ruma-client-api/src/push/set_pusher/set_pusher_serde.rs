@@ -81,10 +81,10 @@ mod tests {
             pusher: Pusher {
                 ids: PusherIds::new("abcdef".to_owned(), "my.matrix.app".to_owned()),
                 kind: PusherKind::Email(EmailPusherData::new()),
-                app_display_name: "My Matrix App".to_owned(),
-                device_display_name: "My Phone".to_owned(),
+                app_display_name: "My Matrix App".into(),
+                device_display_name: "My Phone".into(),
                 profile_tag: None,
-                lang: "en".to_owned(),
+                lang: "en".into(),
             },
             append: false,
         });

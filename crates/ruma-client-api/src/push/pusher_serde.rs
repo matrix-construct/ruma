@@ -1,17 +1,18 @@
 use ruma_common::serde::from_raw_json_value;
 use serde::{de, ser::SerializeStruct, Deserialize, Serialize};
 use serde_json::value::RawValue as RawJsonValue;
+use smallstr::SmallString;
 
-use super::{Pusher, PusherIds, PusherKind};
+use super::{DisplayName, Lang, ProfileTag, Pusher, PusherIds, PusherKind};
 
 #[derive(Debug, Deserialize)]
 struct PusherDeHelper {
     #[serde(flatten)]
     ids: PusherIds,
-    app_display_name: String,
-    device_display_name: String,
-    profile_tag: Option<String>,
-    lang: String,
+    app_display_name: DisplayName,
+    device_display_name: DisplayName,
+    profile_tag: Option<ProfileTag>,
+    lang: Lang,
 }
 
 impl<'de> Deserialize<'de> for Pusher {
@@ -23,6 +24,7 @@ impl<'de> Deserialize<'de> for Pusher {
 
         let PusherDeHelper { ids, app_display_name, device_display_name, profile_tag, lang } =
             from_raw_json_value(&json)?;
+
         let kind = from_raw_json_value(&json)?;
 
         Ok(Self { ids, kind, app_display_name, device_display_name, profile_tag, lang })
@@ -57,9 +59,11 @@ impl Serialize for PusherKind {
 
 #[derive(Debug, Deserialize)]
 struct PusherKindDeHelper {
-    kind: String,
+    kind: PushKind,
     data: Box<RawJsonValue>,
 }
+
+type PushKind = SmallString<[u8; 16]>;
 
 impl<'de> Deserialize<'de> for PusherKind {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
