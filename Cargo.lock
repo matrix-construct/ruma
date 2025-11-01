@@ -2005,6 +2005,7 @@ dependencies = [
  "ruma-signatures",
  "serde",
  "serde_json",
+ "smallstr",
  "thiserror",
  "tracing",
 ]

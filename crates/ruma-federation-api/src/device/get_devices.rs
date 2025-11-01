@@ -16,6 +16,7 @@ pub mod v1 {
         serde::Raw,
     };
     use serde::{Deserialize, Serialize};
+    use smallstr::SmallString;
 
     use crate::authentication::ServerSignatures;
 
@@ -95,8 +96,10 @@ pub mod v1 {
 
         /// Optional display name for the device
         #[serde(skip_serializing_if = "Option::is_none")]
-        pub device_display_name: Option<String>,
+        pub device_display_name: Option<DisplayName>,
     }
+
+    type DisplayName = SmallString<[u8; 40]>;
 
     impl UserDevice {
         /// Creates a new `UserDevice` with the given device id and keys.
