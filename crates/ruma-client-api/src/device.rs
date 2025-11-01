@@ -2,6 +2,7 @@
 
 use ruma_common::{MilliSecondsSinceUnixEpoch, OwnedDeviceId};
 use serde::{Deserialize, Serialize};
+use smallstr::SmallString;
 
 pub mod delete_device;
 pub mod delete_devices;
@@ -17,15 +18,18 @@ pub struct Device {
     pub device_id: OwnedDeviceId,
 
     /// Public display name of the device.
-    pub display_name: Option<String>,
+    pub display_name: Option<DisplayName>,
 
     /// Most recently seen IP address of the session.
-    pub last_seen_ip: Option<String>,
+    pub last_seen_ip: Option<LastSeenIp>,
 
     /// Unix timestamp that the session was last active.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub last_seen_ts: Option<MilliSecondsSinceUnixEpoch>,
 }
+
+type DisplayName = SmallString<[u8; 40]>;
+type LastSeenIp = SmallString<[u8; 48]>;
 
 impl Device {
     /// Creates a new `Device` with the given device ID.

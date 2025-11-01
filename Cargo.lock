@@ -2013,6 +2013,7 @@ dependencies = [
  "ruma-events",
  "serde",
  "serde_json",
+ "smallstr",
  "thiserror",
  "tracing",
 ]

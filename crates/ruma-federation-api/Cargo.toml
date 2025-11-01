@@ -46,6 +46,7 @@ ruma-common = { workspace = true, features = ["api"] }
 ruma-events = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
+smallstr = { workspace = true }
 thiserror = { workspace = true }
 tracing = { workspace = true }
 
