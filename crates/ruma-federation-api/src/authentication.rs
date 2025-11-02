@@ -182,15 +182,15 @@ impl XMatrix {
         let uri = request.uri().path_and_query().expect("http::Request should have a path");
 
         let mut request_object = CanonicalJsonObject::from([
-            ("destination".to_owned(), destination.as_str().into()),
-            ("method".to_owned(), request.method().as_str().into()),
-            ("origin".to_owned(), origin.as_str().into()),
-            ("uri".to_owned(), uri.as_str().into()),
+            ("destination".into(), destination.as_str().into()),
+            ("method".into(), request.method().as_str().into()),
+            ("origin".into(), origin.as_str().into()),
+            ("uri".into(), uri.as_str().into()),
         ]);
 
         if !body.is_empty() {
             let content = serde_json::from_slice(body)?;
-            request_object.insert("content".to_owned(), content);
+            request_object.insert("content".into(), content);
         }
 
         Ok(request_object)
@@ -237,10 +237,10 @@ impl XMatrix {
         let mut request_object = Self::request_object(request, &self.origin, destination)
             .map_err(|error| ruma_signatures::Error::Json(error.into()))?;
         let entity_signature =
-            CanonicalJsonObject::from([(self.key.to_string(), self.sig.encode().into())]);
+            CanonicalJsonObject::from([(self.key.as_str().into(), self.sig.encode().into())]);
         let signatures =
-            CanonicalJsonObject::from([(self.origin.to_string(), entity_signature.into())]);
-        request_object.insert("signatures".to_owned(), signatures.into());
+            CanonicalJsonObject::from([(self.origin.as_str().into(), entity_signature.into())]);
+        request_object.insert("signatures".into(), signatures.into());
 
         Ok(ruma_signatures::verify_json(public_key_map, &request_object)?)
     }

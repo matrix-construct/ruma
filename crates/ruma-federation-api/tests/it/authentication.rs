@@ -48,8 +48,8 @@ fn server_signatures_roundtrip() {
     );
 
     let public_key_set =
-        PublicKeySet::from([("ed25519:1".to_owned(), Base64::new(key_pair.public_key().to_vec()))]);
-    let public_key_map = PublicKeyMap::from([(origin.to_string(), public_key_set)]);
+        PublicKeySet::from([("ed25519:1".into(), Base64::new(key_pair.public_key().to_vec()))]);
+    let public_key_map = PublicKeyMap::from([(origin.as_str().into(), public_key_set)]);
 
     // With invalid destination.
     xmatrix

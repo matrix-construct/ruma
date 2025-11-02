@@ -33,7 +33,7 @@ impl Signature {
     pub fn new(id: &str, bytes: &[u8]) -> Result<Self, IdParseError> {
         let key_id = SigningKeyId::<AnyKeyName>::parse(id)?;
 
-        Ok(Self { key_id: key_id.to_owned(), signature: bytes.to_vec() })
+        Ok(Self { key_id: key_id.into(), signature: bytes.to_vec() })
     }
 
     /// The algorithm used to generate the signature.
@@ -55,8 +55,8 @@ impl Signature {
 
     /// The key identifier, a string containing the signature algorithm and the key "version"
     /// separated by a colon, e.g. `ed25519:1`.
-    pub fn id(&self) -> String {
-        self.key_id.to_string()
+    pub fn id(&self) -> &str {
+        self.key_id.as_str()
     }
 
     /// The "version" of the key used for this signature.
