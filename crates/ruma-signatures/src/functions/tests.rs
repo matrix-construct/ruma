@@ -23,25 +23,25 @@ fn generate_key_pair(name: &str) -> Ed25519KeyPair {
 }
 
 fn add_key_to_map(public_key_map: &mut PublicKeyMap, name: &str, pair: &Ed25519KeyPair) {
-    let sender_key_map = public_key_map.entry(name.to_owned()).or_default();
+    let sender_key_map = public_key_map.entry(name.into()).or_default();
     let encoded_public_key = Base64::new(pair.public_key().to_vec());
     let version = ServerSigningKeyId::from_parts(
         SigningKeyAlgorithm::Ed25519,
         pair.version().try_into().unwrap(),
     );
 
-    sender_key_map.insert(version.to_string(), encoded_public_key);
+    sender_key_map.insert(version.as_str().into(), encoded_public_key);
 }
 
 fn add_invalid_key_to_map(public_key_map: &mut PublicKeyMap, name: &str, pair: &Ed25519KeyPair) {
-    let sender_key_map = public_key_map.entry(name.to_owned()).or_default();
+    let sender_key_map = public_key_map.entry(name.into()).or_default();
     let encoded_public_key = Base64::new(pair.public_key().to_vec());
     let version = ServerSigningKeyId::from_parts(
         SigningKeyAlgorithm::from("an-unknown-algorithm"),
         pair.version().try_into().unwrap(),
     );
 
-    sender_key_map.insert(version.to_string(), encoded_public_key);
+    sender_key_map.insert(version.as_str().into(), encoded_public_key);
 }
 
 #[test]
@@ -308,8 +308,8 @@ fn verify_event_fails_if_public_key_is_invalid() {
         SigningKeyAlgorithm::Ed25519,
         key_pair_sender.version().try_into().unwrap(),
     );
-    sender_key_map.insert(version.to_string(), encoded_public_key);
-    public_key_map.insert("domain-sender".to_owned(), sender_key_map);
+    sender_key_map.insert(version.as_str().into(), encoded_public_key);
+    public_key_map.insert("domain-sender".into(), sender_key_map);
 
     let verification_result = verify_event(&public_key_map, &signed_event, &RoomVersionRules::V6);
 

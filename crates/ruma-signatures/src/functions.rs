@@ -1,14 +1,13 @@
 //! Functions for signing and verifying JSON and events.
 
 use std::{
-    borrow::Cow,
     collections::{BTreeMap, BTreeSet},
     mem,
 };
 
 use base64::{alphabet, Engine};
 use ruma_common::{
-    canonical_json::{redact, JsonType},
+    canonical_json::{redact, CanonicalJsonName, JsonType},
     room_version_rules::{EventIdFormatVersion, RedactionRules, RoomVersionRules, SignaturesRules},
     serde::{base64::Standard, Base64},
     AnyKeyName, CanonicalJsonObject, CanonicalJsonValue, OwnedEventId, OwnedServerName,
@@ -104,11 +103,12 @@ pub fn sign_json<K>(
 where
     K: KeyPair,
 {
-    let (signatures_key, mut signature_map) = match object.remove_entry("signatures") {
-        Some((key, CanonicalJsonValue::Object(signatures))) => (Cow::Owned(key), signatures),
-        Some(_) => return Err(JsonError::not_of_type("signatures", JsonType::Object)),
-        None => (Cow::Borrowed("signatures"), BTreeMap::new()),
-    };
+    let (signatures_key, mut signature_map): (CanonicalJsonName, _) =
+        match object.remove_entry("signatures") {
+            Some((key, CanonicalJsonValue::Object(signatures))) => (key, signatures),
+            Some(_) => return Err(JsonError::not_of_type("signatures", JsonType::Object)),
+            None => ("signatures".into(), BTreeMap::new()),
+        };
 
     let maybe_unsigned_entry = object.remove_entry("unsigned");
 
@@ -120,17 +120,17 @@ where
 
     // Insert the new signature in the map we pulled out (or created) previously.
     let signature_set = signature_map
-        .entry(entity_id.to_owned())
+        .entry(entity_id.into())
         .or_insert_with(|| CanonicalJsonValue::Object(BTreeMap::new()));
 
     let CanonicalJsonValue::Object(signature_set) = signature_set else {
         return Err(JsonError::not_multiples_of_type("signatures", JsonType::Object));
     };
 
-    signature_set.insert(signature.id(), CanonicalJsonValue::String(signature.base64()));
+    signature_set.insert(signature.id().into(), CanonicalJsonValue::String(signature.base64()));
 
     // Put `signatures` and `unsigned` back in.
-    object.insert(signatures_key.into(), CanonicalJsonValue::Object(signature_map));
+    object.insert(signatures_key, CanonicalJsonValue::Object(signature_map));
 
     if let Some((k, v)) = maybe_unsigned_entry {
         object.insert(k, v);
@@ -288,7 +288,7 @@ fn verify_canonical_json_for_entity(
         let Some(public_key) = public_keys.get(key_id) else {
             return Err(VerificationError::PublicKeyNotFound {
                 entity: entity_id.to_owned(),
-                key_id: key_id.clone(),
+                key_id: key_id.clone().into_string(),
             }
             .into());
         };
@@ -555,7 +555,7 @@ where
     let hash = content_hash(object)?;
 
     let hashes_value = object
-        .entry("hashes".to_owned())
+        .entry("hashes".into())
         .or_insert_with(|| CanonicalJsonValue::Object(BTreeMap::new()));
 
     match hashes_value {
@@ -730,7 +730,7 @@ pub fn required_keys(
 
         let entry = map.entry(server.clone()).or_default();
         set.keys()
-            .cloned()
+            .map(CanonicalJsonName::to_string)
             .map(TryInto::try_into)
             .filter_map(Result::ok)
             .for_each(|key_id| entry.push(key_id));

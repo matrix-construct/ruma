@@ -41,7 +41,9 @@ pub mod to_device;
 use std::fmt;
 
 #[cfg(feature = "canonical-json")]
-pub use self::canonical_json::{CanonicalJsonError, CanonicalJsonObject, CanonicalJsonValue};
+pub use self::canonical_json::{
+    CanonicalJsonError, CanonicalJsonName, CanonicalJsonObject, CanonicalJsonValue,
+};
 pub use self::{
     identifiers::*,
     time::{MilliSecondsSinceUnixEpoch, SecondsSinceUnixEpoch},

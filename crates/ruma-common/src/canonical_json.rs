@@ -7,7 +7,7 @@ use serde_json::Value as JsonValue;
 
 mod value;
 
-pub use self::value::{CanonicalJsonObject, CanonicalJsonValue};
+pub use self::value::{CanonicalJsonName, CanonicalJsonObject, CanonicalJsonValue};
 use crate::{room_version_rules::RedactionRules, serde::Raw};
 
 /// The set of possible errors when serializing to canonical JSON.
@@ -103,7 +103,7 @@ pub enum JsonType {
 pub fn try_from_json_map(
     json: serde_json::Map<String, JsonValue>,
 ) -> Result<CanonicalJsonObject, CanonicalJsonError> {
-    json.into_iter().map(|(k, v)| Ok((k, v.try_into()?))).collect()
+    json.into_iter().map(|(k, v)| Ok((k.into(), v.try_into()?))).collect()
 }
 
 /// Fallible conversion from any value that impl's `Serialize` to a `CanonicalJsonValue`.
@@ -199,10 +199,10 @@ pub fn redact_in_place(
 
     if let Some(redacted_because) = redacted_because {
         let unsigned = CanonicalJsonObject::from_iter([(
-            "redacted_because".to_owned(),
+            "redacted_because".into(),
             redacted_because.0.into(),
         )]);
-        event.insert("unsigned".to_owned(), unsigned.into());
+        event.insert("unsigned".into(), unsigned.into());
     }
 
     Ok(())

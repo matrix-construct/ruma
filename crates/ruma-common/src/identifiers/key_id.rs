@@ -58,12 +58,8 @@ impl<A: KeyAlgorithm, K: KeyName + ?Sized> KeyId<A, K> {
         let algorithm = algorithm.as_ref();
         let key_name = key_name.as_ref();
 
-        let mut res = String::with_capacity(algorithm.len() + 1 + key_name.len());
-        res.push_str(algorithm);
-        res.push(':');
-        res.push_str(key_name);
-
-        Self::from_borrowed(&res).to_owned()
+        OwnedKeyId::from_iov(&[algorithm, ":", key_name])
+            .expect("Failed to construct KeyId from KeyAlgorithm and KeyName")
     }
 
     /// Returns key algorithm of the key ID - the part that comes before the colon.
@@ -99,7 +95,7 @@ impl<A: KeyAlgorithm, K: KeyName + ?Sized> KeyId<A, K> {
     }
 
     fn colon_idx(&self) -> usize {
-        self.as_str().find(':').unwrap()
+        self.as_str().find(':').expect("Missing ':' in identifier.")
     }
 }
 

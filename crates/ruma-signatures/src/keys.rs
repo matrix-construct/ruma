@@ -9,7 +9,9 @@ use ed25519_dalek::{pkcs8::ALGORITHM_OID, SecretKey, Signer, SigningKey, PUBLIC_
 use pkcs8::{
     der::zeroize::Zeroizing, DecodePrivateKey, EncodePrivateKey, ObjectIdentifier, PrivateKeyInfo,
 };
-use ruma_common::{serde::Base64, SigningKeyAlgorithm, SigningKeyId};
+use ruma_common::{
+    canonical_json::CanonicalJsonName, serde::Base64, SigningKeyAlgorithm, SigningKeyId,
+};
 
 use crate::{signatures::Signature, Error, ParseError};
 
@@ -178,12 +180,12 @@ impl Debug for Ed25519KeyPair {
 /// A map from entity names to sets of public keys for that entity.
 ///
 /// An entity is generally a homeserver, e.g. `example.com`.
-pub type PublicKeyMap = BTreeMap<String, PublicKeySet>;
+pub type PublicKeyMap = BTreeMap<CanonicalJsonName, PublicKeySet>;
 
 /// A set of public keys for a single homeserver.
 ///
 /// This is represented as a map from key ID to base64-encoded signature.
-pub type PublicKeySet = BTreeMap<String, Base64>;
+pub type PublicKeySet = BTreeMap<CanonicalJsonName, Base64>;
 
 #[cfg(test)]
 mod tests {

@@ -4,12 +4,20 @@ use as_variant::as_variant;
 use js_int::{Int, UInt};
 use serde::{de::Deserializer, ser::Serializer, Deserialize, Serialize};
 use serde_json::{to_string as to_json_string, Value as JsonValue};
+use smallstr::SmallString;
 
 use super::CanonicalJsonError;
 use crate::serde::{JsonCastable, JsonObject};
 
 /// The inner type of `CanonicalJsonValue::Object`.
-pub type CanonicalJsonObject = BTreeMap<String, CanonicalJsonValue>;
+pub type CanonicalJsonObject = BTreeMap<CanonicalJsonName, CanonicalJsonValue>;
+
+/// Property name (or key) for an Object. This is a string-like but typographically distinct for
+/// optimization purposes.
+pub type CanonicalJsonName = SmallString<[u8; NAME_INLINE_CAP]>;
+
+/// Opinionated buffer size of the CanonicalJsonName type.
+const NAME_INLINE_CAP: usize = 32;
 
 impl<T> JsonCastable<CanonicalJsonObject> for T where T: JsonCastable<JsonObject> {}
 
@@ -188,7 +196,7 @@ impl TryFrom<JsonValue> for CanonicalJsonValue {
             JsonValue::String(string) => Self::String(string),
             JsonValue::Object(obj) => Self::Object(
                 obj.into_iter()
-                    .map(|(k, v)| Ok((k, v.try_into()?)))
+                    .map(|(k, v)| Ok((k.into(), v.try_into()?)))
                     .collect::<Result<CanonicalJsonObject, _>>()?,
             ),
             JsonValue::Null => Self::Null,
@@ -206,7 +214,7 @@ impl From<CanonicalJsonValue> for JsonValue {
                 Self::Array(vec.into_iter().map(Into::into).collect())
             }
             CanonicalJsonValue::Object(obj) => {
-                Self::Object(obj.into_iter().map(|(k, v)| (k, v.into())).collect())
+                Self::Object(obj.into_iter().map(|(k, v)| (k.into_string(), v.into())).collect())
             }
             CanonicalJsonValue::Null => Self::Null,
         }
