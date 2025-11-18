@@ -368,8 +368,8 @@ impl PushConditionRoomCtx {
     }
 
     /// Add the given power levels context to this `PushConditionRoomCtx`.
-    pub fn with_power_levels(self, power_levels: PushConditionPowerLevelsCtx) -> Self {
-        Self { power_levels: Some(power_levels), ..self }
+    pub fn with_power_levels(self, power_levels: Option<PushConditionPowerLevelsCtx>) -> Self {
+        Self { power_levels, ..self }
     }
 }
 
