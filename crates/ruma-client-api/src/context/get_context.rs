@@ -73,7 +73,7 @@ pub mod v3 {
 
         /// A list of room events that happened just before the requested event,
         /// in reverse-chronological order.
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        #[serde(default)]
         pub events_before: Vec<Raw<AnyTimelineEvent>>,
 
         /// Details of the requested event.
