@@ -39,6 +39,9 @@ event_enum! {
         "m.push_rules" => super::push_rules,
         "m.secret_storage.default_key" => super::secret_storage::default_key,
         "m.secret_storage.key.*" => super::secret_storage::key,
+        #[cfg(feature = "unstable-msc4380")]
+        #[ruma_enum(ident = InvitePermissionConfig, alias = "m.invite_permission_config")]
+        "org.matrix.msc4380.invite_permission_config" => super::invite_permission_config,
         #[cfg(feature = "unstable-msc4278")]
         "m.media_preview_config" => super::media_preview_config,
         #[cfg(feature = "unstable-msc4278")]

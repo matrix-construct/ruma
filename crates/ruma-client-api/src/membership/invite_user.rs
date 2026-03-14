@@ -5,7 +5,6 @@
 pub mod v3 {
     //! `/v3/` ([spec (MXID)][spec-mxid], [spec (3PID)][spec-3pid])
     //!
-    //! This endpoint has two forms: one to invite a user
     //! [by their Matrix identifier][spec-mxid], and one to invite a user
     //! [by their third party identifier][spec-3pid].
     //!

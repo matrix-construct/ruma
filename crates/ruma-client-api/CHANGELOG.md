@@ -54,6 +54,11 @@ Breaking changes:
 
 Improvements:
 
+- Add `M_INVITE_BLOCKED` candidate error code proposed by
+  [MSC4380](https://github.com/matrix-org/matrix-spec-proposals/pull/4380)
+  sharing an unstable prefix with the preceding
+  [MSC4155](https://github.com/matrix-org/matrix-spec-proposals/pull/4155).
+
 - Added support for the sliding sync extension for thread subscriptions, as well as the
   accompanying endpoint, both from experimental MSC4308.
 - Added support for the experiment MSC4306 thread subscription endpoints.

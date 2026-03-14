@@ -165,6 +165,8 @@ pub mod image_pack;
 pub mod key;
 #[cfg(feature = "unstable-msc3488")]
 pub mod location;
+#[cfg(feature = "unstable-msc4380")]
+pub mod invite_permission_config;
 pub mod marked_unread;
 #[cfg(feature = "unstable-msc4278")]
 pub mod media_preview_config;

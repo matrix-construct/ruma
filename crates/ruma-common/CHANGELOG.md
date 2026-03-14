@@ -2,6 +2,8 @@
 
 Improvements:
 
+- Add `M_INVITE_BLOCKED` candidate error code proposed by
+  [MSC4380](https://github.com/matrix-org/matrix-spec-proposals/pull/4380).
 - Add `MatrixVersion::V1_16`
 - Remove support for the `org.matrix.hydra.11` room version and the
   corresponding `unstable-hydra` cargo feature. It should only have been used
@@ -86,6 +88,8 @@ Bug fix:
 - Set the `disposition` of `RoomVersionRules::MSC2870` as unstable.
 
 Improvements:
+
+- Add `org.matrix.msc4380` unstable feature support to `/versions`.
 
 - Implement the `Zeroize` trait for the `Base64` type.
 - `ProtocolInstance` has an `instance_id` field, due to a clarification in the
