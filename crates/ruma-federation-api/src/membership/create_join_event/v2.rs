@@ -4,7 +4,7 @@
 
 use ruma_common::{
     api::{request, response, Metadata},
-    metadata, OwnedEventId, OwnedRoomId,
+    metadata, OwnedEventId, OwnedRoomId, OwnedServerName,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::value::RawValue as RawJsonValue;
@@ -111,7 +111,7 @@ pub struct RoomState {
     ///
     /// Required if `members_omitted` is set to `true`.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub servers_in_room: Option<Vec<String>>,
+    pub servers_in_room: Option<Vec<OwnedServerName>>,
 }
 
 impl RoomState {
