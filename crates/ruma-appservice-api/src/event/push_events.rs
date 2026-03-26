@@ -281,7 +281,8 @@ pub mod v1 {
                     "msgtype": "m.text",
                 },
             });
-            let dummy_event = from_json_value(dummy_event_json.clone()).unwrap();
+            let dummy_event = dummy_event_json.clone().into();
+
             let events = vec![dummy_event];
             let supported = SupportedVersions {
                 versions: [MatrixVersion::V1_1].into(),

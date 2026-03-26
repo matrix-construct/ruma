@@ -224,7 +224,10 @@ mod tests {
             .try_into_http_request::<Vec<u8>>(
                 "http://localhost/",
                 SendAccessToken::Always("access_token"),
-                &SupportedVersions::from_parts(&["v11".to_owned()], &Default::default()),
+                &SupportedVersions::from_parts(
+                    ["v11"].into_iter(),
+                    std::collections::BTreeMap::default().into_iter(),
+                ),
             )
             .unwrap();
 

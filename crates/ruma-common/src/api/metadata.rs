@@ -1573,34 +1573,47 @@ mod tests {
     fn supported_versions_from_parts() {
         let empty_features = BTreeMap::new();
 
-        let none = &[];
-        let none_supported = SupportedVersions::from_parts(none, &empty_features);
+        let none: [&str; 0] = [];
+        let none_supported = SupportedVersions::from_parts(
+            none.clone().into_iter(),
+            empty_features.clone().into_iter(),
+        );
         assert_eq!(none_supported.versions, BTreeSet::new());
         assert_eq!(none_supported.features, BTreeSet::new());
 
-        let single_known = &["r0.6.0".to_owned()];
-        let single_known_supported = SupportedVersions::from_parts(single_known, &empty_features);
+        let single_known = ["r0.6.0"];
+        let single_known_supported = SupportedVersions::from_parts(
+            single_known.clone().into_iter(),
+            empty_features.clone().into_iter(),
+        );
         assert_eq!(single_known_supported.versions, BTreeSet::from([V1_0]));
         assert_eq!(single_known_supported.features, BTreeSet::new());
 
-        let multiple_known = &["v1.1".to_owned(), "r0.6.0".to_owned(), "r0.6.1".to_owned()];
-        let multiple_known_supported =
-            SupportedVersions::from_parts(multiple_known, &empty_features);
+        let multiple_known = ["v1.1", "r0.6.0", "r0.6.1"];
+        let multiple_known_supported = SupportedVersions::from_parts(
+            multiple_known.clone().into_iter(),
+            empty_features.clone().into_iter(),
+        );
         assert_eq!(multiple_known_supported.versions, BTreeSet::from([V1_0, V1_1]));
         assert_eq!(multiple_known_supported.features, BTreeSet::new());
 
-        let single_unknown = &["v0.0".to_owned()];
-        let single_unknown_supported =
-            SupportedVersions::from_parts(single_unknown, &empty_features);
+        let single_unknown = ["v0.0"];
+        let single_unknown_supported = SupportedVersions::from_parts(
+            single_unknown.clone().into_iter(),
+            empty_features.clone().into_iter(),
+        );
         assert_eq!(single_unknown_supported.versions, BTreeSet::new());
         assert_eq!(single_unknown_supported.features, BTreeSet::new());
 
         let mut features = BTreeMap::new();
-        features.insert("org.bar.enabled_1".to_owned(), true);
-        features.insert("org.bar.disabled".to_owned(), false);
-        features.insert("org.bar.enabled_2".to_owned(), true);
+        features.insert("org.bar.enabled_1", &true);
+        features.insert("org.bar.disabled", &false);
+        features.insert("org.bar.enabled_2", &true);
 
-        let features_supported = SupportedVersions::from_parts(single_known, &features);
+        let features_supported = SupportedVersions::from_parts(
+            single_known.clone().into_iter(),
+            features.clone().into_iter(),
+        );
         assert_eq!(features_supported.versions, BTreeSet::from([V1_0]));
         assert_eq!(
             features_supported.features,
@@ -1612,38 +1625,23 @@ mod tests {
     fn supported_versions_from_parts_order() {
         let empty_features = BTreeMap::new();
 
-        let sorted = &[
-            "r0.0.1".to_owned(),
-            "r0.5.0".to_owned(),
-            "r0.6.0".to_owned(),
-            "r0.6.1".to_owned(),
-            "v1.1".to_owned(),
-            "v1.2".to_owned(),
-        ];
-        let sorted_supported = SupportedVersions::from_parts(sorted, &empty_features);
+        let sorted = ["r0.0.1", "r0.5.0", "r0.6.0", "r0.6.1", "v1.1", "v1.2"];
+        let sorted_supported =
+            SupportedVersions::from_parts(sorted.into_iter(), empty_features.clone().into_iter());
         assert_eq!(sorted_supported.versions, BTreeSet::from([V1_0, V1_1, V1_2]));
 
-        let sorted_reverse = &[
-            "v1.2".to_owned(),
-            "v1.1".to_owned(),
-            "r0.6.1".to_owned(),
-            "r0.6.0".to_owned(),
-            "r0.5.0".to_owned(),
-            "r0.0.1".to_owned(),
-        ];
-        let sorted_reverse_supported =
-            SupportedVersions::from_parts(sorted_reverse, &empty_features);
+        let sorted_reverse = ["v1.2", "v1.1", "r0.6.1", "r0.6.0", "r0.5.0", "r0.0.1"];
+        let sorted_reverse_supported = SupportedVersions::from_parts(
+            sorted_reverse.into_iter(),
+            empty_features.clone().into_iter(),
+        );
         assert_eq!(sorted_reverse_supported.versions, BTreeSet::from([V1_0, V1_1, V1_2]));
 
-        let random_order = &[
-            "v1.1".to_owned(),
-            "r0.6.1".to_owned(),
-            "r0.5.0".to_owned(),
-            "r0.6.0".to_owned(),
-            "r0.0.1".to_owned(),
-            "v1.2".to_owned(),
-        ];
-        let random_order_supported = SupportedVersions::from_parts(random_order, &empty_features);
+        let random_order = ["v1.1", "r0.6.1", "r0.5.0", "r0.6.0", "r0.0.1", "v1.2"];
+        let random_order_supported = SupportedVersions::from_parts(
+            random_order.into_iter(),
+            empty_features.clone().into_iter(),
+        );
         assert_eq!(random_order_supported.versions, BTreeSet::from([V1_0, V1_1, V1_2]));
     }
 

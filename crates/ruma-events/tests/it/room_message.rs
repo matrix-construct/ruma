@@ -392,7 +392,7 @@ fn reply_thread_serialization_roundtrip() {
     )
     .make_reply_to(&threaded_message, ForwardThread::Yes, AddMentions::No);
 
-    let as_raw = Raw::new(&reply_as_thread_fallback).unwrap();
+    let as_raw = Raw::<RoomMessageEventContent>::new(&reply_as_thread_fallback).unwrap();
 
     let reply_as_thread_fallback = as_raw.deserialize().unwrap();
 

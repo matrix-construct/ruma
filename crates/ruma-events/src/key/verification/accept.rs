@@ -367,7 +367,7 @@ mod tests {
             }),
         };
 
-        let json_content = Raw::new(&content).unwrap();
+        let json_content = Raw::<KeyVerificationAcceptEventContent>::new(&content).unwrap();
         let deser_content = json_content.deserialize().unwrap();
 
         assert_matches!(deser_content.method, AcceptMethod::SasV1(_));

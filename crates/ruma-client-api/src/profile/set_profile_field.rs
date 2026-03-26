@@ -124,6 +124,8 @@ pub mod v3 {
 
 #[cfg(test)]
 mod tests {
+    use std::collections::BTreeMap;
+
     use assert_matches2::assert_matches;
     use ruma_common::{owned_mxc_uri, owned_user_id};
     use serde_json::{
@@ -147,7 +149,10 @@ mod tests {
             .try_into_http_request::<Vec<u8>>(
                 "http://localhost/",
                 SendAccessToken::Always("access_token"),
-                &SupportedVersions::from_parts(&["v11".to_owned()], &Default::default()),
+                &SupportedVersions::from_parts(
+                    ["v11"].into_iter(),
+                    BTreeMap::default().into_iter(),
+                ),
             )
             .unwrap();
 
