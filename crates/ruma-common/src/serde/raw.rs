@@ -57,11 +57,6 @@ impl<T> Raw<T> {
         to_raw_json_value(val).map(Self::from_json)
     }
 
-    /// Create a `Raw` from a boxed `RawValue`.
-    pub fn from_json(json: Box<RawJsonValue>) -> Self {
-        Self { json, _ev: PhantomData }
-    }
-
     /// Convert an owned `String` of JSON data to `Raw<T>`.
     ///
     /// This function is equivalent to `serde_json::from_str::<Raw<T>>` except that an allocation
@@ -73,14 +68,29 @@ impl<T> Raw<T> {
         RawJsonValue::from_string(json).map(Self::from_json)
     }
 
-    /// Access the underlying json value.
-    pub fn json(&self) -> &RawJsonValue {
-        &self.json
+    /// Create a `Raw` from a json Value.
+    pub fn from_json_value(json: &JsonValue) -> Self {
+        to_raw_json_value(json)
+            .map(Self::from_json)
+            .expect("JsonValue failed to serialize to raw value")
+    }
+
+    /// Create a `Raw` from a boxed `RawValue`.
+    #[inline]
+    pub fn from_json(json: Box<RawJsonValue>) -> Self {
+        Self { json, _ev: PhantomData }
     }
 
     /// Convert `self` into the underlying json value.
+    #[inline]
     pub fn into_json(self) -> Box<RawJsonValue> {
         self.json
+    }
+
+    /// Access the underlying json value.
+    #[inline]
+    pub fn json(&self) -> &RawJsonValue {
+        &self.json
     }
 
     /// Try to access a given field inside this `Raw`, assuming it contains an object.
@@ -257,6 +267,20 @@ impl<T> Debug for Raw<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         use std::any::type_name;
         f.debug_struct(&format!("Raw::<{}>", type_name::<T>())).field("json", &self.json).finish()
+    }
+}
+
+impl<T> From<JsonValue> for Raw<T> {
+    #[inline]
+    fn from(other: JsonValue) -> Self {
+        Self::from_json_value(&other)
+    }
+}
+
+impl<T> From<Box<RawJsonValue>> for Raw<T> {
+    #[inline]
+    fn from(other: Box<RawJsonValue>) -> Self {
+        Self::from_json(other)
     }
 }
 
