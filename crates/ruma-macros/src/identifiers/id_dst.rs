@@ -112,6 +112,13 @@ impl IdDst {
             }
 
             #[automatically_derived]
+            impl #impl_generics ::std::borrow::Borrow<#str> for #id {
+                fn borrow(&self) -> &#str {
+                    self.as_str()
+                }
+            }
+
+            #[automatically_derived]
             impl #impl_generics ::std::convert::AsRef<#id> for #id {
                 fn as_ref(&self) -> &#id {
                     self
@@ -336,6 +343,13 @@ impl IdDst {
             #[automatically_derived]
             impl #impl_generics ::std::borrow::Borrow<#id> for #owned_id {
                 fn borrow(&self) -> &#id {
+                    self.as_ref()
+                }
+            }
+
+            #[automatically_derived]
+            impl #impl_generics ::std::borrow::Borrow<#str> for #owned_id {
+                fn borrow(&self) -> &#str {
                     self.as_ref()
                 }
             }

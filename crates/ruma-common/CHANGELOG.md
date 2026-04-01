@@ -82,6 +82,8 @@ Improvements:
 - Add `Error::is_endpoint_not_implemented()` helper method to check if it
   matches the expected format for endpoints that are not implemented by the
   homeserver.
+- The `IdDst` macro generates `Borrow<str>` implementations for the borrowed and
+  owned identifier structs.
 
 ## 0.17.1
 
