@@ -49,6 +49,9 @@ Breaking changes:
   clarify that is is not to be used outside of the signing/verifying context.
 - Update `Ed25519KeyPair::generate` to return bytes directly, not a `Result`
   - The previous implementation should have never returned an `Err` anyways
+- `verify_event()` and `verify_json()` take a type implementing
+  `FetchEntityPublicSigningKey`. It allows to use other types than
+  `PublicKeyMap` that might have better optimizations.
 
 Improvements:
 
