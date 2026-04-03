@@ -41,10 +41,10 @@ Breaking changes:
 - `JsonType` was renamed to `CanonicalJsonType` to reflect that it only
   represents the possible types of a `CanonicalJsonValue`. It can also be
   accessed with `CanonicalJsonValue::json_type()`.
-- Refactor and improve the variants of `RedactionError`:
+- `RedactionError` was renamed to `CanonicalJsonFieldError`.
   - `NotOfType` was renamed to `InvalidType` and provides more details about the
     invalid field.
-  - `JsonFieldMissingFromObject` was renamed to `MissingField` an provides the
+  - `JsonFieldMissingFromObject` was renamed to `Missing` an provides the
     full path of the missing field.
 - `redact_content_in_place()` is now infallible.
 - `MatrixError` and `MatrixErrorBody` were renamed to `Error` and `ErrorBody`
@@ -87,6 +87,8 @@ Improvements:
 - Add `Error::is_endpoint_not_implemented()` helper method to check if it
   matches the expected format for endpoints that are not implemented by the
   homeserver.
+- Add `CanonicalJsonObjectExt` as a helper trait to extract fields from a
+  `CanonicalJsonObject`.
 
 ## 0.17.1
 
