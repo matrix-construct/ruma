@@ -54,6 +54,18 @@ pub mod v3 {
             skip_serializing_if = "ruma_common::serde::is_default"
         )]
         pub thread: ReceiptThread,
+
+        /// Whether to allow the fully-read marker to move backwards.
+        ///
+        /// This uses the unstable prefix in MSC4446 and is only meaningful for
+        /// [`ReceiptType::FullyRead`].
+        #[cfg(feature = "unstable-msc4446")]
+        #[serde(
+            rename = "com.beeper.allow_backward",
+            default,
+            skip_serializing_if = "ruma_common::serde::is_default"
+        )]
+        pub allow_backward: bool,
     }
 
     /// Response type for the `create_receipt` endpoint.
@@ -68,7 +80,14 @@ pub mod v3 {
             receipt_type: ReceiptType,
             event_id: OwnedEventId,
         ) -> Self {
-            Self { room_id, receipt_type, event_id, thread: ReceiptThread::default() }
+            Self {
+                room_id,
+                receipt_type,
+                event_id,
+                thread: ReceiptThread::default(),
+                #[cfg(feature = "unstable-msc4446")]
+                allow_backward: false,
+            }
         }
     }
 

@@ -66,6 +66,17 @@ pub mod v3 {
         /// [`ReceiptType::ReadPrivate`]: crate::receipt::create_receipt::v3::ReceiptType::ReadPrivate
         #[serde(rename = "m.read.private", skip_serializing_if = "Option::is_none")]
         pub private_read_receipt: Option<OwnedEventId>,
+
+        /// Whether to allow the fully-read marker to move backwards.
+        ///
+        /// This uses the unstable prefix in MSC4446.
+        #[cfg(feature = "unstable-msc4446")]
+        #[serde(
+            rename = "com.beeper.allow_backward",
+            default,
+            skip_serializing_if = "ruma_common::serde::is_default"
+        )]
+        pub allow_backward: bool,
     }
 
     /// Response type for the `set_read_marker` endpoint.
@@ -76,7 +87,14 @@ pub mod v3 {
     impl Request {
         /// Creates a new `Request` with the given room ID.
         pub fn new(room_id: OwnedRoomId) -> Self {
-            Self { room_id, fully_read: None, read_receipt: None, private_read_receipt: None }
+            Self {
+                room_id,
+                fully_read: None,
+                read_receipt: None,
+                private_read_receipt: None,
+                #[cfg(feature = "unstable-msc4446")]
+                allow_backward: false,
+            }
         }
     }
 
