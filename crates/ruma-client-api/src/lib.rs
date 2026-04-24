@@ -53,6 +53,7 @@ pub mod tag;
 pub mod thirdparty;
 pub mod threads;
 pub mod to_device;
+pub mod tuwunel;
 pub mod typing;
 pub mod uiaa;
 pub mod user_directory;
