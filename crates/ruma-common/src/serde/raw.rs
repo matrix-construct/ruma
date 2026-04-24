@@ -209,7 +209,9 @@ impl<T, const INLINE_SIZE: usize> Clone for Raw<T, INLINE_SIZE> {
 impl<T, const INLINE_SIZE: usize> Debug for Raw<T, INLINE_SIZE> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         use std::any::type_name;
-        f.debug_struct(&format!("Raw::<{}>", type_name::<T>())).field("json", &self.json).finish()
+        f.debug_struct(&format!("Raw::<{}>", type_name::<T>()))
+            .field("json", &str::from_utf8(&self.json).expect("invalid utf8"))
+            .finish()
     }
 }
 
