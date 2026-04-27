@@ -28,8 +28,8 @@ pub struct Device {
     pub last_seen_ts: Option<MilliSecondsSinceUnixEpoch>,
 }
 
-type DisplayName = SmallString<[u8; 40]>;
-type LastSeenIp = SmallString<[u8; 48]>;
+pub type DisplayName = SmallString<[u8; 40]>;
+pub type LastSeenIp = SmallString<[u8; 48]>;
 
 impl Device {
     /// Creates a new `Device` with the given device ID.
