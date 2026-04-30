@@ -18,9 +18,11 @@ pub struct Device {
     pub device_id: OwnedDeviceId,
 
     /// Public display name of the device.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub display_name: Option<DisplayName>,
 
     /// Most recently seen IP address of the session.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub last_seen_ip: Option<LastSeenIp>,
 
     /// Unix timestamp that the session was last active.
