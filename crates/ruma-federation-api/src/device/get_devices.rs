@@ -16,8 +16,12 @@ pub mod v1 {
         serde::Raw,
     };
     use serde::{Deserialize, Serialize};
+    use smallstr::SmallString;
 
     use crate::authentication::ServerSignatures;
+
+    /// Inline-byte buffer for a device's display name.
+    pub type DisplayName = SmallString<[u8; 40]>;
 
     metadata! {
         method: GET,
@@ -95,7 +99,7 @@ pub mod v1 {
 
         /// Optional display name for the device
         #[serde(skip_serializing_if = "Option::is_none")]
-        pub device_display_name: Option<String>,
+        pub device_display_name: Option<DisplayName>,
     }
 
     impl UserDevice {
