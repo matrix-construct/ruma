@@ -6,17 +6,19 @@ use serde::Serialize;
 use serde_json::Value as JsonValue;
 
 mod macros;
+mod object;
 mod redaction;
 mod serializer;
 mod value;
 
 pub use self::{
+    object::*,
     redaction::{
         RedactedBecause, RedactionError, RedactionEvent, redact, redact_content_in_place,
         redact_in_place,
     },
     serializer::Serializer,
-    value::{CanonicalJsonObject, CanonicalJsonType, CanonicalJsonValue},
+    value::{CanonicalJsonType, CanonicalJsonValue},
 };
 #[doc(inline)]
 pub use crate::assert_to_canonical_json_eq;
@@ -42,7 +44,7 @@ pub fn to_canonical_value<T: Serialize>(
 pub fn try_from_json_map(
     json: serde_json::Map<String, JsonValue>,
 ) -> Result<CanonicalJsonObject, CanonicalJsonError> {
-    json.into_iter().map(|(k, v)| Ok((k, v.try_into()?))).collect()
+    json.into_iter().map(|(k, v)| Ok((k.into(), v.try_into()?))).collect()
 }
 
 /// The set of possible errors when serializing to canonical JSON.
@@ -64,6 +66,9 @@ pub enum CanonicalJsonError {
     /// An error occurred while re-serializing a [`serde_json::value::RawValue`].
     InvalidRawValue(serde_json::Error),
 
+    /// A general serialization or deserialization error from `serde_json`.
+    SerDe(serde_json::Error),
+
     /// An other error happened.
     Other(String),
 }
@@ -79,6 +84,7 @@ impl fmt::Display for CanonicalJsonError {
             Self::InvalidRawValue(error) => {
                 write!(f, "invalid raw value: {error}")
             }
+            Self::SerDe(error) => write!(f, "serde error: {error}"),
             Self::DuplicateObjectKey(key) => write!(f, "duplicate object key `{key}`"),
             Self::Other(msg) => f.write_str(msg),
         }

@@ -360,7 +360,7 @@ fn verify_canonical_json_for_entity(
     let mut checked = false;
     for (key_id, signature) in signature_set {
         // If the key is not in the map of public keys, ignore.
-        let Some(public_key) = public_keys.get(key_id) else {
+        let Some(public_key) = public_keys.get(key_id.as_str()) else {
             continue;
         };
 
@@ -544,8 +544,7 @@ pub fn required_keys(
 
         let entry = map.entry(server.clone()).or_default();
         set.keys()
-            .cloned()
-            .map(TryInto::try_into)
+            .map(|k| k.as_str().try_into())
             .filter_map(Result::ok)
             .for_each(|key_id| entry.push(key_id));
     }
