@@ -1,17 +1,18 @@
 use ruma_common::serde::from_raw_json_value;
 use serde::{Deserialize, Serialize, de, ser::SerializeStruct};
 use serde_json::value::RawValue as RawJsonValue;
+use smallstr::SmallString;
 
-use super::{CustomPusherData, Pusher, PusherIds, PusherKind};
+use super::{DisplayName, Lang, ProfileTag, Pusher, PusherIds, PusherKind};
 
 #[derive(Debug, Deserialize)]
 struct PusherDeHelper {
     #[serde(flatten)]
     ids: PusherIds,
-    app_display_name: String,
-    device_display_name: String,
-    profile_tag: Option<String>,
-    lang: String,
+    app_display_name: DisplayName,
+    device_display_name: DisplayName,
+    profile_tag: Option<ProfileTag>,
+    lang: Lang,
 }
 
 impl<'de> Deserialize<'de> for Pusher {
@@ -23,6 +24,7 @@ impl<'de> Deserialize<'de> for Pusher {
 
         let PusherDeHelper { ids, app_display_name, device_display_name, profile_tag, lang } =
             from_raw_json_value(&json)?;
+
         let kind = from_raw_json_value(&json)?;
 
         Ok(Self { ids, kind, app_display_name, device_display_name, profile_tag, lang })
@@ -57,9 +59,11 @@ impl Serialize for PusherKind {
 
 #[derive(Debug, Deserialize)]
 struct PusherKindDeHelper {
-    kind: String,
+    kind: PushKind,
     data: Box<RawJsonValue>,
 }
+
+type PushKind = SmallString<[u8; 16]>;
 
 impl<'de> Deserialize<'de> for PusherKind {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
@@ -72,18 +76,18 @@ impl<'de> Deserialize<'de> for PusherKind {
         match kind.as_ref() {
             "http" => from_raw_json_value(&data).map(Self::Http),
             "email" => from_raw_json_value(&data).map(Self::Email),
-            _ => Ok(Self::_Custom(CustomPusherData { kind, data: from_raw_json_value(&data)? })),
+            _ => from_raw_json_value(&json).map(Self::_Custom),
         }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use assert_matches2::assert_let;
-    use ruma_common::{
-        canonical_json::assert_to_canonical_json_eq, push::HttpPusherData, serde::JsonObject,
+    use assert_matches2::assert_matches;
+    use ruma_common::{push::HttpPusherData, serde::JsonObject};
+    use serde_json::{
+        Value as JsonValue, from_value as from_json_value, json, to_value as to_json_value,
     };
-    use serde_json::{Value as JsonValue, from_value as from_json_value, json};
 
     use crate::push::{CustomPusherData, EmailPusherData, PusherKind};
 
@@ -93,8 +97,8 @@ mod tests {
         let mut data = EmailPusherData::new();
         let action = PusherKind::Email(data.clone());
 
-        assert_to_canonical_json_eq!(
-            action,
+        assert_eq!(
+            to_json_value(action).unwrap(),
             json!({
                 "kind": "email",
                 "data": {},
@@ -105,8 +109,8 @@ mod tests {
         data.data.insert("custom_key".to_owned(), "value".into());
         let action = PusherKind::Email(data);
 
-        assert_to_canonical_json_eq!(
-            action,
+        assert_eq!(
+            to_json_value(action).unwrap(),
             json!({
                 "kind": "email",
                 "data": {
@@ -122,8 +126,8 @@ mod tests {
         let mut data = HttpPusherData::new("http://localhost".to_owned());
         let action = PusherKind::Http(data.clone());
 
-        assert_to_canonical_json_eq!(
-            action,
+        assert_eq!(
+            to_json_value(action).unwrap(),
             json!({
                 "kind": "http",
                 "data": {
@@ -136,8 +140,8 @@ mod tests {
         data.data.insert("custom_key".to_owned(), "value".into());
         let action = PusherKind::Http(data);
 
-        assert_to_canonical_json_eq!(
-            action,
+        assert_eq!(
+            to_json_value(action).unwrap(),
             json!({
                 "kind": "http",
                 "data": {
@@ -155,8 +159,8 @@ mod tests {
             data: JsonObject::new(),
         });
 
-        assert_to_canonical_json_eq!(
-            action,
+        assert_eq!(
+            to_json_value(action).unwrap(),
             json!({
                 "kind": "my.custom.kind",
                 "data": {}
@@ -172,7 +176,7 @@ mod tests {
             "data": {},
         });
 
-        assert_let!(PusherKind::Email(data) = from_json_value(json).unwrap());
+        assert_matches!(from_json_value(json).unwrap(), PusherKind::Email(data));
         assert!(data.data.is_empty());
 
         // With custom data fields.
@@ -183,9 +187,9 @@ mod tests {
             },
         });
 
-        assert_let!(PusherKind::Email(data) = from_json_value(json).unwrap());
+        assert_matches!(from_json_value(json).unwrap(), PusherKind::Email(data));
         assert_eq!(data.data.len(), 1);
-        assert_let!(Some(JsonValue::String(custom_value)) = data.data.get("custom_key"));
+        assert_matches!(data.data.get("custom_key"), Some(JsonValue::String(custom_value)));
         assert_eq!(custom_value, "value");
     }
 
@@ -199,7 +203,7 @@ mod tests {
             },
         });
 
-        assert_let!(PusherKind::Http(data) = from_json_value(json).unwrap());
+        assert_matches!(from_json_value(json).unwrap(), PusherKind::Http(data));
         assert_eq!(data.url, "http://localhost");
         assert_eq!(data.format, None);
         assert!(data.data.is_empty());
@@ -213,9 +217,9 @@ mod tests {
             },
         });
 
-        assert_let!(PusherKind::Http(data) = from_json_value(json).unwrap());
+        assert_matches!(from_json_value(json).unwrap(), PusherKind::Http(data));
         assert_eq!(data.data.len(), 1);
-        assert_let!(Some(JsonValue::String(custom_value)) = data.data.get("custom_key"));
+        assert_matches!(data.data.get("custom_key"), Some(JsonValue::String(custom_value)));
         assert_eq!(custom_value, "value");
     }
 
@@ -226,7 +230,7 @@ mod tests {
             "data": {}
         });
 
-        assert_let!(PusherKind::_Custom(custom) = from_json_value(json).unwrap());
+        assert_matches!(from_json_value(json).unwrap(), PusherKind::_Custom(custom));
         assert_eq!(custom.kind, "my.custom.kind");
         assert!(custom.data.is_empty());
     }
