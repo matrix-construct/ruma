@@ -36,6 +36,11 @@ impl RoomCanonicalAliasEventContent {
     pub fn new() -> Self {
         Self { alias: None, alt_aliases: Vec::new() }
     }
+
+    /// Returns an iterator over the canonical alias and any alt aliases.
+    pub fn aliases(&self) -> impl Iterator<Item = &OwnedRoomAliasId> {
+        self.alias.iter().chain(self.alt_aliases.iter())
+    }
 }
 
 #[cfg(test)]
