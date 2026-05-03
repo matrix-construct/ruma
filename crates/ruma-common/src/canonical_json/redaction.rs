@@ -1,6 +1,9 @@
 use std::{fmt, mem};
 
-use super::value::{CanonicalJsonObject, CanonicalJsonType, CanonicalJsonValue};
+use super::{
+    CanonicalJsonObject,
+    value::{CanonicalJsonType, CanonicalJsonValue},
+};
 use crate::{room_version_rules::RedactionRules, serde::Raw};
 
 /// Redacts an event using the rules specified in the Matrix client-server specification.
@@ -48,10 +51,10 @@ pub fn redact_in_place(
 
     if let Some(redacted_because) = redacted_because {
         let unsigned = CanonicalJsonObject::from_iter([(
-            "redacted_because".to_owned(),
+            "redacted_because".into(),
             redacted_because.0.into(),
         )]);
-        event.insert("unsigned".to_owned(), unsigned.into());
+        event.insert("unsigned".into(), unsigned.into());
     }
 
     Ok(())
@@ -181,7 +184,9 @@ impl RetainedKeys {
                 let old_object = mem::take(object);
 
                 for (key, mut value) in old_object {
-                    if let RetainKey::Yes { child_retained_keys } = retain_key_fn(rules, &key) {
+                    if let RetainKey::Yes { child_retained_keys } =
+                        retain_key_fn(rules, key.as_str())
+                    {
                         if let Some(child_retained_keys) = child_retained_keys
                             && let CanonicalJsonValue::Object(child_object) = &mut value
                         {

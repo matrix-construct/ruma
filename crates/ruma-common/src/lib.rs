@@ -41,7 +41,12 @@ mod time;
 pub mod to_device;
 
 pub use self::{
-    canonical_json::{CanonicalJsonError, CanonicalJsonObject, CanonicalJsonValue},
+    canonical_json::{
+        CanonicalJsonError, CanonicalJsonMember, CanonicalJsonMemberOptional,
+        CanonicalJsonMemberRef, CanonicalJsonMemberRefOptional, CanonicalJsonMembers,
+        CanonicalJsonMembersOptional, CanonicalJsonMembersRef, CanonicalJsonMembersRefOptional,
+        CanonicalJsonName, CanonicalJsonObject, CanonicalJsonValue,
+    },
     identifiers::*,
     time::{MilliSecondsSinceUnixEpoch, SecondsSinceUnixEpoch},
 };

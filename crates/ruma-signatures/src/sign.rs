@@ -125,7 +125,7 @@ where
     let hash = content_hash(object)?;
 
     let hashes_value = object
-        .entry("hashes".to_owned())
+        .entry("hashes".into())
         .or_insert_with(|| CanonicalJsonValue::Object(BTreeMap::new()));
 
     match hashes_value {
@@ -215,7 +215,7 @@ where
     K: KeyPair,
 {
     let (signatures_key, mut signature_map) = match object.remove_entry("signatures") {
-        Some((key, CanonicalJsonValue::Object(signatures))) => (Cow::Owned(key), signatures),
+        Some((key, CanonicalJsonValue::Object(signatures))) => (key, signatures),
         Some((_, value)) => {
             return Err(JsonError::InvalidType {
                 path: "signatures".to_owned(),
@@ -223,7 +223,7 @@ where
                 found: value.json_type(),
             });
         }
-        None => (Cow::Borrowed("signatures"), BTreeMap::new()),
+        None => ("signatures".into(), BTreeMap::new()),
     };
 
     let maybe_unsigned_entry = object.remove_entry("unsigned");
@@ -236,7 +236,7 @@ where
 
     // Insert the new signature in the map we pulled out (or created) previously.
     let signature_set = signature_map
-        .entry(entity_id.to_owned())
+        .entry(entity_id.into())
         .or_insert_with(|| CanonicalJsonValue::Object(BTreeMap::new()));
 
     let CanonicalJsonValue::Object(signature_set) = signature_set else {
@@ -247,10 +247,10 @@ where
         });
     };
 
-    signature_set.insert(signature.id(), CanonicalJsonValue::String(signature.base64()));
+    signature_set.insert(signature.id().into(), CanonicalJsonValue::String(signature.base64()));
 
     // Put `signatures` and `unsigned` back in.
-    object.insert(signatures_key.into(), CanonicalJsonValue::Object(signature_map));
+    object.insert(signatures_key, CanonicalJsonValue::Object(signature_map));
 
     if let Some((k, v)) = maybe_unsigned_entry {
         object.insert(k, v);
