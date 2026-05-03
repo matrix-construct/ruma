@@ -235,25 +235,25 @@ mod tests {
             raw: RawJsonValue::from_string(r#"{"baz":false}"#.to_owned()).unwrap(),
         };
 
-        let mut expected = BTreeMap::new();
-        expected.insert("string".to_owned(), CanonicalJsonValue::String("string".to_owned()));
+        let mut expected = super::CanonicalJsonObject::new();
+        expected.insert("string".into(), CanonicalJsonValue::String("string".to_owned()));
         expected.insert(
-            "array".to_owned(),
+            "array".into(),
             CanonicalJsonValue::Array(vec![
                 CanonicalJsonValue::Integer(int!(0)),
                 CanonicalJsonValue::Integer(int!(1)),
                 CanonicalJsonValue::Integer(int!(2)),
             ]),
         );
-        expected.insert("boolean".to_owned(), CanonicalJsonValue::Bool(true));
-        let mut child_object = BTreeMap::new();
-        child_object.insert("foo".to_owned(), CanonicalJsonValue::String("Foo".to_owned()));
-        child_object.insert("bar".to_owned(), CanonicalJsonValue::String("bar".to_owned()));
-        expected.insert("object".to_owned(), CanonicalJsonValue::Object(child_object));
-        expected.insert("null".to_owned(), CanonicalJsonValue::Null);
-        let mut raw_object = BTreeMap::new();
-        raw_object.insert("baz".to_owned(), CanonicalJsonValue::Bool(false));
-        expected.insert("raw".to_owned(), CanonicalJsonValue::Object(raw_object));
+        expected.insert("boolean".into(), CanonicalJsonValue::Bool(true));
+        let mut child_object = super::CanonicalJsonObject::new();
+        child_object.insert("foo".into(), CanonicalJsonValue::String("Foo".to_owned()));
+        child_object.insert("bar".into(), CanonicalJsonValue::String("bar".to_owned()));
+        expected.insert("object".into(), CanonicalJsonValue::Object(child_object));
+        expected.insert("null".into(), CanonicalJsonValue::Null);
+        let mut raw_object = super::CanonicalJsonObject::new();
+        raw_object.insert("baz".into(), CanonicalJsonValue::Bool(false));
+        expected.insert("raw".into(), CanonicalJsonValue::Object(raw_object));
 
         let expected = CanonicalJsonValue::Object(expected);
         assert_eq!(to_canonical_value(&t).unwrap(), expected);
