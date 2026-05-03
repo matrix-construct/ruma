@@ -69,7 +69,7 @@ mod tests {
             })
         );
 
-        let raw = Raw::new(&content).unwrap();
+        let raw: Raw<_> = Raw::new(&content).unwrap();
         let deserialized: RoomMessageEventContent = raw.deserialize().unwrap();
         let stream = deserialized.stream.unwrap();
         assert_eq!(stream.device_id, "DEVICEID");

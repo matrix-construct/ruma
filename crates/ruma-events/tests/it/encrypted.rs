@@ -92,7 +92,7 @@ fn content_no_relation_deserialization() {
 fn content_no_relation_serialization_roundtrip() {
     let content = RoomEncryptedEventContent::new(encrypted_scheme(), None);
 
-    let json_content = Raw::new(&content).unwrap();
+    let json_content: Raw<_> = Raw::new(&content).unwrap();
     let deser_content = json_content.deserialize().unwrap();
 
     assert_matches!(deser_content.scheme, EncryptedEventScheme::MegolmV1AesSha2(_));
@@ -174,7 +174,7 @@ fn content_reply_serialization_roundtrip() {
         Some(Relation::Reply(Reply::with_event_id(event_id.clone()))),
     );
 
-    let json_content = Raw::new(&content).unwrap();
+    let json_content: Raw<_> = Raw::new(&content).unwrap();
     let deser_content = json_content.deserialize().unwrap();
 
     assert_matches!(deser_content.scheme, EncryptedEventScheme::MegolmV1AesSha2(_));
@@ -255,7 +255,7 @@ fn content_replacement_serialization_roundtrip() {
         Some(Relation::Replacement(replacement.clone())),
     );
 
-    let json_content = Raw::new(&content).unwrap();
+    let json_content: Raw<_> = Raw::new(&content).unwrap();
     let deser_content = json_content.deserialize().unwrap();
 
     assert_matches!(deser_content.scheme, EncryptedEventScheme::MegolmV1AesSha2(_));
@@ -336,7 +336,7 @@ fn content_reference_serialization_roundtrip() {
         Some(Relation::Reference(reference.clone())),
     );
 
-    let json_content = Raw::new(&content).unwrap();
+    let json_content: Raw<_> = Raw::new(&content).unwrap();
     let deser_content = json_content.deserialize().unwrap();
 
     assert_matches!(deser_content.scheme, EncryptedEventScheme::MegolmV1AesSha2(_));
@@ -427,7 +427,7 @@ fn content_thread_serialization_roundtrip() {
     let content =
         RoomEncryptedEventContent::new(encrypted_scheme(), Some(Relation::Thread(thread.clone())));
 
-    let json_content = Raw::new(&content).unwrap();
+    let json_content: Raw<_> = Raw::new(&content).unwrap();
     let deser_content = json_content.deserialize().unwrap();
 
     assert_matches!(deser_content.scheme, EncryptedEventScheme::MegolmV1AesSha2(_));
@@ -516,7 +516,7 @@ fn content_annotation_serialization_roundtrip() {
         Some(Relation::Annotation(annotation.clone())),
     );
 
-    let json_content = Raw::new(&content).unwrap();
+    let json_content: Raw<_> = Raw::new(&content).unwrap();
     let deser_content = json_content.deserialize().unwrap();
 
     assert_matches!(deser_content.scheme, EncryptedEventScheme::MegolmV1AesSha2(_));

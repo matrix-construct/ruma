@@ -78,8 +78,8 @@ mod tests {
             })
         );
 
-        let deserialized: ToDeviceStreamSubscribeEventContent =
-            Raw::new(&content).unwrap().deserialize().unwrap();
+        let raw: Raw<_> = Raw::new(&content).unwrap();
+        let deserialized: ToDeviceStreamSubscribeEventContent = raw.deserialize().unwrap();
         assert_eq!(deserialized.subscriber_device_id, "SUBSCRIBERDEVICE");
         assert!(deserialized.resync);
     }
