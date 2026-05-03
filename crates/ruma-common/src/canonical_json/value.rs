@@ -1,17 +1,12 @@
-use std::{collections::BTreeMap, fmt};
+use std::fmt;
 
 use as_variant::as_variant;
 use js_int::{Int, UInt};
 use serde::{Deserialize, Serialize, de::Deserializer, ser::Serializer};
 use serde_json::{Value as JsonValue, to_string as to_json_string};
 
-use super::CanonicalJsonError;
-use crate::serde::{JsonCastable, JsonObject};
-
-/// The inner type of `CanonicalJsonValue::Object`.
-pub type CanonicalJsonObject = BTreeMap<String, CanonicalJsonValue>;
-
-impl<T> JsonCastable<CanonicalJsonObject> for T where T: JsonCastable<JsonObject> {}
+use super::{CanonicalJsonError, CanonicalJsonObject};
+use crate::serde::JsonCastable;
 
 /// Represents a canonical JSON value as per the Matrix specification.
 #[derive(Clone, Default, Eq, PartialEq)]
@@ -211,7 +206,7 @@ impl TryFrom<JsonValue> for CanonicalJsonValue {
             JsonValue::String(string) => Self::String(string),
             JsonValue::Object(obj) => Self::Object(
                 obj.into_iter()
-                    .map(|(k, v)| Ok((k, v.try_into()?)))
+                    .map(|(k, v)| Ok((k.into(), v.try_into()?)))
                     .collect::<Result<CanonicalJsonObject, _>>()?,
             ),
             JsonValue::Null => Self::Null,
@@ -229,7 +224,7 @@ impl From<CanonicalJsonValue> for JsonValue {
                 Self::Array(vec.into_iter().map(Into::into).collect())
             }
             CanonicalJsonValue::Object(obj) => {
-                Self::Object(obj.into_iter().map(|(k, v)| (k, v.into())).collect())
+                Self::Object(obj.into_iter().map(|(k, v)| (k.into_string(), v.into())).collect())
             }
             CanonicalJsonValue::Null => Self::Null,
         }
@@ -237,6 +232,16 @@ impl From<CanonicalJsonValue> for JsonValue {
 }
 
 impl<T> JsonCastable<CanonicalJsonValue> for T {}
+
+impl From<&RawJsonValue> for CanonicalJsonValue {
+    fn from(val: &RawJsonValue) -> Self {
+        // SAFETY: RawJsonValue is always valid JSON.
+        serde_json::from_str::<JsonValue>(val.get())
+            .ok()
+            .and_then(|v| v.try_into().ok())
+            .expect("RawValue should round-trip through CanonicalJsonValue")
+    }
+}
 
 macro_rules! variant_impls {
     ($variant:ident($ty:ty)) => {

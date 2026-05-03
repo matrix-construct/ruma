@@ -164,7 +164,7 @@ impl serde::Serializer for Serializer {
     {
         // Serialize as a `{ variant: value }` object.
         let mut values = CanonicalJsonObject::new();
-        values.insert(variant.to_owned(), to_canonical_value(value)?);
+        values.insert(variant.into(), to_canonical_value(value)?);
         Ok(CanonicalJsonValue::Object(values))
     }
 
@@ -328,11 +328,11 @@ impl serde::ser::SerializeMap for SerializeObject {
         // expected failure.
         let key = self.next_key.take().expect("serialize_value called before serialize_key");
 
-        if self.object.contains_key(&key) {
+        if self.object.contains_key(key.as_str()) {
             return Err(CanonicalJsonError::DuplicateObjectKey(key));
         }
 
-        self.object.insert(key, to_canonical_value(value)?);
+        self.object.insert(key.into(), to_canonical_value(value)?);
 
         Ok(())
     }
@@ -381,7 +381,7 @@ impl serde::ser::SerializeTupleVariant for SerializeNamedValue<SerializeArray> {
 
     fn end(self) -> Result<Self::Ok> {
         let mut object = CanonicalJsonObject::new();
-        object.insert(self.name, serde::ser::SerializeSeq::end(self.serialize)?);
+        object.insert(self.name.into(), serde::ser::SerializeSeq::end(self.serialize)?);
         Ok(CanonicalJsonValue::Object(object))
     }
 }
@@ -399,7 +399,7 @@ impl serde::ser::SerializeStructVariant for SerializeNamedValue<SerializeObject>
 
     fn end(self) -> Result<Self::Ok> {
         let mut object = CanonicalJsonObject::new();
-        object.insert(self.name, serde::ser::SerializeMap::end(self.serialize)?);
+        object.insert(self.name.into(), serde::ser::SerializeMap::end(self.serialize)?);
         Ok(CanonicalJsonValue::Object(object))
     }
 }

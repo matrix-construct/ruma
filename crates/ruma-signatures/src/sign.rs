@@ -320,7 +320,8 @@ fn insert_signature(
 
     let entity_signatures_set =
         signatures.get_as_object_or_insert_default(entity_id, format!("signatures.{entity_id}"))?;
-    entity_signatures_set.insert(signature.id(), CanonicalJsonValue::String(signature.base64()));
+    entity_signatures_set
+        .insert(signature.key_id.as_str().into(), CanonicalJsonValue::String(signature.base64()));
 
     Ok(())
 }

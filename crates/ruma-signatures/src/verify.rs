@@ -493,8 +493,7 @@ pub fn required_keys(
 
         let entry = map.entry(server.clone()).or_default();
         set.keys()
-            .cloned()
-            .map(TryInto::try_into)
+            .map(|k| k.as_str().try_into())
             .filter_map(Result::ok)
             .for_each(|key_id| entry.push(key_id));
     }
