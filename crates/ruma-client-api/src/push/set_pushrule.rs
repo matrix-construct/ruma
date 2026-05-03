@@ -10,7 +10,7 @@ pub mod v3 {
     use ruma_common::{
         api::{auth_scheme::AccessToken, error::Error, response},
         metadata,
-        push::{Action, NewPushRule, PushCondition},
+        push::NewPushRule,
     };
 
     metadata! {
@@ -172,13 +172,19 @@ pub mod v3 {
                 RuleKind::Override => {
                     let ConditionalRequestBody { actions, conditions } =
                         serde_json::from_slice(request.body().as_ref())?;
-                    NewPushRule::Override(NewConditionalPushRule::new(rule_id, conditions, actions))
+                    NewPushRule::Override(NewConditionalPushRule::new(
+                        rule_id.into(),
+                        conditions,
+                        actions,
+                    ))
                 }
                 RuleKind::Underride => {
                     let ConditionalRequestBody { actions, conditions } =
                         serde_json::from_slice(request.body().as_ref())?;
                     NewPushRule::Underride(NewConditionalPushRule::new(
-                        rule_id, conditions, actions,
+                        rule_id.into(),
+                        conditions,
+                        actions,
                     ))
                 }
                 RuleKind::Sender => {
@@ -196,7 +202,11 @@ pub mod v3 {
                 RuleKind::Content => {
                     let PatternedRequestBody { actions, pattern } =
                         serde_json::from_slice(request.body().as_ref())?;
-                    NewPushRule::Content(NewPatternedPushRule::new(rule_id, pattern, actions))
+                    NewPushRule::Content(NewPatternedPushRule::new(
+                        rule_id.into(),
+                        pattern,
+                        actions,
+                    ))
                 }
             };
 
@@ -219,24 +229,24 @@ pub mod v3 {
     #[cfg_attr(feature = "client", derive(serde::Serialize))]
     #[cfg_attr(feature = "server", derive(serde::Deserialize))]
     struct SimpleRequestBody {
-        actions: Vec<Action>,
+        actions: ruma_common::push::Actions,
     }
 
     #[derive(Debug)]
     #[cfg_attr(feature = "client", derive(serde::Serialize))]
     #[cfg_attr(feature = "server", derive(serde::Deserialize))]
     struct PatternedRequestBody {
-        actions: Vec<Action>,
+        actions: ruma_common::push::Actions,
 
-        pattern: String,
+        pattern: ruma_common::push::Pattern,
     }
 
     #[derive(Debug)]
     #[cfg_attr(feature = "client", derive(serde::Serialize))]
     #[cfg_attr(feature = "server", derive(serde::Deserialize))]
     struct ConditionalRequestBody {
-        actions: Vec<Action>,
+        actions: ruma_common::push::Actions,
 
-        conditions: Vec<PushCondition>,
+        conditions: ruma_common::push::PushConditions,
     }
 }
