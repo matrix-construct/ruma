@@ -67,9 +67,8 @@ impl<'de> Deserialize<'de> for PusherAction {
 
 #[cfg(test)]
 mod tests {
-    use assert_matches2::{assert_let, assert_matches};
-    use ruma_common::canonical_json::assert_to_canonical_json_eq;
-    use serde_json::{from_value as from_json_value, json};
+    use assert_matches2::assert_matches;
+    use serde_json::{from_value as from_json_value, json, to_value as to_json_value};
 
     use super::PusherAction;
     use crate::push::{
@@ -82,16 +81,16 @@ mod tests {
             pusher: Pusher {
                 ids: PusherIds::new("abcdef".to_owned(), "my.matrix.app".to_owned()),
                 kind: PusherKind::Email(EmailPusherData::new()),
-                app_display_name: "My Matrix App".to_owned(),
-                device_display_name: "My Phone".to_owned(),
+                app_display_name: "My Matrix App".into(),
+                device_display_name: "My Phone".into(),
                 profile_tag: None,
-                lang: "en".to_owned(),
+                lang: "en".into(),
             },
             append: false,
         });
 
-        assert_to_canonical_json_eq!(
-            action,
+        assert_eq!(
+            to_json_value(action).unwrap(),
             json!({
                 "pushkey": "abcdef",
                 "app_id": "my.matrix.app",
@@ -109,8 +108,8 @@ mod tests {
         let action =
             PusherAction::Delete(PusherIds::new("abcdef".to_owned(), "my.matrix.app".to_owned()));
 
-        assert_to_canonical_json_eq!(
-            action,
+        assert_eq!(
+            to_json_value(action).unwrap(),
             json!({
                 "pushkey": "abcdef",
                 "app_id": "my.matrix.app",
@@ -131,7 +130,7 @@ mod tests {
             "data": {}
         });
 
-        assert_let!(PusherAction::Post(post_data) = from_json_value(json).unwrap());
+        assert_matches!(from_json_value(json).unwrap(), PusherAction::Post(post_data));
         assert!(!post_data.append);
 
         let pusher = post_data.pusher;
@@ -152,7 +151,7 @@ mod tests {
             "kind": null,
         });
 
-        assert_let!(PusherAction::Delete(ids) = from_json_value(json).unwrap());
+        assert_matches!(from_json_value(json).unwrap(), PusherAction::Delete(ids));
         assert_eq!(ids.pushkey, "abcdef");
         assert_eq!(ids.app_id, "my.matrix.app");
     }
