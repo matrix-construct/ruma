@@ -30,15 +30,14 @@ impl OwnedId {
         Self { ident, id_type, smallvec_inline_bytes, storage_attrs: StorageCfgAttributes::new() }
     }
 
-    /// Expand an implementation for all the internal storage representations by calling the given
-    /// function for each value and concatenating the outputs gated behind the proper `#[cfg]`
-    /// attribute.
+    /// Expand an implementation for mandatory SmallVec storage.
     fn expand_for_each_storage_value<F: Fn(&StorageCfgValue) -> TokenStream>(
         &self,
         expand_value_fn: F,
     ) -> TokenStream {
         StorageCfgValue::ALL
             .iter()
+            .filter(|value| matches!(value, StorageCfgValue::SmallVec))
             .map(|value| {
                 let cfg_attr = value.cfg_attr(&self.storage_attrs);
                 let expanded = expand_value_fn(value);
@@ -89,6 +88,7 @@ impl OwnedId {
         let doc_header = format!("Owned variant of [`{}`].", id_dst.ident);
         let doc_values = StorageCfgValue::ALL
             .iter()
+            .filter(|value| matches!(value, StorageCfgValue::SmallVec))
             .map(|value| StorageCfgValue::doc(value, self))
             .collect::<Vec<_>>()
             .join("\n* ");
@@ -171,37 +171,10 @@ impl OwnedId {
             ///
             /// ## Inner representation
             ///
-            /// By default, this type uses a `Box<str>` internally. The inner representation can be selected at
-            /// compile time by using one of the following supported values:
+            /// Stores identifier bytes in a SmallVec, inline up to the per-type capacity and
+            /// on the heap above it. Storage is independent of compile-time configuration.
             ///
             #[doc = #doc_values]
-            ///
-            /// The selected value can be set by using the `ruma_identifiers_storage` compile-time `cfg` setting.
-            /// This setting can be configured using the `RUSTFLAGS` environment variable at build time, like this:
-            ///
-            /// ```shell
-            /// RUSTFLAGS="--cfg ruma_identifiers_storage=\"{value}\""
-            /// ```
-            ///
-            /// Or in `.cargo/config.toml`:
-            ///
-            /// ```toml
-            /// # General setting for all targets, overridden by per-target `rustflags` setting if set.
-            /// [build]
-            /// rustflags = ["--cfg", "ruma_identifiers_storage=\"{value}\""]
-            ///
-            /// # Per-target setting.
-            /// [target.<triple/cfg>]
-            /// rustflags = ["--cfg", "ruma_identifiers_storage=\"{value}\""]
-            /// ```
-            ///
-            /// This setting can also be configured using the `RUMA_IDENTIFIERS_STORAGE` environment variable at
-            /// compile time, which has the benefit of not requiring to re-compile the whole dependency chain
-            /// when the value is changed, like this:
-            ///
-            /// ```shell
-            /// RUMA_IDENTIFIERS_STORAGE="{value}"
-            /// ```
             pub struct #owned_ident #generics {
                 #inner_types_decl
                 #phantom_decl
@@ -240,6 +213,24 @@ impl OwnedId {
                     #as_bytes_impls
                 }
 
+                /// Returns the byte length of this identifier.
+                #[inline]
+                pub fn len(&self) -> ::std::primitive::usize {
+                    self.inner.len()
+                }
+
+                /// Returns `true` if this identifier has zero length.
+                #[inline]
+                pub fn is_empty(&self) -> ::std::primitive::bool {
+                    self.inner.is_empty()
+                }
+
+                /// Returns the capacity of the underlying inline-or-heap buffer.
+                #[inline]
+                pub fn capacity(&self) -> ::std::primitive::usize {
+                    self.inner.capacity()
+                }
+
                 #into_inner_impls
                 #from_inner_impls
 
@@ -257,9 +248,7 @@ impl OwnedId {
                 ///
                 /// # Implementation details
                 ///
-                /// If the `ruma_identifiers_storage` configuration is set to
-                /// `Arc` or `ThinArc`, this type will be zeroized if and only if
-                /// there is no other strong or weak reference to this same location.
+                /// The identifier bytes are zeroized in place before the buffer is dropped.
                 ///
                 /// [`zeroize`]: https://docs.rs/zeroize/
                 pub fn zeroize(mut self) {
@@ -413,8 +402,7 @@ impl StorageCfgValue {
                  Requires the `triomphe` cargo feature.",
             ),
             Self::SmallVec => Cow::Owned(format!(
-                "`SmallVec` -- Use a `smallvec::SmallVec<[u8; {}]>`. \
-                 Requires the `smallvec` cargo feature.",
+                "Uses a `smallvec::SmallVec<[u8; {}]>`.",
                 owned_id.smallvec_inline_bytes
             )),
         }
@@ -632,7 +620,7 @@ impl StorageCfgAttributes {
         Self {
             default: parse_quote! { #[cfg(not(any(#( #key = #all_values ),*)))] },
             arc: value_to_attribute(StorageCfgValue::Arc),
-            small_vec: value_to_attribute(StorageCfgValue::SmallVec),
+            small_vec: parse_quote! { #[cfg(all())] },
             thin_arc: value_to_attribute(StorageCfgValue::ThinArc),
         }
     }

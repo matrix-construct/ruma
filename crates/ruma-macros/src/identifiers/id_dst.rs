@@ -224,6 +224,8 @@ impl IdDst {
         let serde = ruma_common.reexported(RumaCommonReexport::Serde);
         let serde_json = ruma_common.reexported(RumaCommonReexport::SerdeJson);
 
+        let smallvec = &self.types.small_vec_bytes;
+
         let parse_doc_header = format!("Try parsing a `&str` into an `{owned_ident}`.");
 
         let str = &self.types.str;
@@ -248,6 +250,54 @@ impl IdDst {
                     let s = s.as_ref();
                     #validate(s)?;
                     ::std::result::Result::Ok(#owned_ident::from_str_unchecked(s))
+                }
+
+                /// Try parsing a `&str` into a borrowed reference of this identifier without
+                /// allocating a new owned value.
+                #[inline]
+                pub fn parse_ref(s: &#str) -> ::std::result::Result<&Self, #ruma_common::IdParseError> {
+                    #validate(s)?;
+                    ::std::result::Result::Ok(#ident::from_borrowed_unchecked(s))
+                }
+            }
+
+            #[automatically_derived]
+            impl #impl_generics #owned_id {
+                /// Try parsing a `&str` into an owned identifier.
+                ///
+                /// Convenience forwarder to the borrowed type's `parse`.
+                #[inline]
+                pub fn parse(
+                    s: impl ::std::convert::AsRef<#str>,
+                ) -> ::std::result::Result<Self, #ruma_common::IdParseError> {
+                    #ident::parse(s)
+                }
+
+                /// Try assembling parts of an identifier (sigil, localpart, optional domain) into
+                /// an owned identifier, without going through `format!`.
+                pub fn from_parts(
+                    sigil: ::std::primitive::char,
+                    local: &#str,
+                    domain: ::std::option::Option<&#str>,
+                ) -> ::std::result::Result<Self, #ruma_common::IdParseError> {
+                    let mut buf = [0u8; 4];
+                    let sigil = sigil.encode_utf8(&mut buf);
+                    let len = sigil.len() + local.len()
+                        + domain.map(|d| d.len() + 1).unwrap_or(0);
+
+                    let mut inner = <#smallvec>::with_capacity(len);
+                    inner.extend_from_slice(sigil.as_bytes());
+                    inner.extend_from_slice(local.as_bytes());
+                    if let ::std::option::Option::Some(d) = domain {
+                        inner.push(b':');
+                        inner.extend_from_slice(d.as_bytes());
+                    }
+
+                    // SAFETY: all input came from `char` / `&str`, so the bytes are valid UTF-8.
+                    let s = unsafe { ::std::str::from_utf8_unchecked(inner.as_slice()) };
+                    #validate(s)?;
+
+                    ::std::result::Result::Ok(unsafe { Self::from_inner_unchecked(inner) })
                 }
             }
 
