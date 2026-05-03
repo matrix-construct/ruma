@@ -113,8 +113,8 @@ mod tests {
             })
         );
 
-        let deserialized: ToDeviceStreamUpdateEventContent =
-            Raw::new(&content).unwrap().deserialize().unwrap();
+        let raw: Raw<_> = Raw::new(&content).unwrap();
+        let deserialized: ToDeviceStreamUpdateEventContent = raw.deserialize().unwrap();
         assert_eq!(deserialized.seq, uint!(1));
         assert_matches!(deserialized.operation, StreamUpdateOperation::Replace(payload));
         assert_eq!(payload.body, "hello");
@@ -142,8 +142,8 @@ mod tests {
             })
         );
 
-        let deserialized: ToDeviceStreamUpdateEventContent =
-            Raw::new(&content).unwrap().deserialize().unwrap();
+        let raw: Raw<_> = Raw::new(&content).unwrap();
+        let deserialized: ToDeviceStreamUpdateEventContent = raw.deserialize().unwrap();
         assert_eq!(deserialized.seq, uint!(0));
         assert_matches!(deserialized.operation, StreamUpdateOperation::Replace(payload));
         assert_eq!(payload.body, "hello");

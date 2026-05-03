@@ -87,7 +87,7 @@ mod tests {
             "🏠".to_owned(),
         ));
 
-        let json_content = Raw::new(&content).unwrap();
+        let json_content: Raw<_> = Raw::new(&content).unwrap();
         let deser_content = json_content.deserialize().unwrap();
 
         assert_eq!(deser_content.relates_to.event_id, content.relates_to.event_id);
