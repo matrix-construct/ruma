@@ -6,17 +6,19 @@ use serde::Serialize;
 use serde_json::Value as JsonValue;
 
 mod macros;
+mod object;
 mod redaction;
 mod serializer;
 mod value;
 
 pub use self::{
+    object::*,
     redaction::{
         RedactedBecause, RedactingSerializer, RedactionEvent, redact, redact_content_in_place,
         redact_in_place,
     },
     serializer::Serializer,
-    value::{CanonicalJsonObject, CanonicalJsonType, CanonicalJsonValue},
+    value::{CanonicalJsonType, CanonicalJsonValue},
 };
 #[doc(inline)]
 pub use crate::assert_to_canonical_json_eq;
@@ -42,7 +44,7 @@ pub fn to_canonical_value<T: Serialize>(
 pub fn try_from_json_map(
     json: serde_json::Map<String, JsonValue>,
 ) -> Result<CanonicalJsonObject, CanonicalJsonError> {
-    json.into_iter().map(|(k, v)| Ok((k, v.try_into()?))).collect()
+    json.into_iter().map(|(k, v)| Ok((k.into(), v.try_into()?))).collect()
 }
 
 /// The set of possible errors when serializing to canonical JSON.
@@ -64,6 +66,9 @@ pub enum CanonicalJsonError {
     /// An error occurred while re-serializing a [`serde_json::value::RawValue`].
     InvalidRawValue(serde_json::Error),
 
+    /// A general serialization or deserialization error from `serde_json`.
+    SerDe(serde_json::Error),
+
     /// An other error happened.
     Other(String),
 }
@@ -79,6 +84,7 @@ impl fmt::Display for CanonicalJsonError {
             Self::InvalidRawValue(error) => {
                 write!(f, "invalid raw value: {error}")
             }
+            Self::SerDe(error) => write!(f, "serde error: {error}"),
             Self::DuplicateObjectKey(key) => write!(f, "duplicate object key `{key}`"),
             Self::Other(msg) => f.write_str(msg),
         }
@@ -208,7 +214,7 @@ pub trait CanonicalJsonObjectExt {
     /// Returns an error if the field is already be present but invalid.
     fn get_as_object_or_insert_default(
         &mut self,
-        field: impl Into<String>,
+        field: impl Into<CanonicalJsonName>,
         path: impl Into<String>,
     ) -> Result<&mut CanonicalJsonObject, CanonicalJsonFieldError>;
 
@@ -285,7 +291,7 @@ impl CanonicalJsonObjectExt for CanonicalJsonObject {
 
     fn get_as_object_or_insert_default(
         &mut self,
-        field: impl Into<String>,
+        field: impl Into<CanonicalJsonName>,
         path: impl Into<String>,
     ) -> Result<&mut CanonicalJsonObject, CanonicalJsonFieldError> {
         let value = self
@@ -467,24 +473,24 @@ mod tests {
         };
 
         let mut expected = BTreeMap::new();
-        expected.insert("string".to_owned(), CanonicalJsonValue::String("string".to_owned()));
+        expected.insert("string".into(), CanonicalJsonValue::String("string".to_owned()));
         expected.insert(
-            "array".to_owned(),
+            "array".into(),
             CanonicalJsonValue::Array(vec![
                 CanonicalJsonValue::Integer(int!(0)),
                 CanonicalJsonValue::Integer(int!(1)),
                 CanonicalJsonValue::Integer(int!(2)),
             ]),
         );
-        expected.insert("boolean".to_owned(), CanonicalJsonValue::Bool(true));
+        expected.insert("boolean".into(), CanonicalJsonValue::Bool(true));
         let mut child_object = BTreeMap::new();
-        child_object.insert("foo".to_owned(), CanonicalJsonValue::String("Foo".to_owned()));
-        child_object.insert("bar".to_owned(), CanonicalJsonValue::String("bar".to_owned()));
-        expected.insert("object".to_owned(), CanonicalJsonValue::Object(child_object));
-        expected.insert("null".to_owned(), CanonicalJsonValue::Null);
+        child_object.insert("foo".into(), CanonicalJsonValue::String("Foo".to_owned()));
+        child_object.insert("bar".into(), CanonicalJsonValue::String("bar".to_owned()));
+        expected.insert("object".into(), CanonicalJsonValue::Object(child_object));
+        expected.insert("null".into(), CanonicalJsonValue::Null);
         let mut raw_object = BTreeMap::new();
-        raw_object.insert("baz".to_owned(), CanonicalJsonValue::Bool(false));
-        expected.insert("raw".to_owned(), CanonicalJsonValue::Object(raw_object));
+        raw_object.insert("baz".into(), CanonicalJsonValue::Bool(false));
+        expected.insert("raw".into(), CanonicalJsonValue::Object(raw_object));
 
         let expected = CanonicalJsonValue::Object(expected);
         assert_eq!(to_canonical_value(&t).unwrap(), expected);
