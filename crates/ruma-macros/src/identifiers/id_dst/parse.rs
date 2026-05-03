@@ -5,7 +5,7 @@ use proc_macro2::Span;
 use quote::{format_ident, quote};
 use syn::meta::ParseNestedMeta;
 
-use super::{IdDst, StorageCfg, Types};
+use super::{DEFAULT_INLINE_BYTES, IdDst, Types};
 use crate::util::RumaCommon;
 
 impl IdDst {
@@ -21,7 +21,8 @@ impl IdDst {
             attr.parse_nested_meta(|meta| id_dst_attrs.try_merge(meta, attr))?;
         }
 
-        let IdDstAttrs { validate } = id_dst_attrs;
+        let IdDstAttrs { validate, inline_bytes } = id_dst_attrs;
+        let inline_bytes = inline_bytes.unwrap_or(DEFAULT_INLINE_BYTES);
 
         if validate.is_none() && !input.generics.params.is_empty() {
             return Err(syn::Error::new(
@@ -68,7 +69,7 @@ impl IdDst {
             validate,
             str_field_index,
             types,
-            storage_cfg: StorageCfg::new(),
+            inline_bytes,
             ruma_common: RumaCommon::new(),
         })
     }
@@ -79,6 +80,9 @@ impl IdDst {
 struct IdDstAttrs {
     /// The path to the function to use to validate the identifier.
     validate: Option<syn::Path>,
+
+    /// Inline-byte threshold for the `SmallVec` storage representation.
+    inline_bytes: Option<usize>,
 }
 
 impl IdDstAttrs {
@@ -97,6 +101,21 @@ impl IdDstAttrs {
         Ok(())
     }
 
+    /// Set the inline-byte threshold for the `SmallVec` storage representation.
+    ///
+    /// Returns an error if it is already set.
+    fn set_inline_bytes(&mut self, n: usize, attr: &syn::Attribute) -> syn::Result<()> {
+        if self.inline_bytes.is_some() {
+            return Err(syn::Error::new_spanned(
+                attr,
+                "cannot have multiple values for `inline_bytes` attribute",
+            ));
+        }
+
+        self.inline_bytes = Some(n);
+        Ok(())
+    }
+
     /// Try to parse the given meta item and merge it into this `IdDstAttrs`.
     ///
     /// Returns an error if an unknown `ruma_id` attribute is encountered, or if an attribute
@@ -104,6 +123,11 @@ impl IdDstAttrs {
     fn try_merge(&mut self, meta: ParseNestedMeta<'_>, attr: &syn::Attribute) -> syn::Result<()> {
         if meta.path.is_ident("validate") {
             return self.set_validate(meta.value()?.parse()?, attr);
+        }
+
+        if meta.path.is_ident("inline_bytes") {
+            let lit: syn::LitInt = meta.value()?.parse()?;
+            return self.set_inline_bytes(lit.base10_parse()?, attr);
         }
 
         Err(meta.error("unsupported `ruma_id` attribute"))
