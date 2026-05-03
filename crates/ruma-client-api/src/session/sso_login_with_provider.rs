@@ -44,6 +44,12 @@ pub mod v3 {
         #[ruma_api(query)]
         #[serde(skip_serializing_if = "Option::is_none")]
         pub action: Option<SsoRedirectAction>,
+
+        /// Login token used to resolve to an existing `user_id` when associating
+        /// an existing account.
+        #[ruma_api(query)]
+        #[serde(rename = "loginToken")]
+        pub login_token: Option<String>,
     }
 
     /// Response type for the `sso_login_with_provider` endpoint.
@@ -61,7 +67,7 @@ pub mod v3 {
     impl Request {
         /// Creates a new `Request` with the given identity provider ID and redirect URL.
         pub fn new(idp_id: String, redirect_url: String) -> Self {
-            Self { idp_id, redirect_url, action: None }
+            Self { idp_id, redirect_url, action: None, login_token: None }
         }
     }
 
