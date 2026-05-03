@@ -234,6 +234,31 @@ unstable-msc4439 = ["ruma-client-api?/unstable-msc4439"]
 unstable-msc4466 = ["ruma-client-api?/unstable-msc4466"]
 unstable-uniffi = ["ruma-events?/unstable-uniffi"]
 
+# Stubs for MSC features tuwunel enables but whose implementations are not
+# yet present in the rebased ruma (deferred patches) or were stabilized
+# upstream and no longer need a feature flag.
+unstable-msc2815 = ["ruma-client-api/unstable-msc2815"]
+unstable-msc3824 = []
+unstable-msc4133 = []
+unstable-msc4311 = []
+
+# Bundle of compat-* features (fork-private, used by tuwunel).
+__compat = [
+    "compat-arbitrary-length-ids",
+    "compat-server-signing-key-version",
+    "compat-empty-string-null",
+    "compat-null",
+    "compat-optional",
+    "compat-unset-avatar",
+    "compat-get-3pids",
+    "compat-upload-signatures",
+    "compat-tag-info",
+    "compat-encrypted-stickers",
+    "compat-optional-txn-pdus",
+    "compat-lax-room-create-deser",
+    "compat-lax-room-topic-deser",
+]
+
 [dependencies]
 assign = { workspace = true }
 js_int = { workspace = true }
