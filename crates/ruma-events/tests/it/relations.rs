@@ -73,7 +73,7 @@ fn reply_serialization_roundtrip() {
     let event_id = owned_event_id!("$1598361704261elfgc");
     content.relates_to = Some(Relation::Reply(Reply::with_event_id(event_id.clone())));
 
-    let json_content = Raw::new(&content).unwrap();
+    let json_content: Raw<_> = Raw::new(&content).unwrap();
     let deser_content = json_content.deserialize().unwrap();
 
     assert_matches!(deser_content.msgtype, MessageType::Text(deser_msg));
@@ -152,7 +152,7 @@ fn replacement_serialization_roundtrip() {
     );
     content.relates_to = Some(Relation::Replacement(replacement.clone()));
 
-    let json_content = Raw::new(&content).unwrap();
+    let json_content: Raw<_> = Raw::new(&content).unwrap();
     let deser_content = json_content.deserialize().unwrap();
 
     assert_matches!(deser_content.msgtype, MessageType::Text(deser_msg));
@@ -310,7 +310,7 @@ fn thread_serialization_roundtrip() {
         Thread::plain(owned_event_id!("$1598361704261elfgc"), owned_event_id!("$latesteventid"));
     content.relates_to = Some(Relation::Thread(thread.clone()));
 
-    let json_content = Raw::new(&content).unwrap();
+    let json_content: Raw<_> = Raw::new(&content).unwrap();
     let deser_content = json_content.deserialize().unwrap();
 
     assert_matches!(deser_content.msgtype, MessageType::Text(deser_msg));
