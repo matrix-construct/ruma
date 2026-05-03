@@ -3,7 +3,9 @@ use std::fmt;
 use as_variant::as_variant;
 use js_int::{Int, UInt};
 use serde::{Deserialize, Serialize, de::Deserializer, ser::Serializer};
-use serde_json::{Value as JsonValue, to_string as to_json_string};
+use serde_json::{
+    Value as JsonValue, to_string as to_json_string, value::RawValue as RawJsonValue,
+};
 
 use super::{CanonicalJsonError, CanonicalJsonObject};
 use crate::serde::JsonCastable;
@@ -236,6 +238,18 @@ impl<T> JsonCastable<CanonicalJsonValue> for T {}
 impl From<&RawJsonValue> for CanonicalJsonValue {
     fn from(val: &RawJsonValue) -> Self {
         // SAFETY: RawJsonValue is always valid JSON.
+        serde_json::from_str::<JsonValue>(val.get())
+            .ok()
+            .and_then(|v| v.try_into().ok())
+            .expect("RawValue should round-trip through CanonicalJsonValue")
+    }
+}
+
+impl From<Box<RawJsonValue>> for CanonicalJsonValue {
+    #[inline]
+    fn from(val: Box<RawJsonValue>) -> Self {
+        // SAFETY: RawJsonValue is always valid JSON; round-tripping through
+        // serde_json shouldn't fail.
         serde_json::from_str::<JsonValue>(val.get())
             .ok()
             .and_then(|v| v.try_into().ok())
