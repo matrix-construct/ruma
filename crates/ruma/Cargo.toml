@@ -242,6 +242,9 @@ unstable-msc4471 = ["ruma-events?/unstable-msc4471"]
 unstable-msc4480 = ["unstable-msc4354", "ruma-client-api?/unstable-msc4480"]
 unstable-uniffi = ["ruma-events?/unstable-uniffi"]
 
+# tuwunel-private features
+unstable-msc2815 = ["ruma-client-api/unstable-msc2815"]
+
 [dependencies]
 assign = { workspace = true }
 js_int = { workspace = true }
