@@ -15,6 +15,8 @@ pub mod v3 {
         metadata,
     };
 
+    use crate::device::DisplayName;
+
     metadata! {
         method: PUT,
         rate_limited: false,
@@ -36,7 +38,7 @@ pub mod v3 {
         ///
         /// If this is `None`, the display name won't be changed.
         #[serde(skip_serializing_if = "Option::is_none")]
-        pub display_name: Option<String>,
+        pub display_name: Option<DisplayName>,
     }
 
     /// Response type for the `update_device` endpoint.
