@@ -58,8 +58,9 @@ struct IdDst {
     /// Common types.
     types: Types,
 
-    /// `#[cfg]` attributes for the supported internal representations.
-    storage_cfg: StorageCfg,
+    /// Inline-byte threshold for the `SmallVec` storage. Set per-type with
+    /// `#[ruma_id(inline_bytes = N)]`; defaults to `DEFAULT_INLINE_BYTES`.
+    inline_bytes: usize,
 
     /// The path to use imports from the ruma-common crate.
     ruma_common: RumaCommon,
@@ -159,14 +160,11 @@ impl IdDst {
 
         let str = &self.types.str;
         let box_str = &self.types.box_str;
-        let arc_str = &self.types.arc_str;
         let string = &self.types.string;
         let bytes = &self.types.bytes;
         let id = &self.types.id;
         let owned_id = &self.types.owned_id;
-
-        let box_str_cfg = &self.storage_cfg.box_str;
-        let arc_str_cfg = &self.storage_cfg.arc_str;
+        let smallvec = self.types.smallvec_bytes(self.inline_bytes);
 
         let (phantom_decl, phantom_ctor) = if self.generics.params.is_empty() {
             None
@@ -185,77 +183,38 @@ impl IdDst {
 
         let to_string_impls = self.expand_to_string_impls(owned_id);
 
-        // Implement `into_inner()` and `from_inner_unchecked()` methods behind the given `cfg`
-        // attribute for all the inner representations.
-        let from_into_inner_cfg_impl = |cfg: &syn::Attribute, inner: &syn::Type| {
-            quote! {
-                /// Consumes this identifier and returns its inner data.
-                #cfg
-                pub(super) fn into_inner(self) -> #inner {
-                    self.inner
-                }
+        let from_into_inner_impl = quote! {
+            /// Consumes this identifier and returns its inner data.
+            pub(super) fn into_inner(self) -> #smallvec {
+                self.inner
+            }
 
-                /// Converts the inner data to this identifier, without checking that it is valid.
-                ///
-                /// # Safety
-                ///
-                /// This function is unsafe because it does not check that the data passed to it is
-                /// valid for this identifier. If this constraint is violated, it may cause memory
-                /// unsafety issues with future users of this type.
-                #cfg
-                pub(super) unsafe fn from_inner_unchecked(inner: #inner) -> Self {
-                    Self {
-                        inner,
-                        #phantom_ctor
-                    }
+            /// Converts the inner data to this identifier, without checking that it is valid.
+            ///
+            /// # Safety
+            ///
+            /// This function is unsafe because it does not check that the data passed to it is
+            /// valid for this identifier. If this constraint is violated, it may cause memory
+            /// unsafety issues with future users of this type.
+            pub(super) unsafe fn from_inner_unchecked(inner: #smallvec) -> Self {
+                Self {
+                    inner,
+                    #phantom_ctor
                 }
             }
         };
-        let from_into_inner_impls = [(box_str_cfg, box_str), (arc_str_cfg, arc_str)]
-            .into_iter()
-            .map(|(cfg, inner)| from_into_inner_cfg_impl(cfg, inner));
 
         quote! {
             #[doc = #doc_header]
             ///
             /// ## Inner representation
             ///
-            /// By default, this type uses a `Box<str>` internally. The inner representation can be selected at
-            /// compile time by using one of the following supported values:
-            ///
-            /// * `Arc` -- Use an `Arc<str>`.
-            ///
-            /// The selected value can be set by using the `ruma_identifiers_storage` compile-time `cfg` setting.
-            /// This setting can be configured using the `RUSTFLAGS` environment variable at build time, like this:
-            ///
-            /// ```shell
-            /// RUSTFLAGS="--cfg ruma_identifiers_storage=\"{value}\""
-            /// ```
-            ///
-            /// Or in `.cargo/config.toml`:
-            ///
-            /// ```toml
-            /// # General setting for all targets, overridden by per-target `rustflags` setting if set.
-            /// [build]
-            /// rustflags = ["--cfg", "ruma_identifiers_storage=\"{value}\""]
-            ///
-            /// # Per-target setting.
-            /// [target.<triple/cfg>]
-            /// rustflags = ["--cfg", "ruma_identifiers_storage=\"{value}\""]
-            /// ```
-            ///
-            /// This setting can also be configured using the `RUMA_IDENTIFIERS_STORAGE` environment variable at
-            /// compile time, which has the benefit of not requiring to re-compile the whole dependency chain
-            /// when the value is changed, like this:
-            ///
-            /// ```shell
-            /// RUMA_IDENTIFIERS_STORAGE="{value}"
-            /// ```
+            /// Stores the identifier as a `SmallVec<[u8; INLINE_BYTES]>`: small identifiers
+            /// (under `INLINE_BYTES`) live inline on the stack with no heap allocation, larger
+            /// ones spill to the heap. The threshold is per-type, set with
+            /// `#[ruma_id(inline_bytes = N)]`, defaulting to 32.
             pub struct #owned_ident #generics {
-                #box_str_cfg
-                inner: #box_str,
-                #arc_str_cfg
-                inner: #arc_str,
+                inner: #smallvec,
                 #phantom_decl
             }
 
@@ -263,51 +222,56 @@ impl IdDst {
             impl #impl_generics #owned_id {
                 pub(super) fn from_str_unchecked(s: &#str) -> Self {
                     Self {
-                        #box_str_cfg
-                        inner: s.into(),
-                        #arc_str_cfg
-                        inner: s.into(),
+                        inner: ::smallvec::SmallVec::from_slice(s.as_bytes()),
                         #phantom_ctor
                     }
                 }
 
                 pub(super) fn from_box_str_unchecked(s: #box_str) -> Self {
                     Self {
-                        #box_str_cfg
-                        inner: s,
-                        #arc_str_cfg
-                        inner: s.into(),
+                        inner: ::smallvec::SmallVec::from_vec(::std::string::String::from(s).into_bytes()),
                         #phantom_ctor
                     }
                 }
 
                 pub(super) fn from_string_unchecked(s: #string) -> Self {
                     Self {
-                        #box_str_cfg
-                        inner: s.into(),
-                        #arc_str_cfg
-                        inner: s.into(),
+                        inner: ::smallvec::SmallVec::from_vec(s.into_bytes()),
                         #phantom_ctor
                     }
                 }
 
                 /// Access the inner string without going through the borrowed type.
                 pub(super) fn as_inner_str(&self) -> &#str {
-                    #box_str_cfg
-                    { &self.inner }
-                    #arc_str_cfg
-                    { &self.inner }
+                    // SAFETY: validated as UTF-8 on construction; the SmallVec only ever holds
+                    // bytes that came from a `&str` / `String` / `Box<str>`.
+                    unsafe { ::std::str::from_utf8_unchecked(self.inner.as_slice()) }
+                }
+
+                /// Returns the byte length of this identifier.
+                #[inline]
+                pub fn len(&self) -> ::std::primitive::usize {
+                    self.inner.len()
+                }
+
+                /// Returns `true` if this identifier has zero length.
+                #[inline]
+                pub fn is_empty(&self) -> ::std::primitive::bool {
+                    self.inner.is_empty()
+                }
+
+                /// Returns the capacity of the underlying inline-or-heap buffer.
+                #[inline]
+                pub fn capacity(&self) -> ::std::primitive::usize {
+                    self.inner.capacity()
                 }
 
                 /// Access the inner bytes without going through the borrowed type.
                 pub(super) fn as_inner_bytes(&self) -> &#bytes {
-                    #box_str_cfg
-                    { self.inner.as_bytes() }
-                    #arc_str_cfg
-                    { self.inner.as_bytes() }
+                    self.inner.as_slice()
                 }
 
-                #( #from_into_inner_impls )*
+                #from_into_inner_impl
             }
 
             #[automatically_derived]
@@ -416,20 +380,17 @@ impl IdDst {
             #[automatically_derived]
             impl #impl_generics ::std::convert::From<#owned_id> for #box_str {
                 fn from(id: #owned_id) -> Self {
-                    #box_str_cfg
-                    { id.inner }
-                    #arc_str_cfg
-                    { id.inner.as_ref().into() }
+                    // SAFETY: validated as UTF-8 on construction.
+                    unsafe { ::std::string::String::from_utf8_unchecked(id.inner.into_vec()) }
+                        .into_boxed_str()
                 }
             }
 
             #[automatically_derived]
             impl #impl_generics ::std::convert::From<#owned_id> for #string {
                 fn from(id: #owned_id) -> Self {
-                    #box_str_cfg
-                    { id.inner.into() }
-                    #arc_str_cfg
-                    { id.inner.as_ref().into() }
+                    // SAFETY: validated as UTF-8 on construction.
+                    unsafe { ::std::string::String::from_utf8_unchecked(id.inner.into_vec()) }
                 }
             }
         }
@@ -475,6 +436,55 @@ impl IdDst {
                     let s = s.as_ref();
                     #validate(s)?;
                     ::std::result::Result::Ok(#owned_ident::from_str_unchecked(s))
+                }
+
+                /// Try parsing a `&str` into a borrowed reference of this identifier without
+                /// allocating a new owned value.
+                #[inline]
+                pub fn parse_ref(s: &#str) -> ::std::result::Result<&Self, #ruma_common::IdParseError> {
+                    #validate(s)?;
+                    ::std::result::Result::Ok(#ident::from_borrowed_unchecked(s))
+                }
+            }
+
+            #[automatically_derived]
+            impl #impl_generics #owned_id {
+                /// Try parsing a `&str` into an owned identifier.
+                ///
+                /// Convenience forwarder to the borrowed type's `parse`.
+                #[inline]
+                pub fn parse(
+                    s: impl ::std::convert::AsRef<#str>,
+                ) -> ::std::result::Result<Self, #ruma_common::IdParseError> {
+                    #ident::parse(s)
+                }
+
+                /// Try assembling parts of an identifier (sigil, localpart, optional domain) into
+                /// an owned identifier, without going through `format!`.
+                pub fn from_parts(
+                    sigil: ::std::primitive::char,
+                    local: &#str,
+                    domain: ::std::option::Option<&#str>,
+                ) -> ::std::result::Result<Self, #ruma_common::IdParseError> {
+                    let mut buf = [0u8; 4];
+                    let sigil = sigil.encode_utf8(&mut buf);
+                    let len = sigil.len() + local.len()
+                        + domain.map(|d| d.len() + 1).unwrap_or(0);
+
+                    let mut inner: ::smallvec::SmallVec<[::std::primitive::u8; #inline_bytes]> =
+                        ::smallvec::SmallVec::with_capacity(len);
+                    inner.extend_from_slice(sigil.as_bytes());
+                    inner.extend_from_slice(local.as_bytes());
+                    if let ::std::option::Option::Some(d) = domain {
+                        inner.push(b':');
+                        inner.extend_from_slice(d.as_bytes());
+                    }
+
+                    // SAFETY: all input came from `char` / `&str`, so the bytes are valid UTF-8.
+                    let s = unsafe { ::std::str::from_utf8_unchecked(inner.as_slice()) };
+                    #validate(s)?;
+
+                    ::std::result::Result::Ok(unsafe { Self::from_inner_unchecked(inner) })
                 }
             }
 
@@ -790,9 +800,6 @@ struct Types {
     /// `Box<str>`.
     box_str: syn::Type,
 
-    /// `Arc<str>`.
-    arc_str: syn::Type,
-
     /// `String`.
     string: syn::Type,
 
@@ -822,7 +829,6 @@ impl Types {
 
         Self {
             box_str: parse_quote! { ::std::boxed::Box<#str> },
-            arc_str: parse_quote! { ::std::sync::Arc<#str> },
             string: parse_quote! { ::std::string::String },
             cow_str: parse_quote! { #cow<'a, #str> },
             bytes: parse_quote! { [::std::primitive::u8] },
@@ -832,24 +838,12 @@ impl Types {
             owned_id: parse_quote! { #owned_ident #type_generics },
         }
     }
-}
 
-/// `#[cfg]` attributes for the supported internal representations.
-struct StorageCfg {
-    /// Attribute for the default internal representation, `Box<str>`.
-    box_str: syn::Attribute,
-
-    /// Attribute for the `Arc<str>` internal representation.
-    arc_str: syn::Attribute,
-}
-
-impl StorageCfg {
-    fn new() -> Self {
-        let key = quote! { ruma_identifiers_storage };
-
-        Self {
-            box_str: parse_quote! { #[cfg(not(#key = "Arc"))] },
-            arc_str: parse_quote! { #[cfg(#key = "Arc")] },
-        }
+    /// `SmallVec<[u8; INLINE]>` for the per-type inline-byte threshold.
+    fn smallvec_bytes(&self, inline_bytes: usize) -> syn::Type {
+        parse_quote! { ::smallvec::SmallVec<[::std::primitive::u8; #inline_bytes]> }
     }
 }
+
+/// Default inline-byte threshold for the `SmallVec` storage representation.
+pub(super) const DEFAULT_INLINE_BYTES: usize = 32;
