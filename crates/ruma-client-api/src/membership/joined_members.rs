@@ -61,14 +61,12 @@ pub mod v3 {
     #[cfg_attr(not(ruma_unstable_exhaustive_types), non_exhaustive)]
     pub struct RoomMember {
         /// The display name of the user.
-        #[serde(skip_serializing_if = "Option::is_none")]
         pub display_name: Option<String>,
 
         /// The mxc avatar url of the user.
         ///
         /// If you activate the `compat-empty-string-null` feature, this field being an empty
         /// string in JSON will result in `None` here during deserialization.
-        #[serde(skip_serializing_if = "Option::is_none")]
         #[cfg_attr(
             feature = "compat-empty-string-null",
             serde(default, deserialize_with = "ruma_common::serde::empty_string_as_none")
