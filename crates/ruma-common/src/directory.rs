@@ -61,7 +61,7 @@ pub struct PublicRoomsChunk {
     pub avatar_url: Option<OwnedMxcUri>,
 
     /// The join rule of the room.
-    #[serde(default, skip_serializing_if = "crate::serde::is_default")]
+    #[serde(default)]
     pub join_rule: JoinRuleKind,
 
     /// The type of room from `m.room.create`, if any.
