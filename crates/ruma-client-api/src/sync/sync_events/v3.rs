@@ -228,7 +228,6 @@ pub struct LeftRoom {
     pub state: State,
 
     /// The private data that this user has attached to this room.
-    #[serde(skip_serializing_if = "RoomAccountData::is_empty")]
     pub account_data: RoomAccountData,
 }
 
@@ -286,7 +285,6 @@ pub struct JoinedRoom {
     pub state: State,
 
     /// The private data that this user has attached to this room.
-    #[serde(skip_serializing_if = "RoomAccountData::is_empty")]
     pub account_data: RoomAccountData,
 
     /// The ephemeral events in the room that aren't recorded in the timeline or state of the
@@ -545,7 +543,7 @@ impl GlobalAccountData {
 #[cfg_attr(not(ruma_unstable_exhaustive_types), non_exhaustive)]
 pub struct RoomAccountData {
     /// A list of events.
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(default)]
     pub events: Vec<Raw<AnyRoomAccountDataEvent>>,
 }
 
@@ -1260,6 +1258,7 @@ mod server_tests {
                 "rooms": {
                     "join": {
                         joined_room_id: {
+                            "account_data": { "events": [] },
                             "timeline": {
                                 "events": [
                                     event,
@@ -1269,6 +1268,7 @@ mod server_tests {
                     },
                     "leave": {
                         left_room_id: {
+                            "account_data": { "events": [] },
                             "timeline": {
                                 "events": [
                                     event,
@@ -1306,6 +1306,7 @@ mod server_tests {
                 "rooms": {
                     "join": {
                         joined_room_id: {
+                            "account_data": { "events": [] },
                             "state": {
                                 "events": [
                                     event,
@@ -1315,6 +1316,7 @@ mod server_tests {
                     },
                     "leave": {
                         left_room_id: {
+                            "account_data": { "events": [] },
                             "state": {
                                 "events": [
                                     event,
@@ -1351,11 +1353,13 @@ mod server_tests {
                 "rooms": {
                     "join": {
                         joined_room_id: {
+                            "account_data": { "events": [] },
                             "state_after": {},
                         },
                     },
                     "leave": {
                         left_room_id: {
+                            "account_data": { "events": [] },
                             "state_after": {},
                         },
                     },
@@ -1389,6 +1393,7 @@ mod server_tests {
                 "rooms": {
                     "join": {
                         joined_room_id: {
+                            "account_data": { "events": [] },
                             "state_after": {
                                 "events": [
                                     event,
@@ -1398,6 +1403,7 @@ mod server_tests {
                     },
                     "leave": {
                         left_room_id: {
+                            "account_data": { "events": [] },
                             "state_after": {
                                 "events": [
                                     event,
