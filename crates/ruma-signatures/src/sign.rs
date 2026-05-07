@@ -1,4 +1,4 @@
-use std::{borrow::Cow, collections::BTreeMap, mem};
+use std::{collections::BTreeMap, mem};
 
 use ruma_common::{
     AnyKeyName, CanonicalJsonObject, CanonicalJsonValue, OwnedSigningKeyId, SigningKeyAlgorithm,
@@ -213,7 +213,7 @@ where
     // Insert the new signature in the map we pulled out (or created) previously.
     let signature_set = signature_map
         .get_as_object_or_insert_default(entity_id.to_owned(), format!("signatures.{entity_id}"))?;
-    signature_set.insert(signature.id(), CanonicalJsonValue::String(signature.base64()));
+    signature_set.insert(signature.id().into(), CanonicalJsonValue::String(signature.base64()));
 
     // Put `signatures` and `unsigned` back in.
     object.insert(signatures_key, CanonicalJsonValue::Object(signature_map));
