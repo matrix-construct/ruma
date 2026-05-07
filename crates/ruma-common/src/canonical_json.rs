@@ -213,7 +213,7 @@ pub trait CanonicalJsonObjectExt {
     /// Returns an error if the field is already be present but invalid.
     fn get_as_object_or_insert_default(
         &mut self,
-        field: impl Into<String>,
+        field: impl Into<CanonicalJsonName>,
         path: impl Into<String>,
     ) -> Result<&mut CanonicalJsonObject, CanonicalJsonFieldError>;
 
@@ -290,7 +290,7 @@ impl CanonicalJsonObjectExt for CanonicalJsonObject {
 
     fn get_as_object_or_insert_default(
         &mut self,
-        field: impl Into<String>,
+        field: impl Into<CanonicalJsonName>,
         path: impl Into<String>,
     ) -> Result<&mut CanonicalJsonObject, CanonicalJsonFieldError> {
         let value = self
