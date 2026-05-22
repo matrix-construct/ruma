@@ -140,6 +140,13 @@ pub enum ContactRole {
     #[ruma_enum(rename = "support.feline.msc4121.role.moderator", alias = "m.role.moderator")]
     Moderator,
 
+    /// A role for a Data Protection Officer as required by GDPR Article 37 Nr. 1, according to [MSC4265](https://github.com/matrix-org/matrix-spec-proposals/pull/4265).
+    ///
+    /// The future prefix for this if accepted will be `m.role.dpo`
+    #[cfg(feature = "unstable-msc4265")]
+    #[ruma_enum(rename = "org.matrix.msc4265.role.dpo", alias = "m.role.dpo")]
+    Dpo,
+
     #[doc(hidden)]
     _Custom(PrivOwnedStr),
 }
