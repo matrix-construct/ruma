@@ -41,11 +41,7 @@ pub struct Response {
     /// MSC4383: information about the homeserver implementation, with parity to
     /// the eponymous object returned by `GET /_matrix/federation/v1/version`.
     #[cfg(feature = "unstable-msc4383")]
-    #[serde(
-        rename = "net.zemos.msc4383.server",
-        default,
-        skip_serializing_if = "Option::is_none"
-    )]
+    #[serde(rename = "net.zemos.msc4383.server", default, skip_serializing_if = "Option::is_none")]
     pub server: Option<Server>,
 }
 
