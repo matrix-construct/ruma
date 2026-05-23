@@ -19,6 +19,11 @@ all-features = true
 # an empty `Vec` in deserialization.
 compat-optional-txn-pdus = []
 
+# Treat empty optional pagination tokens supplied via the query string the same
+# as the token being absent, restoring serde_html_form 0.2.x behavior at the
+# request-deserialization boundary.
+compat-empty-string-null = ["ruma-common/compat-empty-string-null"]
+
 client = ["dep:httparse", "dep:memchr"]
 server = ["dep:bytes", "dep:rand"]
 unstable-msc3618 = []

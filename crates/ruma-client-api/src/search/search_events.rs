@@ -43,6 +43,10 @@ pub mod v3 {
         /// The point to return events from.
         ///
         /// If given, this should be a `next_batch` result from a previous call to this endpoint.
+        #[cfg_attr(
+            feature = "compat-empty-string-null",
+            serde(default, deserialize_with = "ruma_common::serde::empty_string_as_none")
+        )]
         #[ruma_api(query)]
         pub next_batch: Option<String>,
 
