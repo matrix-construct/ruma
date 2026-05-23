@@ -60,6 +60,7 @@ unstable-msc4195 = ["unstable-msc4143"]
 # Profile Updates Sliding Sync Extension
 unstable-msc4262 = ["ruma-common/unstable-msc4262"]
 unstable-msc4265 = []
+unstable-msc4266 = []
 unstable-msc4293 = ["ruma-events/unstable-msc4293"]
 # Thread subscription support.
 unstable-msc4306 = []
@@ -81,6 +82,7 @@ js_option = { workspace = true }
 maplit = { workspace = true }
 ruma-common = { workspace = true, features = ["api"] }
 ruma-events = { workspace = true }
+ruma-identity-service-api = { workspace = true }
 serde = { workspace = true }
 serde_html_form = { workspace = true }
 serde_json = { workspace = true }
