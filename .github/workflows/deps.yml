@@ -9,9 +9,9 @@ on:
     # every monday at 4AM (UTC?)
     - cron: '0 4 * * 1'
   push:
-    branches: [main]
+    branches: [main, tuwunel-changes]
   pull_request:
-    branches: [main]
+    branches: [main, tuwunel-changes]
 
 jobs:
   bans-licenses-sources:
