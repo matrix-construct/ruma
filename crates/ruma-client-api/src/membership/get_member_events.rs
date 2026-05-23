@@ -37,6 +37,10 @@ pub mod v3 {
         /// This token can be obtained from a prev_batch token returned for each room by the sync
         /// API.
         #[serde(skip_serializing_if = "Option::is_none")]
+        #[cfg_attr(
+            feature = "compat-empty-string-null",
+            serde(default, deserialize_with = "ruma_common::serde::empty_string_as_none")
+        )]
         #[ruma_api(query)]
         pub at: Option<String>,
 

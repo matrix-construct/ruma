@@ -37,6 +37,10 @@ pub mod v1 {
         ///
         /// If specified, `max_depth` and `suggested_only` cannot be changed from the first
         /// request.
+        #[cfg_attr(
+            feature = "compat-empty-string-null",
+            serde(default, deserialize_with = "ruma_common::serde::empty_string_as_none")
+        )]
         #[ruma_api(query)]
         pub from: Option<String>,
 

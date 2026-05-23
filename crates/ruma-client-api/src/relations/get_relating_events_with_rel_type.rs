@@ -53,6 +53,10 @@ pub mod v1 {
         /// terms of topological ordering, because it is only possible to paginate "backwards"
         /// through events, starting at `from`.
         #[serde(skip_serializing_if = "Option::is_none")]
+        #[cfg_attr(
+            feature = "compat-empty-string-null",
+            serde(default, deserialize_with = "ruma_common::serde::empty_string_as_none")
+        )]
         #[ruma_api(query)]
         pub from: Option<String>,
 
@@ -70,6 +74,10 @@ pub mod v1 {
         /// Like `from`, this can be a previous token from a prior call to this endpoint
         /// or from `/messages` or `/sync`.
         #[serde(skip_serializing_if = "Option::is_none")]
+        #[cfg_attr(
+            feature = "compat-empty-string-null",
+            serde(default, deserialize_with = "ruma_common::serde::empty_string_as_none")
+        )]
         #[ruma_api(query)]
         pub to: Option<String>,
 

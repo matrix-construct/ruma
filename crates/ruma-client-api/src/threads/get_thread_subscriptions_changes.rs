@@ -48,6 +48,10 @@ pub mod unstable {
         /// If not provided, then the pagination starts from the "end".
         #[ruma_api(query)]
         #[serde(skip_serializing_if = "Option::is_none")]
+        #[cfg_attr(
+            feature = "compat-empty-string-null",
+            serde(default, deserialize_with = "ruma_common::serde::empty_string_as_none")
+        )]
         pub from: Option<String>,
 
         /// A token used to limit the pagination.
@@ -56,6 +60,10 @@ pub mod unstable {
         /// returned new thread subscriptions with a `prev_batch` token.
         #[ruma_api(query)]
         #[serde(skip_serializing_if = "Option::is_none")]
+        #[cfg_attr(
+            feature = "compat-empty-string-null",
+            serde(default, deserialize_with = "ruma_common::serde::empty_string_as_none")
+        )]
         pub to: Option<String>,
 
         /// A maximum number of thread subscriptions to fetch in one response.
