@@ -32,6 +32,10 @@ pub mod msc2666 {
         /// The `next_batch` token returned from a previous response, to get the next batch of
         /// rooms.
         #[serde(skip_serializing_if = "Option::is_none")]
+        #[cfg_attr(
+            feature = "compat-empty-string-null",
+            serde(default, deserialize_with = "ruma_common::serde::empty_string_as_none")
+        )]
         #[ruma_api(query)]
         pub from: Option<String>,
     }
@@ -103,6 +107,10 @@ pub mod v1 {
         /// The `next_batch` returned from a previous response, to get the next batch of
         /// rooms.
         #[serde(skip_serializing_if = "Option::is_none")]
+        #[cfg_attr(
+            feature = "compat-empty-string-null",
+            serde(default, deserialize_with = "ruma_common::serde::empty_string_as_none")
+        )]
         #[ruma_api(query)]
         pub from: Option<String>,
     }

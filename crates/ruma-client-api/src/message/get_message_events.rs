@@ -43,6 +43,10 @@ pub mod v3 {
         ///
         /// If this is `None`, the server will return messages from the start or end of the
         /// history visible to the user, depending on the value of [`dir`][Self::dir].
+        #[cfg_attr(
+            feature = "compat-empty-string-null",
+            serde(default, deserialize_with = "ruma_common::serde::empty_string_as_none")
+        )]
         #[ruma_api(query)]
         pub from: Option<String>,
 
@@ -52,6 +56,10 @@ pub mod v3 {
         /// sync endpoint, or from a `start` or `end` token returned by a previous request to
         /// this endpoint.
         #[serde(skip_serializing_if = "Option::is_none")]
+        #[cfg_attr(
+            feature = "compat-empty-string-null",
+            serde(default, deserialize_with = "ruma_common::serde::empty_string_as_none")
+        )]
         #[ruma_api(query)]
         pub to: Option<String>,
 
