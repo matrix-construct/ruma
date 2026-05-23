@@ -4,12 +4,16 @@
 //!
 //! Get server admin contact and support page of a homeserver's domain.
 
+#[cfg(feature = "unstable-msc4266")]
+use std::collections::BTreeMap;
+
 use ruma_common::{
     OwnedUserId,
     api::{auth_scheme::NoAccessToken, request, response},
     metadata,
     serde::StringEnum,
 };
+use ruma_identity_service_api::tos::get_terms_of_service::v2::Policies;
 use serde::{Deserialize, Serialize};
 
 use crate::PrivOwnedStr;
@@ -42,6 +46,16 @@ pub struct Response {
     /// At least one of `contacts` or `support_page` is required.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub support_page: Option<String>,
+
+    /// List of policy documents the server advertises, such as a privacy policy or terms of
+    /// service.
+    ///
+    /// These are syntactically the same as the list of policies that the server can show on registration (<https://spec.matrix.org/latest/client-server-api/#terms-of-service-at-registration>).
+    ///
+    /// As defined in [MSC4266](https://github.com/matrix-org/matrix-spec-proposals/pull/4266)
+    #[cfg(feature = "unstable-msc4266")]
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub policies: BTreeMap<String, Policies>,
 }
 
 impl Request {
@@ -54,12 +68,22 @@ impl Request {
 impl Response {
     /// Creates a new `Response` with the given contacts.
     pub fn with_contacts(contacts: Vec<Contact>) -> Self {
-        Self { contacts, support_page: None }
+        Self {
+            contacts,
+            support_page: None,
+            #[cfg(feature = "unstable-msc4266")]
+            policies: BTreeMap::new(),
+        }
     }
 
     /// Creates a new `Response` with the given support page.
     pub fn with_support_page(support_page: String) -> Self {
-        Self { contacts: Vec::new(), support_page: Some(support_page) }
+        Self {
+            contacts: Vec::new(),
+            support_page: Some(support_page),
+            #[cfg(feature = "unstable-msc4266")]
+            policies: BTreeMap::new(),
+        }
     }
 }
 
