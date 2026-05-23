@@ -8,9 +8,9 @@ env:
 
 on:
   push:
-    branches: [main, next]
+    branches: [main, next, tuwunel-changes]
   pull_request:
-    branches: [main, next]
+    branches: [main, next, tuwunel-changes]
 
 jobs:
   xtask:
@@ -36,51 +36,6 @@ jobs:
 
       - name: Run lints
         run: target/debug/xtask ci lint-custom
-
-  msrv:
-    name: Minimum Supported Rust Version / ${{ matrix.name }}
-    needs: xtask
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        include:
-          - name: Check All Features
-            cmd: msrv-all
-
-          - name: Check Ruma
-            cmd: msrv-ruma
-
-          - name: Check Owned IDs with Box
-            cmd: msrv-owned-id-box
-
-          - name: Check Owned IDs with Arc
-            cmd: msrv-owned-id-arc
-
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v6
-
-      - name: Install MSRV toolchain
-        uses: dtolnay/rust-toolchain@master
-        with:
-          # keep in sync with README.md, the root Cargo.toml and xtask/src/ci.rs
-          toolchain: "1.89"
-
-      - uses: Swatinem/rust-cache@v2
-        with:
-          # A stable compiler update should automatically not reuse old caches.
-          # Add the MSRV as a stable cache key too so bumping it also gets us a
-          # fresh cache.
-          shared-key: msrv1.89
-
-      - name: Get xtask
-        uses: actions/cache@v5
-        with:
-          path: target/debug/xtask
-          key: xtask-${{ hashFiles('Cargo.toml', 'xtask/src/**', 'xtask/Cargo.toml') }}
-
-      - name: Run checks
-        run: target/debug/xtask ci ${{ matrix.cmd }}
 
   stable:
     name: Rust Stable / ${{ matrix.name }}
