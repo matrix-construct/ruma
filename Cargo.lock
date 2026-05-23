@@ -2031,6 +2031,7 @@ dependencies = [
  "maplit",
  "ruma-common",
  "ruma-events",
+ "ruma-identity-service-api",
  "serde",
  "serde_html_form",
  "serde_json",
