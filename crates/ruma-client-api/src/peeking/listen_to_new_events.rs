@@ -35,6 +35,10 @@ pub mod v3 {
         /// This token is either from a previous request to this API or from the initial sync API.
         #[ruma_api(query)]
         #[serde(skip_serializing_if = "Option::is_none")]
+        #[cfg_attr(
+            feature = "compat-empty-string-null",
+            serde(default, deserialize_with = "ruma_common::serde::empty_string_as_none")
+        )]
         pub from: Option<String>,
 
         /// The room ID for which events should be returned.
