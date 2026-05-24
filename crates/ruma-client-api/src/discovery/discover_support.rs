@@ -54,6 +54,7 @@ pub struct Response {
     ///
     /// As defined in [MSC4266](https://github.com/matrix-org/matrix-spec-proposals/pull/4266)
     #[cfg(feature = "unstable-msc4266")]
+    #[serde(rename = "org.matrix.msc4266.policies")]
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
     pub policies: BTreeMap<String, Policies>,
 }
