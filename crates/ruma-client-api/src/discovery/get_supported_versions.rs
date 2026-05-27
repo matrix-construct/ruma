@@ -51,6 +51,9 @@ pub struct Response {
 
 /// Identifying information about the homeserver implementation.
 ///
+/// The `commit`, `compiler`, `kernel`, and `arch` fields are additions outside
+/// MSC4383 and are always optional.
+///
 /// This uses the unstable prefix defined in [MSC4383].
 ///
 /// [MSC4383]: https://github.com/matrix-org/matrix-spec-proposals/pull/4383
@@ -65,13 +68,29 @@ pub struct Server {
     ///
     /// The version format depends on the implementation.
     pub version: String,
+
+    /// Sourcecode version.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub commit: Option<String>,
+
+    /// Compiler version.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub compiler: Option<String>,
+
+    /// System version.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub kernel: Option<String>,
+
+    /// Hardware architecture.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub arch: Option<String>,
 }
 
 #[cfg(feature = "unstable-msc4383")]
 impl Server {
     /// Creates a `Server` with the given implementation `name` and `version`.
     pub fn new(name: String, version: String) -> Self {
-        Self { name, version }
+        Self { name, version, commit: None, compiler: None, kernel: None, arch: None }
     }
 }
 
