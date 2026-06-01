@@ -143,6 +143,24 @@ fn test_reverse_topological_power_sort() {
     assert_eq!(sorted, ["$o", "$l", "$n", "$m", "$p"],);
 }
 
+#[test]
+fn test_reverse_topological_power_sort_reference_outside_graph() {
+    // "$a" references "$x", which is not in the graph. That reference must be treated as a
+    // non-edge: "$a" must still be sorted, and neither it nor its dependent "$b" may be dropped.
+    let graph = EventIdMap::from([
+        (owned_event_id!("$a"), EventIdSet::from([owned_event_id!("$x")])),
+        (owned_event_id!("$b"), EventIdSet::from([owned_event_id!("$a")])),
+        (owned_event_id!("$c"), EventIdSet::new()),
+    ]);
+
+    let sorted = crate::reverse_topological_power_sort(&graph, |_id| {
+        Ok((int!(0).into(), MilliSecondsSinceUnixEpoch(uint!(0))))
+    })
+    .unwrap();
+
+    assert_eq!(sorted, ["$a", "$b", "$c"]);
+}
+
 macro_rules! state_set {
     ($($kind:expr => $key:expr => $id:expr),* $(,)?) => {{
         #[allow(unused_mut)]

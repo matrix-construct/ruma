@@ -379,7 +379,9 @@ fn sort_power_events<E: Event>(
 ///
 /// ## Returns
 ///
-/// Returns the ordered list of event IDs from earliest to latest.
+/// Returns the ordered list of event IDs from earliest to latest. Every event in the graph appears
+/// exactly once; a reference to an event that is not in the graph is treated as a non-edge rather
+/// than dropping the referencing event.
 #[instrument(skip_all)]
 pub fn reverse_topological_power_sort<Id, F>(
     graph: &EventIdMap<Id, EventIdSet<Id>>,
@@ -435,6 +437,15 @@ where
     // Populate the list of events with an outdegree of zero, and the maps of incoming and outgoing
     // edges with the graph.
     for (event_id, outgoing_edges) in graph {
+        // A reference to an event that is not in the graph is unresolvable and is treated as a
+        // non-edge. Otherwise the referencing event would never reach an outdegree of zero, and
+        // would be dropped from the result along with everything that depends on it.
+        let outgoing_edges: EventIdSet<_> = outgoing_edges
+            .iter()
+            .map(Borrow::borrow)
+            .filter(|&auth_event_id| graph.contains_event_id(auth_event_id))
+            .collect();
+
         if outgoing_edges.is_empty() {
             let (power_level, origin_server_ts) = event_details_fn(event_id.borrow())?;
 
@@ -446,15 +457,11 @@ where
                 event_id: event_id.clone(),
             }));
         } else {
-            for auth_event_id in outgoing_edges {
-                incoming_edges_map
-                    .entry(auth_event_id.borrow())
-                    .or_default()
-                    .insert(event_id.borrow());
+            for &auth_event_id in &outgoing_edges {
+                incoming_edges_map.entry(auth_event_id).or_default().insert(event_id.borrow());
             }
 
-            outgoing_edges_map
-                .insert(event_id.clone(), outgoing_edges.iter().map(Borrow::borrow).collect());
+            outgoing_edges_map.insert(event_id.clone(), outgoing_edges);
         }
     }
 

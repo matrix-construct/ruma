@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+Bug fixes:
+
+- Fix `reverse_topological_power_sort()` dropping events that reference an event
+  ID which is not in the graph. Such a reference is now treated as a non-edge,
+  so every event in the graph is sorted exactly once.
+
 ## 0.17.0
 
 Breaking changes:
