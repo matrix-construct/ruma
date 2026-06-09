@@ -40,6 +40,7 @@ impl<'de> Deserialize<'de> for AuthData {
             Some("m.login.registration_token") => {
                 from_raw_json_value(&json).map(Self::RegistrationToken)
             }
+            Some("org.matrix.login.jwt") => from_raw_json_value(&json).map(Self::Jwt),
             Some("m.login.terms") => from_raw_json_value(&json).map(Self::Terms),
             Some("m.oauth" | "org.matrix.cross_signing_reset") => {
                 from_raw_json_value(&json).map(Self::OAuth)
@@ -306,5 +307,19 @@ mod tests {
         assert_eq!(foo, "bar");
 
         assert_to_canonical_json_eq!(auth_data, json);
+    }
+
+    #[test]
+    fn jwt_auth_data_deserializes_to_jwt_variant() {
+        let json = json!({
+            "type": "org.matrix.login.jwt",
+            "token": "a.b.c",
+        });
+
+        // Must land on the dedicated Jwt variant, not fall through to _Custom.
+        let auth_data = from_json_value::<AuthData>(json).unwrap();
+        assert_let!(AuthData::Jwt(jwt) = &auth_data);
+        assert_eq!(jwt.token, "a.b.c");
+        assert_eq!(auth_data.auth_type().unwrap().as_str(), "org.matrix.login.jwt");
     }
 }
