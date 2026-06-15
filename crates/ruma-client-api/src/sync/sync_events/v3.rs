@@ -82,6 +82,18 @@ pub struct Request {
     #[serde(default, skip_serializing_if = "ruma_common::serde::is_default")]
     #[ruma_api(query)]
     pub use_state_after: bool,
+
+    /// The unstable name for [`use_state_after`], used before MSC4222 was stabilized in
+    /// Matrix 1.16.
+    ///
+    /// [`use_state_after`]: Self::use_state_after
+    #[serde(
+        default,
+        rename = "org.matrix.msc4222.use_state_after",
+        skip_serializing_if = "ruma_common::serde::is_default"
+    )]
+    #[ruma_api(query)]
+    pub use_state_after_unstable: bool,
 }
 
 /// Response type for the `sync` endpoint.
@@ -435,6 +447,15 @@ pub enum State {
     /// To get this variant, `use_state_after` must be set to `true` in the [`Request`].
     #[serde(rename = "state_after")]
     After(StateEvents),
+
+    /// The same as [`After`](Self::After), serialized under the unstable name from MSC4222
+    /// before its stabilization in Matrix 1.16.
+    ///
+    /// Emitted to clients that opted in with [`use_state_after_unstable`].
+    ///
+    /// [`use_state_after_unstable`]: Request::use_state_after_unstable
+    #[serde(rename = "org.matrix.msc4222.state_after")]
+    AfterUnstable(StateEvents),
 }
 
 impl State {
@@ -446,8 +467,8 @@ impl State {
     /// Returns true if there are no state updates.
     pub fn is_empty(&self) -> bool {
         match self {
-            Self::Before(state) => state.is_empty(),
-            Self::After(state) => state.is_empty(),
+            Self::Before(state) | Self::After(state) | Self::AfterUnstable(state) =>
+                state.is_empty(),
         }
     }
 }
@@ -762,6 +783,7 @@ mod client_tests {
             set_presence: PresenceState::Offline,
             timeout: Some(Duration::from_millis(30000)),
             use_state_after: true,
+            use_state_after_unstable: true,
         }
         .try_into_http_request(
             "https://homeserver.tld",
@@ -780,6 +802,7 @@ mod client_tests {
         assert!(query.contains("set_presence=offline"));
         assert!(query.contains("timeout=30000"));
         assert!(query.contains("use_state_after=true"));
+        assert!(query.contains("org.matrix.msc4222.use_state_after=true"));
     }
 
     #[test]
@@ -1294,6 +1317,39 @@ mod server_tests {
                         left_room_id: {
                             "account_data": { "events": [] },
                             "state_after": {
+                                "events": [
+                                    event,
+                                ],
+                            },
+                        },
+                    },
+                },
+            })
+        );
+    }
+
+    #[test]
+    fn serialize_response_state_after_unstable() {
+        let joined_room_id = owned_room_id!("!joined:localhost");
+        let event = sync_state_event();
+
+        let mut response = Response::new("aaa".to_owned());
+
+        let mut joined_room = JoinedRoom::new();
+        joined_room.state = State::AfterUnstable(vec![event.clone()].into());
+        response.rooms.join.insert(joined_room_id.clone(), joined_room);
+
+        let http_response = response.try_into_http_response::<Vec<u8>>().unwrap();
+
+        assert_eq!(
+            from_json_slice::<JsonValue>(http_response.body()).unwrap(),
+            json!({
+                "next_batch": "aaa",
+                "rooms": {
+                    "join": {
+                        joined_room_id: {
+                            "account_data": { "events": [] },
+                            "org.matrix.msc4222.state_after": {
                                 "events": [
                                     event,
                                 ],
