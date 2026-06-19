@@ -14,6 +14,11 @@ Improvements:
   field on `discovery::get_supported_versions::Response` carries the
   homeserver implementation name and version, mirroring the federation
   `/version` payload.
+- Stabilize the `GET /_matrix/client/v1/mutual_rooms` endpoint (MSC2666),
+  adding the required `count` field. The `mutual_rooms` module moves from
+  `unstable` to `v1`, and the retained unstable endpoint shares the v1
+  request and response types; the response fields are now `joined`, `count`
+  and `next_batch`.
 
 [MSC4383]: https://github.com/matrix-org/matrix-spec-proposals/pull/4383
 
