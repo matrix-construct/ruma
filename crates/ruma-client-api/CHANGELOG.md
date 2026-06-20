@@ -20,6 +20,11 @@ Improvements:
   request and response types; the response fields are now `joined`, `count`
   and `next_batch`.
 
+Bug fixes:
+
+- Fix `sync_events::v5::Request::set_presence` being read from / serialized to
+  the JSON body instead of the query string.
+
 [MSC4383]: https://github.com/matrix-org/matrix-spec-proposals/pull/4383
 
 ## 0.23.1

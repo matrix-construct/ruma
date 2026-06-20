@@ -101,6 +101,7 @@ pub struct Request {
     ///
     /// Defaults to `PresenceState::Online`.
     #[serde(default, skip_serializing_if = "ruma_common::serde::is_default")]
+    #[ruma_api(query)]
     pub set_presence: PresenceState,
 
     /// Lists of rooms we are interested by, represented by ranges.
@@ -882,5 +883,109 @@ mod tests {
             serde_json::from_str::<ExtensionRoomConfig>(r#""!foo:bar.baz""#).unwrap(),
             ExtensionRoomConfig::Room(owned_room_id!("!foo:bar.baz"))
         );
+    }
+}
+
+#[cfg(all(test, feature = "client"))]
+mod client_tests {
+    use std::{borrow::Cow, time::Duration};
+
+    use ruma_common::api::{
+        MatrixVersion, OutgoingRequest as _, SupportedVersions, auth_scheme::SendAccessToken,
+    };
+    use serde_json::Value as JsonValue;
+
+    use super::{PresenceState, Request};
+
+    #[test]
+    fn serialize_request_presence_query_param() {
+        let supported = SupportedVersions {
+            versions: [MatrixVersion::V1_1].into(),
+            features: Default::default(),
+        };
+        let mut request = Request::new();
+        request.pos = Some("s123".into());
+        request.set_presence = PresenceState::Offline;
+        request.timeout = Some(Duration::from_millis(5000));
+
+        let req: http::Request<Vec<u8>> = request
+            .try_into_http_request(
+                "https://homeserver.tld",
+                SendAccessToken::IfRequired("auth_tok"),
+                Cow::Owned(supported),
+            )
+            .unwrap();
+
+        let uri = req.uri();
+        let query = uri.query().unwrap();
+
+        assert_eq!(uri.path(), "/_matrix/client/unstable/org.matrix.simplified_msc3575/sync");
+        assert!(query.contains("pos=s123"));
+        assert!(query.contains("set_presence=offline"));
+        assert!(query.contains("timeout=5000"));
+
+        let body = serde_json::from_slice::<JsonValue>(req.body()).unwrap();
+        assert!(body.get("set_presence").is_none());
+    }
+}
+
+#[cfg(all(test, feature = "server"))]
+mod server_tests {
+    use std::time::Duration;
+
+    use ruma_common::{api::IncomingRequest as _, presence::PresenceState};
+
+    use super::Request;
+
+    #[test]
+    fn deserialize_request_presence_query_param() {
+        let uri = http::Uri::builder()
+            .scheme("https")
+            .authority("matrix.org")
+            .path_and_query(
+                "/_matrix/client/unstable/org.matrix.simplified_msc3575/sync\
+                ?pos=s123\
+                &set_presence=offline\
+                &timeout=5000",
+            )
+            .build()
+            .unwrap();
+
+        let req = Request::try_from_http_request(
+            http::Request::builder()
+                .method(http::Method::POST)
+                .uri(uri)
+                .body(br#"{}"# as &[u8])
+                .unwrap(),
+            &[] as &[String],
+        )
+        .unwrap();
+
+        assert_eq!(req.pos.as_deref(), Some("s123"));
+        assert_eq!(req.set_presence, PresenceState::Offline);
+        assert_eq!(req.timeout, Some(Duration::from_millis(5000)));
+    }
+
+    #[test]
+    fn deserialize_request_presence_defaults_to_online() {
+        let uri = http::Uri::builder()
+            .scheme("https")
+            .authority("matrix.org")
+            .path_and_query("/_matrix/client/unstable/org.matrix.simplified_msc3575/sync")
+            .build()
+            .unwrap();
+
+        let req = Request::try_from_http_request(
+            http::Request::builder()
+                .method(http::Method::POST)
+                .uri(uri)
+                .body(br#"{}"# as &[u8])
+                .unwrap(),
+            &[] as &[String],
+        )
+        .unwrap();
+
+        assert_eq!(req.set_presence, PresenceState::Online);
+        assert_eq!(req.timeout, None);
     }
 }
