@@ -369,7 +369,9 @@ pub mod v3 {
         pub next_batch: Option<String>,
 
         /// List of results in the requested order.
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        ///
+        /// Serialized even when empty so that clients can rely on the field being present.
+        #[serde(default)]
         pub results: Vec<SearchResult>,
 
         /// The current state for every room in the results.

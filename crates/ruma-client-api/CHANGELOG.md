@@ -28,6 +28,8 @@ Bug fixes:
 
 - Fix `sync_events::v5::Request::set_presence` being read from / serialized to
   the JSON body instead of the query string.
+- Serialize the `results` field of `search_events` responses even when empty,
+  so clients can rely on the key being present.
 
 [MSC4383]: https://github.com/matrix-org/matrix-spec-proposals/pull/4383
 
