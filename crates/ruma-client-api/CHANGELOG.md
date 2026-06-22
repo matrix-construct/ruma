@@ -19,6 +19,10 @@ Improvements:
   `unstable` to `v1`, and the retained unstable endpoint shares the v1
   request and response types; the response fields are now `joined`, `count`
   and `next_batch`.
+- Add the `related_by_rel_types` and `related_by_senders` fields to
+  `RoomEventFilter`, to filter room events by their relations as stabilized
+  in Matrix 1.4 (MSC3440). The `io.element.relation_types` and
+  `io.element.relation_senders` unstable names are accepted as aliases.
 
 Bug fixes:
 
