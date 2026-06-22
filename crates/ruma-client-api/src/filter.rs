@@ -101,6 +101,24 @@ pub struct RoomEventFilter {
     /// [`sync_events`]: crate::sync::sync_events
     #[serde(default, skip_serializing_if = "ruma_common::serde::is_default")]
     pub unread_thread_notifications: bool,
+
+    /// A list of relation types to include.
+    ///
+    /// An event A is included in the filter only if there exists another event B which relates to
+    /// A with a `rel_type` which is defined in the list.
+    #[serde(default, alias = "io.element.relation_types", skip_serializing_if = "<[_]>::is_empty")]
+    pub related_by_rel_types: Vec<String>,
+
+    /// A list of senders to include.
+    ///
+    /// An event A is included in the filter only if there exists another event B which relates to
+    /// A, and which has a sender which is in the list.
+    #[serde(
+        default,
+        alias = "io.element.relation_senders",
+        skip_serializing_if = "<[_]>::is_empty"
+    )]
+    pub related_by_senders: Vec<OwnedUserId>,
 }
 
 impl RoomEventFilter {
@@ -141,6 +159,8 @@ impl RoomEventFilter {
             url_filter,
             lazy_load_options,
             unread_thread_notifications,
+            related_by_rel_types,
+            related_by_senders,
         } = self;
         not_types.is_empty()
             && not_rooms.is_empty()
@@ -152,6 +172,8 @@ impl RoomEventFilter {
             && url_filter.is_none()
             && lazy_load_options.is_disabled()
             && !unread_thread_notifications
+            && related_by_rel_types.is_empty()
+            && related_by_senders.is_empty()
     }
 }
 
