@@ -164,6 +164,9 @@ pub enum ErrorKind {
     /// been witnessed by the invitee.
     InviteBlocked,
 
+    /// `M_KEY_TOO_LARGE`
+    KeyTooLarge,
+
     /// `M_LIMIT_EXCEEDED`
     ///
     /// The request has been refused due to [rate limiting]: too many requests have been sent in a
@@ -213,6 +216,9 @@ pub enum ErrorKind {
     /// An `mxc:` URI generated with the `POST /_matrix/media/*/create` endpoint was used and the
     /// content is not yet available.
     NotYetUploaded,
+
+    /// `M_PROFILE_TOO_LARGE`
+    ProfileTooLarge,
 
     /// `M_RESOURCE_LIMIT_EXCEEDED`
     ///
@@ -447,6 +453,7 @@ impl ErrorKind {
             ErrorKind::InvalidRoomState => ErrorCode::InvalidRoomState,
             ErrorKind::InvalidUsername => ErrorCode::InvalidUsername,
             ErrorKind::InviteBlocked => ErrorCode::InviteBlocked,
+            ErrorKind::KeyTooLarge => ErrorCode::KeyTooLarge,
             ErrorKind::LimitExceeded(_) => ErrorCode::LimitExceeded,
             ErrorKind::MissingParam => ErrorCode::MissingParam,
             ErrorKind::MissingToken => ErrorCode::MissingToken,
@@ -456,6 +463,7 @@ impl ErrorKind {
             ErrorKind::NotInThread => ErrorCode::NotInThread,
             ErrorKind::NotJson => ErrorCode::NotJson,
             ErrorKind::NotYetUploaded => ErrorCode::NotYetUploaded,
+            ErrorKind::ProfileTooLarge => ErrorCode::ProfileTooLarge,
             ErrorKind::ResourceLimitExceeded(_) => ErrorCode::ResourceLimitExceeded,
             ErrorKind::RoomInUse => ErrorCode::RoomInUse,
             #[cfg(feature = "unstable-msc4406")]
@@ -860,6 +868,9 @@ pub enum ErrorCode {
     #[ruma_enum(alias = "ORG.MATRIX.MSC4155.INVITE_BLOCKED")]
     InviteBlocked,
 
+    /// `M_KEY_TOO_LARGE`
+    KeyTooLarge,
+
     /// `M_LIMIT_EXCEEDED`
     ///
     /// The request has been refused due to [rate limiting]: too many requests have been sent in a
@@ -910,6 +921,9 @@ pub enum ErrorCode {
     /// An `mxc:` URI generated with the `POST /_matrix/media/*/create` endpoint was used and the
     /// content is not yet available.
     NotYetUploaded,
+
+    /// `M_PROFILE_TOO_LARGE`
+    ProfileTooLarge,
 
     /// `M_RESOURCE_LIMIT_EXCEEDED`
     ///

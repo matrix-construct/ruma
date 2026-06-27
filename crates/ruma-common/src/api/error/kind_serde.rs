@@ -225,6 +225,7 @@ impl<'de> Visitor<'de> for ErrorKindVisitor {
             ErrorCode::InvalidRoomState => ErrorKind::InvalidRoomState,
             ErrorCode::InvalidUsername => ErrorKind::InvalidUsername,
             ErrorCode::InviteBlocked => ErrorKind::InviteBlocked,
+            ErrorCode::KeyTooLarge => ErrorKind::KeyTooLarge,
             ErrorCode::LimitExceeded => ErrorKind::LimitExceeded(LimitExceededErrorData {
                 retry_after: retry_after_ms
                     .map(from_json_value::<UInt>)
@@ -242,6 +243,7 @@ impl<'de> Visitor<'de> for ErrorKindVisitor {
             ErrorCode::NotInThread => ErrorKind::NotInThread,
             ErrorCode::NotJson => ErrorKind::NotJson,
             ErrorCode::NotYetUploaded => ErrorKind::NotYetUploaded,
+            ErrorCode::ProfileTooLarge => ErrorKind::ProfileTooLarge,
             ErrorCode::ResourceLimitExceeded => {
                 ErrorKind::ResourceLimitExceeded(ResourceLimitExceededErrorData {
                     admin_contact: from_json_value(
@@ -401,6 +403,7 @@ impl Serialize for ErrorKind {
             | Self::InvalidRoomState
             | Self::InvalidUsername
             | Self::InviteBlocked
+            | Self::KeyTooLarge
             | Self::LimitExceeded(LimitExceededErrorData {
                 retry_after: None | Some(RetryAfter::DateTime(_)),
             })
@@ -410,6 +413,7 @@ impl Serialize for ErrorKind {
             | Self::NotImplemented
             | Self::NotJson
             | Self::NotYetUploaded
+            | Self::ProfileTooLarge
             | Self::RoomInUse
             | Self::ServerNotTrusted
             | Self::ThreepidAuthFailed
