@@ -467,8 +467,9 @@ impl State {
     /// Returns true if there are no state updates.
     pub fn is_empty(&self) -> bool {
         match self {
-            Self::Before(state) | Self::After(state) | Self::AfterUnstable(state) =>
-                state.is_empty(),
+            Self::Before(state) | Self::After(state) | Self::AfterUnstable(state) => {
+                state.is_empty()
+            }
         }
     }
 }
