@@ -69,10 +69,16 @@ full = [
 ]
 
 # Allow IDs to exceed 255 bytes.
-compat-arbitrary-length-ids = ["ruma-common/compat-arbitrary-length-ids"]
+compat-arbitrary-length-ids = [
+    "ruma-common/compat-arbitrary-length-ids",
+    "ruma-identifiers-validation?/compat-arbitrary-length-ids",
+]
 
 # Don't validate `ServerSigningKeyVersion`.
-compat-server-signing-key-version = ["ruma-common/compat-server-signing-key-version"]
+compat-server-signing-key-version = [
+    "ruma-common/compat-server-signing-key-version",
+    "ruma-identifiers-validation?/compat-server-signing-key-version",
+]
 
 # Allow some mandatory fields in requests / responses to be missing, defaulting
 # them to an empty string in deserialization.
