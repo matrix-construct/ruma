@@ -1,6 +1,6 @@
 //! Types for the undocumented [`org.matrix.room.preview_urls`] event.
 //!
-//! [`org.matrix.room.preview_url`]: https://github.com/matrix-org/matrix-spec/issues/394
+//! [`org.matrix.room.preview_urls`]: https://github.com/matrix-org/matrix-spec/issues/394
 
 use ruma_macros::EventContent;
 use serde::{Deserialize, Serialize};
