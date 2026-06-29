@@ -23,7 +23,7 @@ use crate::{AnyGlobalAccountDataEvent, AnyRoomAccountDataEvent};
 
 /// Enum allowing to use the same structures for global and room account data
 #[derive(Debug)]
-#[allow(clippy::exhaustive_enums)]
+#[allow(clippy::exhaustive_enums, clippy::large_enum_variant)]
 pub enum AnyAccountDataEvent {
     /// An event for a specific room
     Room(AnyRoomAccountDataEvent),
