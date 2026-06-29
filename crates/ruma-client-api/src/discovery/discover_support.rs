@@ -51,7 +51,7 @@ pub struct Response {
     /// List of policy documents the server advertises, such as a privacy policy or terms of
     /// service.
     ///
-    /// These are syntactically the same as the list of policies that the server can show on registration (<https://spec.matrix.org/latest/client-server-api/#terms-of-service-at-registration>).
+    /// These are syntactically the same as the list of policies that the server can show on registration (<https://spec.matrix.org/v1.18/client-server-api/#terms-of-service-at-registration>).
     ///
     /// As defined in [MSC4266](https://github.com/matrix-org/matrix-spec-proposals/pull/4266)
     #[cfg(feature = "unstable-msc4266")]

@@ -630,7 +630,6 @@ impl MatrixVersion {
             | MatrixVersion::V1_17
             // <https://spec.matrix.org/v1.18/rooms/#complete-list-of-room-versions>
             | MatrixVersion::V1_18
-            // <https://spec.matrix.org/v1.19/rooms/#complete-list-of-room-versions>
             | MatrixVersion::V1_19 => RoomVersionId::V12,
         }
     }
