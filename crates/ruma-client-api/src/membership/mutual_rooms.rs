@@ -3,9 +3,9 @@
 //! Get the list of rooms a user shares with another user.
 
 pub mod v1 {
-    //! `/v1/` ([spec])
+    //! `/v1/` ([MSC])
     //!
-    //! [spec]: https://spec.matrix.org/v1.19/client-server-api/#get_matrixclientv1mutual_rooms
+    //! [MSC]: https://github.com/matrix-org/matrix-spec-proposals/pull/2666
 
     use js_int::UInt;
     use ruma_common::{
