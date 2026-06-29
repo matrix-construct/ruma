@@ -104,7 +104,7 @@ impl<T, const INLINE_SIZE: usize> Raw<T, INLINE_SIZE> {
     /// Create a `Raw` from a boxed `RawValue`.
     #[inline]
     pub fn from_json(json: Box<RawJsonValue>) -> Self {
-        let len = json.get().as_bytes().len();
+        let len = json.get().len();
         let bs: Box<str> = json.into();
         let p: *mut u8 = Box::into_raw(bs).cast();
         let v = unsafe { Vec::<u8>::from_raw_parts(p, len, len) };

@@ -13,6 +13,7 @@ use ruma_common::{
     metadata,
     serde::StringEnum,
 };
+#[cfg(feature = "unstable-msc4266")]
 use ruma_identity_service_api::tos::get_terms_of_service::v2::Policies;
 use serde::{Deserialize, Serialize};
 
