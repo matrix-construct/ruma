@@ -27,19 +27,19 @@ pub struct CanonicalJsonMembersOptional<'a, K>(pub &'a [CanonicalJsonMemberOptio
 #[derive(Clone, Debug, Default)]
 pub struct CanonicalJsonMembersRefOptional<'a, K>(pub &'a [CanonicalJsonMemberRefOptional<'a, K>]);
 
-/// Inner type component for CanonicalJsonMembers with AsRef<str> keys and Into Values
+/// Inner type component for CanonicalJsonMembers with `AsRef<str>` keys and Into Values
 #[allow(type_alias_bounds)]
 pub type CanonicalJsonMember<K: AsRef<str>> = (K, CanonicalJsonValue);
 
-/// Inner type component for CanonicalJsonMembers with AsRef<str> keys and Into Values
+/// Inner type component for CanonicalJsonMembers with `AsRef<str>` keys and Into Values
 #[allow(type_alias_bounds)]
 pub type CanonicalJsonMemberRef<'a, K: AsRef<str>> = (K, &'a CanonicalJsonValue);
 
-/// Inner type component for CanonicalJsonMembers with AsRef<str> keys and Optional Into Values
+/// Inner type component for CanonicalJsonMembers with `AsRef<str>` keys and Optional Into Values
 #[allow(type_alias_bounds)]
 pub type CanonicalJsonMemberOptional<K: AsRef<str>> = (K, Option<CanonicalJsonValue>);
 
-/// Inner type component for CanonicalJsonMembers with AsRef<str> keys and Optional Into Values
+/// Inner type component for CanonicalJsonMembers with `AsRef<str>` keys and Optional Into Values
 #[allow(type_alias_bounds)]
 pub type CanonicalJsonMemberRefOptional<'a, K: AsRef<str>> = (K, Option<&'a CanonicalJsonValue>);
 

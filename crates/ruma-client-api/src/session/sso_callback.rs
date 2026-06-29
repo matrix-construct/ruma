@@ -1,9 +1,7 @@
 //! `GET /_matrix/client/unstable/login/sso/callback`
 
 pub mod unstable {
-    //! `/unstable/` ([spec])
-    //!
-    //! [spec]: none
+    //! `/unstable/`
 
     use std::borrow::Cow;
 
