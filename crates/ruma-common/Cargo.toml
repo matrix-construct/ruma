@@ -54,9 +54,7 @@ unstable-msc4406 = []
 unstable-msc4426 = []
 
 # Allow IDs to exceed 255 bytes.
-compat-arbitrary-length-ids = [
-    "ruma-identifiers-validation/compat-arbitrary-length-ids",
-]
+compat-arbitrary-length-ids = ["ruma-identifiers-validation/compat-arbitrary-length-ids"]
 
 # Don't validate `ServerSigningKeyVersion`.
 compat-server-signing-key-version = ["ruma-identifiers-validation/compat-server-signing-key-version"]
