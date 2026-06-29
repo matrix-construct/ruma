@@ -65,6 +65,7 @@ pub mod v3 {
 
         /// The direction to return events from.
         #[ruma_api(query)]
+        #[serde(default)]
         pub dir: Direction,
 
         /// The maximum number of events to return.
