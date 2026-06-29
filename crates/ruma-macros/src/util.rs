@@ -2,9 +2,7 @@ use as_variant::as_variant;
 use proc_macro_crate::{FoundCrate, crate_name};
 use proc_macro2::{Span, TokenStream};
 use quote::{ToTokens, TokenStreamExt, format_ident, quote};
-use syn::{
-    Attribute, Field, Ident, LitStr, meta::ParseNestedMeta, punctuated::Punctuated, visit::Visit,
-};
+use syn::{Attribute, Field, Ident, LitStr, meta::ParseNestedMeta, punctuated::Punctuated};
 
 /// The path to use for imports from the ruma-common crate.
 ///
@@ -413,9 +411,6 @@ impl AttributeExt for Attribute {
 pub(crate) trait TypeExt {
     /// Get the inner type if this is wrapped in an `Option`.
     fn option_inner_type(&self) -> Option<&syn::Type>;
-
-    /// Whether this type has a lifetime.
-    fn has_lifetime(&self) -> bool;
 }
 
 impl TypeExt for syn::Type {
@@ -440,23 +435,6 @@ impl TypeExt for syn::Type {
         };
 
         Some(inner_type)
-    }
-
-    fn has_lifetime(&self) -> bool {
-        struct Visitor {
-            found_lifetime: bool,
-        }
-
-        impl<'ast> Visit<'ast> for Visitor {
-            fn visit_lifetime(&mut self, _lt: &'ast syn::Lifetime) {
-                self.found_lifetime = true;
-            }
-        }
-
-        let mut vis = Visitor { found_lifetime: false };
-        vis.visit_type(self);
-
-        vis.found_lifetime
     }
 }
 

@@ -6,7 +6,7 @@ use syn::{meta::ParseNestedMeta, parse_quote};
 use super::Response;
 use crate::{
     api::{Body, Headers},
-    util::{ParseNestedMetaExt, RumaCommon, TypeExt},
+    util::{ParseNestedMetaExt, RumaCommon},
 };
 
 impl Response {
