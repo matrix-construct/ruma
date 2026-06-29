@@ -13,6 +13,10 @@ rust-version = { workspace = true }
 [package.metadata.docs.rs]
 all-features = true
 
+# `smallvec` is referenced only in `IdDst`-generated code, which cargo-machete cannot detect.
+[package.metadata.cargo-machete]
+ignored = ["smallvec"]
+
 [features]
 html = ["dep:ruma-html"]
 markdown = ["dep:pulldown-cmark"]

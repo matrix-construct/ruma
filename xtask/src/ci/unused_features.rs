@@ -9,6 +9,11 @@ const ALLOW_LIST: &[&str] = &[
     // Features from the API macros, they are mostly found in macro-generated code.
     "client",
     "server",
+    // Fork stubs that tuwunel enables but whose implementations are not present in the
+    // rebased ruma, so they intentionally forward to nothing.
+    "unstable-msc3824",
+    "unstable-msc4133",
+    "unstable-msc4311",
 ];
 
 /// Check that all cargo features are used.
