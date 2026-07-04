@@ -73,8 +73,8 @@ pub struct RoomMemberEventContent {
 
     /// Flag indicating whether the room containing this event was created with the intention of
     /// being a direct chat.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub is_direct: Option<bool>,
+    #[serde(default, skip_serializing_if = "ruma_common::serde::is_default")]
+    pub is_direct: bool,
 
     /// The membership state of this user.
     pub membership: MembershipState,
@@ -127,7 +127,7 @@ impl RoomMemberEventContent {
             membership,
             avatar_url: None,
             displayname: None,
-            is_direct: None,
+            is_direct: false,
             third_party_invite: None,
             #[cfg(feature = "unstable-msc2448")]
             blurhash: None,
@@ -210,8 +210,8 @@ pub struct PossiblyRedactedRoomMemberEventContent {
 
     /// Flag indicating whether the room containing this event was created with the intention of
     /// being a direct chat.
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub is_direct: Option<bool>,
+    #[serde(default, skip_serializing_if = "ruma_common::serde::is_default")]
+    pub is_direct: bool,
 
     /// The membership state of this user.
     pub membership: MembershipState,
@@ -268,7 +268,7 @@ impl PossiblyRedactedRoomMemberEventContent {
             membership,
             avatar_url: None,
             displayname: None,
-            is_direct: None,
+            is_direct: false,
             third_party_invite: None,
             #[cfg(feature = "unstable-msc2448")]
             blurhash: None,
@@ -337,7 +337,7 @@ impl RedactContent for PossiblyRedactedRoomMemberEventContent {
                 .filter(|_| rules.keep_room_member_join_authorised_via_users_server),
             avatar_url: None,
             displayname: None,
-            is_direct: None,
+            is_direct: false,
             #[cfg(feature = "unstable-msc2448")]
             blurhash: None,
             reason: None,
@@ -390,7 +390,7 @@ impl From<RedactedRoomMemberEventContent> for PossiblyRedactedRoomMemberEventCon
         Self {
             avatar_url: None,
             displayname: None,
-            is_direct: None,
+            is_direct: false,
             membership,
             third_party_invite: third_party_invite.map(Into::into),
             #[cfg(feature = "unstable-msc2448")]
@@ -968,7 +968,7 @@ mod tests {
 
         assert_eq!(ev.content.avatar_url, None);
         assert_eq!(ev.content.displayname, None);
-        assert_eq!(ev.content.is_direct, None);
+        assert!(!ev.content.is_direct);
         assert_eq!(ev.content.membership, MembershipState::Join);
         assert_matches!(ev.content.third_party_invite, None);
     }
@@ -1001,14 +1001,14 @@ mod tests {
 
         assert_eq!(ev.content.avatar_url, None);
         assert_eq!(ev.content.displayname, None);
-        assert_eq!(ev.content.is_direct, None);
+        assert!(!ev.content.is_direct);
         assert_eq!(ev.content.membership, MembershipState::Join);
         assert_matches!(ev.content.third_party_invite, None);
 
         let prev_content = ev.unsigned.prev_content.unwrap();
         assert_eq!(prev_content.avatar_url, None);
         assert_eq!(prev_content.displayname, None);
-        assert_eq!(prev_content.is_direct, None);
+        assert!(!prev_content.is_direct);
         assert_eq!(prev_content.membership, MembershipState::Join);
         assert_matches!(prev_content.third_party_invite, None);
     }
@@ -1055,7 +1055,7 @@ mod tests {
             Some(mxc_uri!("mxc://example.org/SEsfnsuifSDFSSEF"))
         );
         assert_eq!(ev.content.displayname.as_deref(), Some("Alice Margatroid"));
-        assert_eq!(ev.content.is_direct, Some(true));
+        assert!(ev.content.is_direct);
         assert_eq!(ev.content.membership, MembershipState::Invite);
 
         let third_party_invite = ev.content.third_party_invite.unwrap();
@@ -1119,7 +1119,7 @@ mod tests {
 
         assert_eq!(ev.content.avatar_url, None);
         assert_eq!(ev.content.displayname, None);
-        assert_eq!(ev.content.is_direct, None);
+        assert!(!ev.content.is_direct);
         assert_eq!(ev.content.membership, MembershipState::Join);
         assert_matches!(ev.content.third_party_invite, None);
 
@@ -1129,7 +1129,7 @@ mod tests {
             Some(mxc_uri!("mxc://example.org/SEsfnsuifSDFSSEF"))
         );
         assert_eq!(prev_content.displayname.as_deref(), Some("Alice Margatroid"));
-        assert_eq!(prev_content.is_direct, Some(true));
+        assert!(prev_content.is_direct);
         assert_eq!(prev_content.membership, MembershipState::Invite);
 
         let third_party_invite = prev_content.third_party_invite.unwrap();
@@ -1175,7 +1175,7 @@ mod tests {
 
         assert_eq!(ev.content.avatar_url, None);
         assert_eq!(ev.content.displayname, None);
-        assert_eq!(ev.content.is_direct, None);
+        assert!(!ev.content.is_direct);
         assert_eq!(ev.content.membership, MembershipState::Join);
         assert_matches!(ev.content.third_party_invite, None);
         assert_eq!(
