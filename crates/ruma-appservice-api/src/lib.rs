@@ -112,6 +112,12 @@ pub struct Registration {
     /// Defaults to `false`
     #[serde(default, rename = "io.element.msc4190")]
     pub device_management: bool,
+
+    /// Whether the application service wants transaction extensions, as part of MSC3202.
+    ///
+    /// Defaults to `false`
+    #[serde(default, rename = "org.matrix.msc3202")]
+    pub msc3202_transaction_extensions: bool,
 }
 
 /// Initial set of fields of `Registration`.
@@ -175,6 +181,7 @@ impl From<RegistrationInit> for Registration {
             protocols,
             receive_ephemeral: false,
             device_management: false,
+            msc3202_transaction_extensions: false,
         }
     }
 }
