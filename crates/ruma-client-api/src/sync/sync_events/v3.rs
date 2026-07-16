@@ -305,7 +305,6 @@ pub struct JoinedRoom {
 
     /// The ephemeral events in the room that aren't recorded in the timeline or state of the
     /// room.
-    #[serde(skip_serializing_if = "Ephemeral::is_empty")]
     pub ephemeral: Ephemeral,
 
     /// The sticky events in the room that aren't recorded in the timeline of the room.
@@ -591,7 +590,7 @@ impl RoomAccountData {
 #[cfg_attr(not(ruma_unstable_exhaustive_types), non_exhaustive)]
 pub struct Ephemeral {
     /// A list of events.
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    #[serde(default)]
     pub events: Vec<Raw<AnySyncEphemeralRoomEvent>>,
 }
 
