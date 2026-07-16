@@ -1171,6 +1171,7 @@ mod server_tests {
                     "join": {
                         joined_room_id: {
                             "account_data": { "events": [] },
+                            "ephemeral": { "events": [] },
                             "timeline": {
                                 "events": [
                                     event,
@@ -1219,6 +1220,7 @@ mod server_tests {
                     "join": {
                         joined_room_id: {
                             "account_data": { "events": [] },
+                            "ephemeral": { "events": [] },
                             "state": {
                                 "events": [
                                     event,
@@ -1266,6 +1268,7 @@ mod server_tests {
                     "join": {
                         joined_room_id: {
                             "account_data": { "events": [] },
+                            "ephemeral": { "events": [] },
                             "state_after": {},
                         },
                     },
@@ -1306,6 +1309,7 @@ mod server_tests {
                     "join": {
                         joined_room_id: {
                             "account_data": { "events": [] },
+                            "ephemeral": { "events": [] },
                             "state_after": {
                                 "events": [
                                     event,
@@ -1349,6 +1353,7 @@ mod server_tests {
                     "join": {
                         joined_room_id: {
                             "account_data": { "events": [] },
+                            "ephemeral": { "events": [] },
                             "org.matrix.msc4222.state_after": {
                                 "events": [
                                     event,
