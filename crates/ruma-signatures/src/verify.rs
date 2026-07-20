@@ -1,6 +1,9 @@
 //! Verification of digital signatures.
 
-use std::collections::{BTreeMap, BTreeSet};
+use std::{
+    borrow::Borrow,
+    collections::{BTreeMap, BTreeSet},
+};
 
 use ruma_common::{
     AnyKeyName, CanonicalJsonObject, CanonicalJsonValue, IdParseError, OwnedEventId,
@@ -50,7 +53,7 @@ use crate::{
 /// # use std::collections::BTreeMap;
 /// # use ruma_common::RoomVersionId;
 /// # use ruma_common::serde::Base64;
-/// # use ruma_signatures::{verify_event, Verified};
+/// # use ruma_signatures::{PublicKeyMap, verify_event, Verified};
 /// #
 /// const PUBLIC_KEY: &[u8] = b"XGX0JRS2Af3be3knz2fBiRbApjm2Dh61gXDJA8kcJNI";
 ///
@@ -83,7 +86,7 @@ use crate::{
 /// // Create the `PublicKeyMap` that will inform `verify_json` which signatures to verify.
 /// let mut public_key_set = BTreeMap::new();
 /// public_key_set.insert("ed25519:1".into(), Base64::parse(PUBLIC_KEY.to_owned()).unwrap());
-/// let mut public_key_map = BTreeMap::new();
+/// let mut public_key_map = PublicKeyMap::new();
 /// public_key_map.insert("domain".into(), public_key_set);
 ///
 /// // Get the redaction rules for the version of the current room.
@@ -96,7 +99,7 @@ use crate::{
 /// assert_eq!(verification_result.unwrap(), Verified::All);
 /// ```
 pub fn verify_event(
-    public_key_map: &PublicKeyMap,
+    public_key_map: &impl FetchEntityPublicSigningKey,
     object: &CanonicalJsonObject,
     rules: &RoomVersionRules,
 ) -> Result<Verified, VerificationError> {
@@ -219,14 +222,14 @@ pub fn verify_policy_server_signature(
 /// // Create the `PublicKeyMap` that will inform `verify_json` which signatures to verify.
 /// let mut public_key_set = BTreeMap::new();
 /// public_key_set.insert("ed25519:1".into(), Base64::parse(PUBLIC_KEY.to_owned()).unwrap());
-/// let mut public_key_map = BTreeMap::new();
+/// let mut public_key_map = ruma_signatures::PublicKeyMap::new();
 /// public_key_map.insert("domain".into(), public_key_set);
 ///
 /// // Verify at least one signature for each entity in `public_key_map`.
 /// assert!(ruma_signatures::verify_json(&public_key_map, &object).is_ok());
 /// ```
 pub fn verify_json(
-    public_key_map: &PublicKeyMap,
+    public_key_map: &impl FetchEntityPublicSigningKey,
     object: &CanonicalJsonObject,
 ) -> Result<(), VerificationError> {
     let signature_map = object.get_as_required_object("signatures", "signatures")?;
@@ -584,7 +587,7 @@ pub type PublicKeyMap = BTreeMap<String, PublicKeySet>;
 pub type PublicKeySet = BTreeMap<String, Base64>;
 
 /// A trait implemented by types that allow to get the public signing keys for a given entity.
-trait FetchEntityPublicSigningKey {
+pub trait FetchEntityPublicSigningKey {
     /// Get the bytes of the public signing key with the given ID for the given entity.
     fn public_signing_key(
         &self,
@@ -593,7 +596,24 @@ trait FetchEntityPublicSigningKey {
     ) -> Result<Option<&[u8]>, VerificationError>;
 }
 
-impl FetchEntityPublicSigningKey for PublicKeyMap {
+impl<T> FetchEntityPublicSigningKey for &T
+where
+    T: FetchEntityPublicSigningKey,
+{
+    fn public_signing_key(
+        &self,
+        entity: &str,
+        key_id: &str,
+    ) -> Result<Option<&[u8]>, VerificationError> {
+        (*self).public_signing_key(entity, key_id)
+    }
+}
+
+impl<Entity, KeyId> FetchEntityPublicSigningKey for BTreeMap<Entity, BTreeMap<KeyId, Base64>>
+where
+    Entity: Borrow<str> + Ord,
+    KeyId: Borrow<str> + Ord,
+{
     fn public_signing_key(
         &self,
         entity: &str,
