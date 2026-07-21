@@ -12,6 +12,7 @@ pub mod v3 {
     use ruma_common::{
         api::{auth_scheme::AccessToken, request, response},
         metadata,
+        serde::Raw,
         thirdparty::Protocol,
     };
 
@@ -35,7 +36,7 @@ pub mod v3 {
     pub struct Response {
         /// Metadata about protocols supported by the homeserver.
         #[ruma_api(body)]
-        pub protocols: BTreeMap<String, Protocol>,
+        pub protocols: BTreeMap<String, Raw<Protocol>>,
     }
 
     impl Request {
@@ -47,7 +48,7 @@ pub mod v3 {
 
     impl Response {
         /// Creates a new `Response` with the given protocols.
-        pub fn new(protocols: BTreeMap<String, Protocol>) -> Self {
+        pub fn new(protocols: BTreeMap<String, Raw<Protocol>>) -> Self {
             Self { protocols }
         }
     }

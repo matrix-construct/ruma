@@ -12,6 +12,7 @@ pub mod v1 {
     use ruma_common::{
         api::{auth_scheme::AccessToken, request, response},
         metadata,
+        serde::Raw,
         thirdparty::{Protocol, ProtocolInstance, ProtocolInstanceInit},
     };
     use serde::{Deserialize, Serialize};
@@ -36,7 +37,7 @@ pub mod v1 {
     pub struct Response {
         /// Metadata about the protocol.
         #[ruma_api(body)]
-        pub protocol: AppserviceProtocol,
+        pub protocol: Raw<AppserviceProtocol>,
     }
 
     impl Request {
@@ -48,7 +49,7 @@ pub mod v1 {
 
     impl Response {
         /// Creates a new `Response` with the given protocol.
-        pub fn new(protocol: AppserviceProtocol) -> Self {
+        pub fn new(protocol: Raw<AppserviceProtocol>) -> Self {
             Self { protocol }
         }
     }
