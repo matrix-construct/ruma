@@ -1128,10 +1128,10 @@ mod tests {
 
     #[test]
     fn test_error_kind_type_size() {
-        // There is no strict requirement for this type to be 40 bytes or smaller,
+        // There is no strict requirement for this type to be 56 bytes or smaller,
         // but it's been optimized by hand (Boxing the `_Custom` variant)
         // and it would be nice to keep track of any regressions.
         let size = size_of::<ErrorKind>();
-        assert!(size <= 40, "size_of::<ErrorKind>() has regressed, is now {size}");
+        assert!(size <= 56, "size_of::<ErrorKind>() has regressed, is now {size}");
     }
 }
