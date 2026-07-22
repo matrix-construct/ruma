@@ -17,6 +17,7 @@ use ruma_common::api::auth_scheme::{
 use serde::{Deserialize, Serialize};
 
 pub mod event;
+pub mod keys;
 #[cfg(feature = "unstable-msc4417")]
 pub mod media;
 pub mod ping;
