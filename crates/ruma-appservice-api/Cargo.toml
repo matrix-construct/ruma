@@ -19,6 +19,8 @@ client = []
 server = []
 
 unstable-msc3202 = []
+unstable-msc3983 = []
+unstable-msc3984 = []
 unstable-msc4203 = []
 
 [dependencies]
