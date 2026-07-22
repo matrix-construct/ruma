@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+Improvements:
+
+- Add endpoint types for application service key claims and queries from MSC3983 and MSC3984.
+
 ## 0.16.0
 
 Breaking changes:
