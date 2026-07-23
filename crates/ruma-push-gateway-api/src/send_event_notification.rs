@@ -16,7 +16,7 @@ pub mod v1 {
         serde::{JsonObject, StringEnum},
     };
     use ruma_events::TimelineEventType;
-    use serde::{Deserialize, Serialize};
+    use serde::{Deserialize, Deserializer, Serialize, Serializer};
     use serde_json::value::RawValue as RawJsonValue;
 
     use crate::PrivOwnedStr;
@@ -162,29 +162,111 @@ pub mod v1 {
     }
 
     /// Type for passing information about notification counts.
-    #[derive(Clone, Debug, Default, Deserialize, Serialize)]
+    #[derive(Clone, Debug, Default)]
     #[cfg_attr(not(ruma_unstable_exhaustive_types), non_exhaustive)]
     pub struct NotificationCounts {
         /// The number of unread messages a user has across all of the rooms they
         /// are a member of.
-        #[serde(default, skip_serializing_if = "ruma_common::serde::is_default")]
         pub unread: UInt,
 
         /// The number of unacknowledged missed calls a user has across all rooms of
         /// which they are a member.
-        #[serde(default, skip_serializing_if = "ruma_common::serde::is_default")]
         pub missed_calls: UInt,
+
+        unread_present: bool,
+        missed_calls_present: bool,
+    }
+
+    #[derive(Serialize)]
+    struct NotificationCountsSer<'a> {
+        #[serde(skip_serializing_if = "Option::is_none")]
+        unread: Option<&'a UInt>,
+
+        #[serde(skip_serializing_if = "Option::is_none")]
+        missed_calls: Option<&'a UInt>,
+    }
+
+    #[derive(Default, Deserialize)]
+    struct NotificationCountsDe {
+        #[serde(default)]
+        unread: PresentUInt,
+
+        #[serde(default)]
+        missed_calls: PresentUInt,
+    }
+
+    #[derive(Default)]
+    struct PresentUInt(Option<UInt>);
+
+    impl<'de> Deserialize<'de> for PresentUInt {
+        fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            UInt::deserialize(deserializer).map(|value| Self(Some(value)))
+        }
+    }
+
+    impl Serialize for NotificationCounts {
+        fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+        {
+            NotificationCountsSer {
+                unread: (self.unread != uint!(0) || self.unread_present).then_some(&self.unread),
+                missed_calls: (self.missed_calls != uint!(0) || self.missed_calls_present)
+                    .then_some(&self.missed_calls),
+            }
+            .serialize(serializer)
+        }
+    }
+
+    impl<'de> Deserialize<'de> for NotificationCounts {
+        fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+        where
+            D: Deserializer<'de>,
+        {
+            let NotificationCountsDe { unread, missed_calls } =
+                NotificationCountsDe::deserialize(deserializer)?;
+            let unread_present = unread.0.is_some();
+            let missed_calls_present = missed_calls.0.is_some();
+
+            Ok(Self {
+                unread: unread.0.unwrap_or_default(),
+                missed_calls: missed_calls.0.unwrap_or_default(),
+                unread_present,
+                missed_calls_present,
+            })
+        }
     }
 
     impl NotificationCounts {
         /// Create new notification counts from the given unread and missed call
         /// counts.
         pub fn new(unread: UInt, missed_calls: UInt) -> Self {
-            NotificationCounts { unread, missed_calls }
+            NotificationCounts { unread, missed_calls, ..Default::default() }
+        }
+
+        /// Create new notification counts with explicit field presence.
+        ///
+        /// A present zero is serialized, while an absent count is omitted.
+        pub fn new_explicit(unread: Option<UInt>, missed_calls: Option<UInt>) -> Self {
+            let unread_present = unread.is_some();
+            let missed_calls_present = missed_calls.is_some();
+
+            Self {
+                unread: unread.unwrap_or_default(),
+                missed_calls: missed_calls.unwrap_or_default(),
+                unread_present,
+                missed_calls_present,
+            }
         }
 
         fn is_default(&self) -> bool {
-            self.unread == uint!(0) && self.missed_calls == uint!(0)
+            self.unread == uint!(0)
+                && self.missed_calls == uint!(0)
+                && !self.unread_present
+                && !self.missed_calls_present
         }
     }
 
@@ -356,9 +438,65 @@ pub mod v1 {
             owned_room_alias_id, owned_room_id, owned_user_id, push::HighlightTweakValue,
         };
         use ruma_events::TimelineEventType;
-        use serde_json::{Value as JsonValue, from_value as from_json_value, json};
+        use serde_json::{
+            Value as JsonValue, from_value as from_json_value, json, to_value as to_json_value,
+        };
 
         use super::{Device, Notification, NotificationCounts, NotificationPriority, Tweak};
+
+        #[test]
+        fn serialize_notification_counts() {
+            assert_eq!(to_json_value(Notification::default()).unwrap(), json!({ "devices": [] }),);
+            assert_eq!(
+                to_json_value(Notification {
+                    counts: NotificationCounts::new_explicit(Some(uint!(0)), None),
+                    ..Notification::default()
+                })
+                .unwrap(),
+                json!({ "counts": { "unread": 0 }, "devices": [] }),
+            );
+            assert_eq!(
+                to_json_value(NotificationCounts::new(uint!(0), uint!(0))).unwrap(),
+                json!({}),
+            );
+            assert_eq!(
+                to_json_value(NotificationCounts::new(uint!(3), uint!(0))).unwrap(),
+                json!({ "unread": 3 }),
+            );
+            assert_eq!(
+                to_json_value(NotificationCounts::new_explicit(Some(uint!(0)), None)).unwrap(),
+                json!({ "unread": 0 }),
+            );
+            assert_eq!(
+                to_json_value(NotificationCounts::new_explicit(None, Some(uint!(0)))).unwrap(),
+                json!({ "missed_calls": 0 }),
+            );
+            assert_eq!(
+                to_json_value(NotificationCounts::new_explicit(Some(uint!(0)), Some(uint!(0)),))
+                    .unwrap(),
+                json!({ "unread": 0, "missed_calls": 0 }),
+            );
+        }
+
+        #[test]
+        fn deserialize_notification_counts() {
+            let counts: NotificationCounts = from_json_value(json!({})).unwrap();
+            assert!(!counts.unread_present);
+            assert_eq!(to_json_value(counts).unwrap(), json!({}));
+
+            let counts: NotificationCounts = from_json_value(json!({ "unread": 0 })).unwrap();
+            assert!(counts.unread_present);
+            assert_eq!(to_json_value(counts).unwrap(), json!({ "unread": 0 }));
+
+            let counts_json = json!({ "unread": 3, "missed_calls": 2 });
+            let counts: NotificationCounts = from_json_value(counts_json.clone()).unwrap();
+            assert_eq!(to_json_value(counts).unwrap(), counts_json);
+
+            assert!(from_json_value::<NotificationCounts>(json!({ "unread": null })).is_err(),);
+            assert!(
+                from_json_value::<NotificationCounts>(json!({ "missed_calls": null })).is_err(),
+            );
+        }
 
         #[test]
         fn serialize_request() {
