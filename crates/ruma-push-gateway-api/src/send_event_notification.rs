@@ -7,7 +7,7 @@ pub mod v1 {
     //!
     //! [spec]: https://spec.matrix.org/v1.19/push-gateway-api/#post_matrixpushv1notify
 
-    use js_int::{UInt, uint};
+    use js_int::UInt;
     use ruma_common::{
         OwnedEventId, OwnedRoomAliasId, OwnedRoomId, OwnedUserId, SecondsSinceUnixEpoch,
         api::{auth_scheme::NoAuthentication, request, response},
@@ -123,9 +123,9 @@ pub mod v1 {
 
         /// Current number of unacknowledged communications for the recipient user.
         ///
-        /// Counts whose value is zero should be omitted.
-        #[serde(default, skip_serializing_if = "NotificationCounts::is_default")]
-        pub counts: NotificationCounts,
+        /// May be omitted entirely. When present, zero values are serialized explicitly.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub counts: Option<NotificationCounts>,
 
         /// An array of devices that the notification should be sent to.
         pub devices: Vec<Device>,
@@ -167,12 +167,12 @@ pub mod v1 {
     pub struct NotificationCounts {
         /// The number of unread messages a user has across all of the rooms they
         /// are a member of.
-        #[serde(default, skip_serializing_if = "ruma_common::serde::is_default")]
+        #[serde(default)]
         pub unread: UInt,
 
         /// The number of unacknowledged missed calls a user has across all rooms of
         /// which they are a member.
-        #[serde(default, skip_serializing_if = "ruma_common::serde::is_default")]
+        #[serde(default)]
         pub missed_calls: UInt,
     }
 
@@ -181,10 +181,6 @@ pub mod v1 {
         /// counts.
         pub fn new(unread: UInt, missed_calls: UInt) -> Self {
             NotificationCounts { unread, missed_calls }
-        }
-
-        fn is_default(&self) -> bool {
-            self.unread == uint!(0) && self.missed_calls == uint!(0)
         }
     }
 
@@ -395,7 +391,7 @@ pub mod v1 {
                 sender_display_name: Some("Major Tom".to_owned()),
                 room_alias: Some(alias),
                 content: Some(serde_json::from_str("{}").unwrap()),
-                counts: count,
+                counts: Some(count),
                 prio: NotificationPriority::Low,
                 devices,
                 ..Notification::default()
@@ -414,6 +410,7 @@ pub mod v1 {
                     "content": {},
                     "counts": {
                       "unread": 2,
+                      "missed_calls": 0,
                     },
                     "devices": [
                       {
@@ -429,6 +426,13 @@ pub mod v1 {
                     ],
                 }),
             );
+        }
+
+        #[test]
+        fn serialize_request_omits_absent_counts() {
+            let notice = Notification::default();
+
+            assert_to_canonical_json_eq!(notice, json!({ "devices": [] }));
         }
     }
 }
