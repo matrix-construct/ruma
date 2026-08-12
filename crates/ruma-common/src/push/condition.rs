@@ -824,8 +824,13 @@ impl StrExt for str {
 
             // The word characters in ASCII compatible mode (with the `-u` flag) match the
             // definition in the spec: any character not in the set `[A-Za-z0-9_]`.
+            // The pattern is user-controlled and uncached, so a large enough one exceeds the
+            // regex size limit; a rule that cannot compile matches nothing.
             let regex = format!(r"(?-u:^|\W|\b){}(?-u:\b|\W|$)", chunks.concat());
-            let re = Regex::new(&regex).expect("regex construction should succeed");
+            let Ok(re) = Regex::new(&regex) else {
+                return false;
+            };
+
             re.is_match(self.as_bytes())
         } else {
             match self.find(pattern) {
