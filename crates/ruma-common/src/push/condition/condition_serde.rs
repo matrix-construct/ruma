@@ -36,6 +36,10 @@ impl<'de> Deserialize<'de> for PushCondition {
             "event_property_contains" => {
                 from_raw_json_value(&json).map(Self::EventPropertyContains)
             }
+            #[cfg(feature = "unstable-msc3664")]
+            "im.nheko.msc3664.related_event_match" => {
+                from_raw_json_value(&json).map(Self::RelatedEventMatch)
+            }
             #[cfg(feature = "unstable-msc4306")]
             "io.element.msc4306.thread_subscription" => {
                 from_raw_json_value(&json).map(Self::ThreadSubscription)

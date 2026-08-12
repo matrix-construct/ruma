@@ -60,6 +60,13 @@ pub enum PushCondition {
     /// Exact value match on a value in an array property of the event.
     EventPropertyContains(EventPropertyContainsConditionData),
 
+    /// Matches a property of the event that this event relates to, as defined by [MSC3664].
+    ///
+    /// [MSC3664]: https://github.com/matrix-org/matrix-spec-proposals/pull/3664
+    #[cfg(feature = "unstable-msc3664")]
+    #[serde(rename = "im.nheko.msc3664.related_event_match")]
+    RelatedEventMatch(RelatedEventMatchConditionData),
+
     /// Matches a thread event based on the user's thread subscription status, as defined by
     /// [MSC4306].
     ///
@@ -86,6 +93,8 @@ impl PushCondition {
             Self::RoomVersionSupports(_) => "org.matrix.msc3931.room_version_supports",
             Self::EventPropertyIs(_) => "event_property_is",
             Self::EventPropertyContains(_) => "event_property_contains",
+            #[cfg(feature = "unstable-msc3664")]
+            Self::RelatedEventMatch(_) => "im.nheko.msc3664.related_event_match",
             #[cfg(feature = "unstable-msc4306")]
             Self::ThreadSubscription(_) => "io.element.msc4306.thread_subscription",
             Self::_Custom(condition) => &condition.kind,
@@ -117,6 +126,8 @@ impl PushCondition {
             Self::RoomVersionSupports(c) => Cow::Owned(serialize(c)),
             Self::EventPropertyIs(c) => Cow::Owned(serialize(c)),
             Self::EventPropertyContains(c) => Cow::Owned(serialize(c)),
+            #[cfg(feature = "unstable-msc3664")]
+            Self::RelatedEventMatch(c) => Cow::Owned(serialize(c)),
             #[cfg(feature = "unstable-msc4306")]
             Self::ThreadSubscription(c) => Cow::Owned(serialize(c)),
             Self::_Custom(c) => Cow::Borrowed(&c.data),
@@ -150,6 +161,8 @@ impl PushCondition {
             Self::RoomVersionSupports(condition) => condition.applies(context),
             Self::EventPropertyIs(condition) => condition.applies(event),
             Self::EventPropertyContains(condition) => condition.applies(event),
+            #[cfg(feature = "unstable-msc3664")]
+            Self::RelatedEventMatch(condition) => condition.applies(event, context),
             #[cfg(feature = "unstable-msc4306")]
             Self::ThreadSubscription(condition) => condition.applies(event, context).await,
             Self::_Custom(_) => false,
@@ -191,6 +204,13 @@ impl From<EventPropertyIsConditionData> for PushCondition {
 impl From<EventPropertyContainsConditionData> for PushCondition {
     fn from(value: EventPropertyContainsConditionData) -> Self {
         Self::EventPropertyContains(value)
+    }
+}
+
+#[cfg(feature = "unstable-msc3664")]
+impl From<RelatedEventMatchConditionData> for PushCondition {
+    fn from(value: RelatedEventMatchConditionData) -> Self {
+        Self::RelatedEventMatch(value)
     }
 }
 
@@ -430,6 +450,95 @@ impl EventPropertyContainsConditionData {
     }
 }
 
+/// Data for the `related_event_match` [`PushCondition`].
+#[derive(Clone, Debug, Serialize, Deserialize)]
+#[cfg(feature = "unstable-msc3664")]
+#[cfg_attr(not(ruma_unstable_exhaustive_types), non_exhaustive)]
+pub struct RelatedEventMatchConditionData {
+    /// The type of the relation to follow.
+    ///
+    /// Replies are matched as if they carried a relation of type `m.in_reply_to`.
+    pub rel_type: String,
+
+    /// Whether to follow a relation that is only present as a fallback.
+    #[serde(default, skip_serializing_if = "crate::serde::is_default")]
+    pub include_fallbacks: bool,
+
+    /// The [dot-separated path] of the property of the related event to match.
+    ///
+    /// The condition matches any event carrying a relation of `rel_type` when this or `pattern`
+    /// is missing.
+    ///
+    /// [dot-separated path]: https://spec.matrix.org/v1.19/appendices/#dot-separated-property-paths
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub key: Option<String>,
+
+    /// The glob-style pattern to match the property against.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub pattern: Option<String>,
+}
+
+#[cfg(feature = "unstable-msc3664")]
+impl RelatedEventMatchConditionData {
+    /// Construct a new `RelatedEventMatchConditionData` matching any relation of the given type.
+    pub fn new(rel_type: String) -> Self {
+        Self { rel_type, include_fallbacks: false, key: None, pattern: None }
+    }
+
+    /// Construct a new `RelatedEventMatchConditionData` matching the given path of the related
+    /// event against the given pattern.
+    pub fn new_with_pattern(rel_type: String, key: String, pattern: String) -> Self {
+        Self { rel_type, include_fallbacks: false, key: Some(key), pattern: Some(pattern) }
+    }
+
+    /// Check if this condition applies to the event.
+    ///
+    /// # Arguments
+    ///
+    /// * `event` - The flattened JSON representation of a room message event.
+    /// * `context` - The context of the room at the time of the event.
+    ///
+    /// Returns `false` if the context resolves no relations at all, if the event carries no
+    /// matching relation, if only one of `key` and `pattern` is set, or if a `key` and `pattern`
+    /// are set and the related event is missing from the context.
+    fn applies(&self, event: &FlattenedJson, context: &PushConditionRoomCtx) -> bool {
+        let Some(related_events) = &context.related_events else {
+            return false;
+        };
+
+        if !self.matches_relation(event) {
+            return false;
+        }
+
+        match (&self.key, &self.pattern) {
+            // The relation type alone decides the match, so no related event is needed.
+            (None, None) => true,
+            (Some(key), Some(pattern)) => {
+                related_events.get(&self.rel_type).is_some_and(|related_event| {
+                    check_event_match(related_event, key, pattern, context)
+                })
+            }
+            // A half-specified match is rejected rather than widened to the relation type.
+            _ => false,
+        }
+    }
+
+    /// Check whether the event carries a relation this condition follows.
+    fn matches_relation(&self, event: &FlattenedJson) -> bool {
+        if self.rel_type != "m.in_reply_to" {
+            return event.get_str("content.m\\.relates_to.rel_type") == Some(&self.rel_type);
+        }
+
+        let is_falling_back = event
+            .get("content.m\\.relates_to.is_falling_back")
+            .and_then(FlattenedJsonValue::as_bool)
+            .unwrap_or(false);
+
+        event.get_str("content.m\\.relates_to.m\\.in_reply_to.event_id").is_some()
+            && (self.include_fallbacks || !is_falling_back)
+    }
+}
+
 /// Data for the `thread_subscription` [`PushCondition`].
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[cfg(feature = "unstable-msc4306")]
@@ -538,6 +647,20 @@ pub struct PushConditionRoomCtx {
     #[cfg(feature = "unstable-msc3931")]
     pub supported_features: Vec<RoomVersionFeature>,
 
+    /// The flattened JSON representation of the events the current event relates to, keyed by
+    /// relation type, as defined by [MSC3664].
+    ///
+    /// `None` means the caller does not resolve relations at all, and every `related_event_match`
+    /// condition then fails to match. An empty map means the caller resolved the relations and
+    /// found none, which a condition matching on relation type alone can still act on.
+    ///
+    /// One event's relations are shared by every user the event is evaluated for, so this is
+    /// reference-counted rather than cloned into each user's context.
+    ///
+    /// [MSC3664]: https://github.com/matrix-org/matrix-spec-proposals/pull/3664
+    #[cfg(feature = "unstable-msc3664")]
+    pub related_events: Option<Arc<BTreeMap<String, FlattenedJson>>>,
+
     /// A closure that returns a future indicating if the given thread (represented by its thread
     /// root event id) is subscribed to by the current user, where subscriptions are defined as per
     /// [MSC4306].
@@ -581,6 +704,9 @@ impl std::fmt::Debug for PushConditionRoomCtx {
         #[cfg(feature = "unstable-msc3931")]
         debug_struct.field("supported_features", &self.supported_features);
 
+        #[cfg(feature = "unstable-msc3664")]
+        debug_struct.field("related_events", &self.related_events);
+
         debug_struct.finish_non_exhaustive()
     }
 }
@@ -601,8 +727,19 @@ impl PushConditionRoomCtx {
             power_levels: None,
             #[cfg(feature = "unstable-msc3931")]
             supported_features: Vec::new(),
+            #[cfg(feature = "unstable-msc3664")]
+            related_events: None,
             has_thread_subscription_fn: Default::default(),
         }
+    }
+
+    /// Add the flattened representations of the events the current event relates to, keyed by
+    /// relation type, so as to evaluate the push conditions defined in [MSC3664].
+    ///
+    /// [MSC3664]: https://github.com/matrix-org/matrix-spec-proposals/pull/3664
+    #[cfg(feature = "unstable-msc3664")]
+    pub fn with_related_events(self, related_events: Arc<BTreeMap<String, FlattenedJson>>) -> Self {
+        Self { related_events: Some(related_events), ..self }
     }
 
     /// Set a function to check if the user is subscribed to a thread, so as to define the push
@@ -1402,6 +1539,164 @@ mod tests {
         );
 
         assert!(sender_notification_permission.applies(&first_event, &context).await);
+    }
+
+    #[cfg(feature = "unstable-msc3664")]
+    #[apply(test!)]
+    async fn related_event_match_applies() {
+        use std::sync::Arc;
+
+        use super::RelatedEventMatchConditionData;
+
+        let my_message = FlattenedJson::from_value(json!({
+            "event_id": "$my_message",
+            "sender": "@gorilla:server.name",
+            "content": {
+                "msgtype": "m.text",
+                "body": "Dinner at 7?",
+            },
+        }));
+
+        let their_message = FlattenedJson::from_value(json!({
+            "event_id": "$their_message",
+            "sender": "@worthy_whale:server.name",
+            "content": {
+                "msgtype": "m.text",
+                "body": "Dinner at 8?",
+            },
+        }));
+
+        let reaction = FlattenedJson::from_value(json!({
+            "event_id": "$reaction",
+            "sender": "@worthy_whale:server.name",
+            "content": {
+                "m.relates_to": {
+                    "rel_type": "m.annotation",
+                    "event_id": "$my_message",
+                    "key": "👍",
+                },
+            },
+        }));
+
+        let annotates_me =
+            PushCondition::RelatedEventMatch(RelatedEventMatchConditionData::new_with_pattern(
+                "m.annotation".to_owned(),
+                "sender".to_owned(),
+                "@gorilla:server.name".to_owned(),
+            ));
+
+        let annotated = |event: FlattenedJson| {
+            push_context()
+                .with_related_events(Arc::new([("m.annotation".to_owned(), event)].into()))
+        };
+
+        // A caller that resolved the relations and found none, as opposed to one that does not
+        // resolve them at all.
+        let resolved_none = || push_context().with_related_events(Arc::default());
+
+        assert!(annotates_me.applies(&reaction, &annotated(my_message)).await);
+        assert!(!annotates_me.applies(&reaction, &annotated(their_message)).await);
+        assert!(!annotates_me.applies(&reaction, &resolved_none()).await);
+
+        // A condition without a key and a pattern matches on the relation type alone, so it
+        // needs no related event resolved.
+        let any_annotation = PushCondition::RelatedEventMatch(RelatedEventMatchConditionData::new(
+            "m.annotation".to_owned(),
+        ));
+
+        assert!(any_annotation.applies(&reaction, &resolved_none()).await);
+        assert!(!any_annotation.applies(&first_flattened_event(), &resolved_none()).await);
+
+        // A caller that does not resolve relations leaves every condition unable to match, the
+        // relation-type-only one included.
+        assert!(!annotates_me.applies(&reaction, &push_context()).await);
+        assert!(!any_annotation.applies(&reaction, &push_context()).await);
+    }
+
+    /// A condition carrying only one of `key` and `pattern` cannot express the match it names,
+    /// so it is rejected rather than widened to every event carrying the relation.
+    #[cfg(feature = "unstable-msc3664")]
+    #[apply(test!)]
+    async fn related_event_match_half_specified() {
+        use std::sync::Arc;
+
+        use super::RelatedEventMatchConditionData;
+
+        let reaction = FlattenedJson::from_value(json!({
+            "event_id": "$reaction",
+            "sender": "@worthy_whale:server.name",
+            "content": {
+                "m.relates_to": {
+                    "rel_type": "m.annotation",
+                    "event_id": "$my_message",
+                    "key": "👍",
+                },
+            },
+        }));
+
+        let mut data = RelatedEventMatchConditionData::new("m.annotation".to_owned());
+        data.key = Some("sender".to_owned());
+        let key_without_pattern = PushCondition::RelatedEventMatch(data);
+
+        let context = push_context().with_related_events(Arc::default());
+
+        assert!(!key_without_pattern.applies(&reaction, &context).await);
+    }
+
+    #[cfg(feature = "unstable-msc3664")]
+    #[apply(test!)]
+    async fn related_event_match_reply_fallbacks() {
+        use std::sync::Arc;
+
+        use super::RelatedEventMatchConditionData;
+
+        let reply = FlattenedJson::from_value(json!({
+            "event_id": "$reply",
+            "sender": "@worthy_whale:server.name",
+            "content": {
+                "msgtype": "m.text",
+                "body": "Sounds good",
+                "m.relates_to": {
+                    "m.in_reply_to": {
+                        "event_id": "$my_message",
+                    },
+                },
+            },
+        }));
+
+        let threaded = FlattenedJson::from_value(json!({
+            "event_id": "$threaded",
+            "sender": "@worthy_whale:server.name",
+            "content": {
+                "msgtype": "m.text",
+                "body": "Sounds good",
+                "m.relates_to": {
+                    "rel_type": "m.thread",
+                    "event_id": "$thread_root",
+                    "is_falling_back": true,
+                    "m.in_reply_to": {
+                        "event_id": "$my_message",
+                    },
+                },
+            },
+        }));
+
+        let any_reply = PushCondition::RelatedEventMatch(RelatedEventMatchConditionData::new(
+            "m.in_reply_to".to_owned(),
+        ));
+
+        let context = push_context().with_related_events(Arc::default());
+
+        assert!(any_reply.applies(&reply, &context).await);
+
+        // A thread's reply relation is only a fallback, so it is not a reply by default.
+        assert!(!any_reply.applies(&threaded, &context).await);
+
+        let mut data = RelatedEventMatchConditionData::new("m.in_reply_to".to_owned());
+        data.include_fallbacks = true;
+        let any_reply_or_fallback = PushCondition::RelatedEventMatch(data);
+
+        assert!(any_reply_or_fallback.applies(&threaded, &context).await);
     }
 
     #[cfg(feature = "unstable-msc4306")]

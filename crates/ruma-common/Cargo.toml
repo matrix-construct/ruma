@@ -34,6 +34,8 @@ unstable-msc2666 = []
 unstable-msc2870 = []
 unstable-msc3026 = []
 unstable-msc3417 = []
+# Push rules for relations.
+unstable-msc3664 = []
 unstable-msc3768 = []
 unstable-msc3843 = []
 unstable-msc3930 = []
