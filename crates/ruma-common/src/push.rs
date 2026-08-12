@@ -33,6 +33,8 @@ mod condition;
 mod iter;
 mod predefined;
 
+#[cfg(feature = "unstable-msc3664")]
+pub use self::condition::RelatedEventMatchConditionData;
 #[cfg(feature = "unstable-msc4306")]
 pub use self::condition::ThreadSubscriptionConditionData;
 #[cfg(feature = "unstable-msc3932")]
