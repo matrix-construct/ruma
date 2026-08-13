@@ -1027,6 +1027,11 @@ where
         to = idx;
     }
 
+    // `to` is a position within the set, and neither source is bounded by its
+    // length: a default position can sit past a set shorter than it, and `after`
+    // names the rule the new one follows, which may be the last.
+    let to = to.min(set.len().saturating_sub(1));
+
     // Only move the item if it's new or if it was positioned.
     if replaced.is_none() || after.is_some() || before.is_some() {
         set.move_index(from, to);
@@ -1062,7 +1067,8 @@ mod tests {
     use smol_macros::test;
 
     use super::{
-        AnyPushRule, ConditionalPushRule, PatternedPushRule, Ruleset, SimplePushRule,
+        AnyPushRule, ConditionalPushRule, NewConditionalPushRule, NewPushRule, NewSimplePushRule,
+        PatternedPushRule, Ruleset, SimplePushRule,
         action::{Action, HighlightTweakValue, Tweak},
         condition::{
             EventMatchConditionData, PushCondition, PushConditionPowerLevelsCtx,
@@ -1951,5 +1957,31 @@ mod tests {
             set.get_match(&message, &context).await.unwrap().rule_id(),
             PredefinedOverrideRuleId::InviteForMe.as_ref()
         );
+    }
+
+    #[test]
+    fn insert_override_rule_into_empty_override_set() {
+        let mut set = Ruleset::new();
+        let rule = NewConditionalPushRule::new("custom".into(), vec![].into(), vec![].into());
+
+        set.insert(NewPushRule::Override(rule), None, None).unwrap();
+
+        assert_eq!(set.override_.len(), 1);
+    }
+
+    #[test]
+    fn insert_rule_after_the_last_rule_of_its_kind() {
+        let mut set = Ruleset::new();
+        let first = NewSimplePushRule::new(owned_room_id!("!a:server.name"), vec![].into());
+        let second = NewSimplePushRule::new(owned_room_id!("!b:server.name"), vec![].into());
+
+        set.insert(NewPushRule::Room(first), None, None).unwrap();
+        set.insert(NewPushRule::Room(second.clone()), None, None).unwrap();
+
+        // New rules land at index 0, so "!a" is now last. Re-inserting an existing
+        // rule after the last one must not move it past the end.
+        set.insert(NewPushRule::Room(second), Some("!a:server.name"), None).unwrap();
+
+        assert_eq!(set.room.len(), 2);
     }
 }
