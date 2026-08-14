@@ -498,28 +498,25 @@ impl RelatedEventMatchConditionData {
     /// * `event` - The flattened JSON representation of a room message event.
     /// * `context` - The context of the room at the time of the event.
     ///
-    /// Returns `false` if the context resolves no relations at all, if the event carries no
-    /// matching relation, if only one of `key` and `pattern` is set, or if a `key` and `pattern`
-    /// are set and the related event is missing from the context.
+    /// Returns `false` if the event carries no matching relation or the context does not contain
+    /// the related event.
     fn applies(&self, event: &FlattenedJson, context: &PushConditionRoomCtx) -> bool {
-        let Some(related_events) = &context.related_events else {
-            return false;
-        };
-
         if !self.matches_relation(event) {
             return false;
         }
 
+        let Some(related_event) = context
+            .related_events
+            .as_ref()
+            .and_then(|related_events| related_events.get(&self.rel_type))
+        else {
+            return false;
+        };
+
         match (&self.key, &self.pattern) {
-            // The relation type alone decides the match, so no related event is needed.
-            (None, None) => true,
-            (Some(key), Some(pattern)) => {
-                related_events.get(&self.rel_type).is_some_and(|related_event| {
-                    check_event_match(related_event, key, pattern, context)
-                })
-            }
-            // A half-specified match is rejected rather than widened to the relation type.
-            _ => false,
+            (Some(key), Some(pattern)) => check_event_match(related_event, key, pattern, context),
+            // A lone key or pattern is ignored, leaving the relation type to decide the match.
+            _ => true,
         }
     }
 
@@ -650,9 +647,9 @@ pub struct PushConditionRoomCtx {
     /// The flattened JSON representation of the events the current event relates to, keyed by
     /// relation type, as defined by [MSC3664].
     ///
-    /// `None` means the caller does not resolve relations at all, and every `related_event_match`
-    /// condition then fails to match. An empty map means the caller resolved the relations and
-    /// found none, which a condition matching on relation type alone can still act on.
+    /// `None` means the caller does not resolve relations at all. An empty map means the caller
+    /// resolved the relations and found none. In either case, every `related_event_match`
+    /// condition fails to match.
     ///
     /// One event's relations are shared by every user the event is evaluated for, so this is
     /// reference-counted rather than cloned into each user's context.
@@ -1598,23 +1595,22 @@ mod tests {
         assert!(!annotates_me.applies(&reaction, &annotated(their_message)).await);
         assert!(!annotates_me.applies(&reaction, &resolved_none()).await);
 
-        // A condition without a key and a pattern matches on the relation type alone, so it
-        // needs no related event resolved.
+        // A condition without a key and a pattern matches on the relation type alone after the
+        // related event is resolved.
         let any_annotation = PushCondition::RelatedEventMatch(RelatedEventMatchConditionData::new(
             "m.annotation".to_owned(),
         ));
 
-        assert!(any_annotation.applies(&reaction, &resolved_none()).await);
+        assert!(any_annotation.applies(&reaction, &annotated(first_flattened_event())).await);
+        assert!(!any_annotation.applies(&reaction, &resolved_none()).await);
         assert!(!any_annotation.applies(&first_flattened_event(), &resolved_none()).await);
 
-        // A caller that does not resolve relations leaves every condition unable to match, the
-        // relation-type-only one included.
+        // Both a full match and a relation-type-only condition need the related event.
         assert!(!annotates_me.applies(&reaction, &push_context()).await);
         assert!(!any_annotation.applies(&reaction, &push_context()).await);
     }
 
-    /// A condition carrying only one of `key` and `pattern` cannot express the match it names,
-    /// so it is rejected rather than widened to every event carrying the relation.
+    /// A consumer ignores a lone `key` or `pattern`, matching on the relation type alone.
     #[cfg(feature = "unstable-msc3664")]
     #[apply(test!)]
     async fn related_event_match_half_specified() {
@@ -1638,9 +1634,17 @@ mod tests {
         data.key = Some("sender".to_owned());
         let key_without_pattern = PushCondition::RelatedEventMatch(data);
 
-        let context = push_context().with_related_events(Arc::default());
+        let mut data = RelatedEventMatchConditionData::new("m.annotation".to_owned());
+        data.pattern = Some("@gorilla:server.name".to_owned());
+        let pattern_without_key = PushCondition::RelatedEventMatch(data);
 
-        assert!(!key_without_pattern.applies(&reaction, &context).await);
+        let context = push_context().with_related_events(Arc::new(
+            [("m.annotation".to_owned(), first_flattened_event())].into(),
+        ));
+        assert!(key_without_pattern.applies(&reaction, &context).await);
+        assert!(pattern_without_key.applies(&reaction, &context).await);
+        assert!(!key_without_pattern.applies(&reaction, &push_context()).await);
+        assert!(!pattern_without_key.applies(&reaction, &push_context()).await);
     }
 
     #[cfg(feature = "unstable-msc3664")]
@@ -1685,7 +1689,9 @@ mod tests {
             "m.in_reply_to".to_owned(),
         ));
 
-        let context = push_context().with_related_events(Arc::default());
+        let context = push_context().with_related_events(Arc::new(
+            [("m.in_reply_to".to_owned(), first_flattened_event())].into(),
+        ));
 
         assert!(any_reply.applies(&reply, &context).await);
 

@@ -4,6 +4,8 @@
 
 use ruma_macros::StringEnum;
 
+#[cfg(feature = "unstable-msc3664")]
+use super::RelatedEventMatchConditionData;
 use super::{
     Action::*, ConditionalPushRule, EventMatchConditionData, EventPropertyContainsConditionData,
     EventPropertyIsConditionData, HighlightTweakValue, PushCondition::*,
@@ -28,6 +30,8 @@ impl Ruleset {
                 ConditionalPushRule::suppress_notices(),
                 ConditionalPushRule::invite_for_me(user_id),
                 ConditionalPushRule::member_event(),
+                #[cfg(feature = "unstable-msc3664")]
+                ConditionalPushRule::reply(user_id),
                 ConditionalPushRule::is_user_mention(user_id),
                 ConditionalPushRule::is_room_mention(),
                 ConditionalPushRule::tombstone(),
@@ -212,6 +216,28 @@ impl ConditionalPushRule {
                 user_id.as_str().into(),
             ))]
             .into(),
+        }
+    }
+
+    /// Matches replies to events sent by the user.
+    #[cfg(feature = "unstable-msc3664")]
+    pub fn reply(user_id: &UserId) -> Self {
+        Self {
+            actions: smallvec::smallvec![
+                Notify,
+                SetTweak(Tweak::Highlight(HighlightTweakValue::Yes)),
+                SetTweak(Tweak::Sound(SoundTweakValue::Default)),
+            ],
+            default: true,
+            enabled: true,
+            rule_id: PredefinedOverrideRuleId::Reply.as_str().into(),
+            conditions: smallvec::smallvec![RelatedEventMatch(
+                RelatedEventMatchConditionData::new_with_pattern(
+                    "m.in_reply_to".to_owned(),
+                    "sender".to_owned(),
+                    user_id.as_str().into(),
+                )
+            )],
         }
     }
 
@@ -602,6 +628,15 @@ pub enum PredefinedOverrideRuleId {
     /// `.m.rule.member_event`
     MemberEvent,
 
+    /// `.im.nheko.msc3664.reply`
+    ///
+    /// This uses the unstable prefix defined in [MSC3664].
+    ///
+    /// [MSC3664]: https://github.com/matrix-org/matrix-spec-proposals/pull/3664
+    #[cfg(feature = "unstable-msc3664")]
+    #[ruma_enum(rename = ".im.nheko.msc3664.reply")]
+    Reply,
+
     /// `.m.rule.is_user_mention`
     IsUserMention,
 
@@ -825,5 +860,47 @@ mod tests {
             ruleset.override_.get(PredefinedOverrideRuleId::MemberEvent.as_str()).unwrap();
         assert!(member_event_rule.enabled);
         assert_eq!(member_event_rule.actions.len(), 0);
+    }
+
+    #[cfg(feature = "unstable-msc3664")]
+    #[test]
+    fn reply_rule() {
+        use crate::push::{HighlightTweakValue, PushCondition, SoundTweakValue, Tweak};
+
+        let ruleset = Ruleset::server_default(user_id!("@user:localhost"));
+        let member_event_idx =
+            ruleset.override_.get_index_of(PredefinedOverrideRuleId::MemberEvent.as_str()).unwrap();
+        let reply_idx =
+            ruleset.override_.get_index_of(PredefinedOverrideRuleId::Reply.as_str()).unwrap();
+        let user_mention_idx = ruleset
+            .override_
+            .get_index_of(PredefinedOverrideRuleId::IsUserMention.as_str())
+            .unwrap();
+
+        assert_eq!(PredefinedOverrideRuleId::Reply.as_str(), ".im.nheko.msc3664.reply");
+        assert_eq!(reply_idx, member_event_idx + 1);
+        assert_eq!(user_mention_idx, reply_idx + 1);
+
+        let rule = &ruleset.override_[reply_idx];
+        assert!(rule.default);
+        assert!(rule.enabled);
+
+        let mut actions = rule.actions.iter();
+        assert_matches!(actions.next(), Some(Action::Notify));
+        assert_matches!(
+            actions.next(),
+            Some(Action::SetTweak(Tweak::Highlight(HighlightTweakValue::Yes)))
+        );
+        assert_matches!(
+            actions.next(),
+            Some(Action::SetTweak(Tweak::Sound(SoundTweakValue::Default)))
+        );
+        assert_matches!(actions.next(), None);
+
+        assert_matches!(&rule.conditions[..], [PushCondition::RelatedEventMatch(data)]);
+        assert_eq!(data.rel_type, "m.in_reply_to");
+        assert!(!data.include_fallbacks);
+        assert_eq!(data.key.as_deref(), Some("sender"));
+        assert_eq!(data.pattern.as_deref(), Some("@user:localhost"));
     }
 }
