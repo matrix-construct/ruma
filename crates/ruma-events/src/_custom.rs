@@ -3,7 +3,7 @@ use serde::Serialize;
 use serde_json::value::RawValue as RawJsonValue;
 
 use super::{
-    EphemeralRoomEventContent, EphemeralRoomEventType, EventContentFromType,
+    EphemeralRoomEventContent, EphemeralRoomEventType, EventContentFromType, EventTypeString,
     GlobalAccountDataEventContent, GlobalAccountDataEventType, MessageLikeEventContent,
     MessageLikeEventType, MessageLikeUnsigned, PossiblyRedactedStateEventContent, RedactContent,
     RedactedMessageLikeEventContent, RedactedStateEventContent, RoomAccountDataEventContent,
@@ -20,7 +20,7 @@ macro_rules! custom_event_content {
         #[allow(clippy::exhaustive_structs)]
         pub struct $i {
             #[serde(skip)]
-            event_type: Box<str>,
+            event_type: EventTypeString,
         }
 
         impl EventContentFromType for $i {

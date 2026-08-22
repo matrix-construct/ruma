@@ -5,7 +5,7 @@ use serde::{Deserialize, de};
 use serde_json::value::RawValue as RawJsonValue;
 
 use super::{AnyRedactionEvent, CustomRedactionEvent};
-use crate::EventTypeDeHelper;
+use crate::{EventTypeDeHelper, EventTypeString};
 
 impl<'de> Deserialize<'de> for AnyRedactionEvent {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
@@ -37,7 +37,7 @@ impl<'de> Deserialize<'de> for AnyRedactionEvent {
 struct CustomRedactionEventDeHelper {
     /// The type of the event
     #[serde(rename = "type")]
-    event_type: Box<str>,
+    event_type: EventTypeString,
 
     /// The globally unique event identifier for the user who sent the event.
     event_id: OwnedEventId,

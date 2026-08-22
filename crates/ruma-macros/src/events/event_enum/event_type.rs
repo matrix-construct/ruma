@@ -38,6 +38,7 @@ impl EventTypeEnum<'_> {
     /// Generate the `*EventType` enum and its implementations.
     pub(super) fn expand(&self) -> TokenStream {
         let ident = &self.ident;
+        let ruma_events = self.ruma_events;
         let enum_doc = format!("The type of `{}` this is.", self.kind);
 
         let variants = self.events.iter().map(|event| {
@@ -49,7 +50,7 @@ impl EventTypeEnum<'_> {
                 quote! {
                     #variant_docs
                     #( #variant_attrs )*
-                    #variant(::std::string::String),
+                    #variant(#ruma_events::EventTypeString),
                 }
             } else {
                 quote! {
@@ -80,7 +81,7 @@ impl EventTypeEnum<'_> {
                 #[doc(hidden)]
                 /// This variant ensures forward compatibility of the library. It deliberately cannot be
                 /// used to create custom variants in client code.
-                _Custom(crate::PrivOwnedStr),
+                _Custom(crate::PrivOwnedSmallStr),
             }
 
             #ord_impl
@@ -150,7 +151,7 @@ impl EventTypeEnum<'_> {
                 fn event_type_str(&self) -> &::std::primitive::str {
                     match self {
                         #( #event_type_str_match_arms )*
-                        Self::_Custom(crate::PrivOwnedStr(s)) => s,
+                        Self::_Custom(crate::PrivOwnedSmallStr(s)) => s,
                     }
                 }
 
@@ -206,6 +207,51 @@ impl EventTypeEnum<'_> {
                 }
             });
 
+        // `Serialize` writes a type with a fragment through `Display`, so it does not take the
+        // allocation `to_cow_str` needs to hand back one string slice.
+        let serialize_match_arms = self.events.iter().map(|event| {
+            let variant = &event.ident;
+            let variant_attrs = &event.attrs;
+            let ev_type = &event.types.ev_type;
+
+            if ev_type.is_prefix() {
+                quote! {
+                    #( #variant_attrs )*
+                    Self::#variant(_) => serializer.collect_str(self),
+                }
+            } else {
+                quote! {
+                    #( #variant_attrs )*
+                    Self::#variant => serializer.serialize_str(#ev_type),
+                }
+            }
+        });
+
+        // `Display` writes the two pieces of a type with a fragment one after the other, so it
+        // does not take the allocation `to_cow_str` needs to hand back one string slice.
+        let display_match_arms = self.events.iter().map(|event| {
+            let variant = &event.ident;
+            let variant_attrs = &event.attrs;
+            let ev_type = &event.types.ev_type;
+
+            if ev_type.is_prefix() {
+                let prefix = ev_type.without_wildcard();
+
+                quote! {
+                    #( #variant_attrs )*
+                    Self::#variant(fragment) => {
+                        f.write_str(#prefix)?;
+                        f.write_str(fragment)
+                    }
+                }
+            } else {
+                quote! {
+                    #( #variant_attrs )*
+                    Self::#variant => f.write_str(#ev_type),
+                }
+            }
+        });
+
         quote! {
             #[allow(deprecated)]
             impl #ident {
@@ -213,7 +259,7 @@ impl EventTypeEnum<'_> {
                 pub fn to_cow_str(&self) -> ::std::borrow::Cow<'_, ::std::primitive::str> {
                     match self {
                         #( #match_arms )*
-                        Self::_Custom(crate::PrivOwnedStr(s)) => ::std::borrow::Cow::Borrowed(s),
+                        Self::_Custom(crate::PrivOwnedSmallStr(s)) => ::std::borrow::Cow::Borrowed(s),
                     }
                 }
             }
@@ -221,7 +267,16 @@ impl EventTypeEnum<'_> {
             #[allow(deprecated)]
             impl ::std::fmt::Display for #ident {
                 fn fmt(&self, f: &mut ::std::fmt::Formatter<'_>) -> ::std::fmt::Result {
-                    self.to_cow_str().fmt(f)
+                    // Padding and truncation need the whole type as one slice, which a type with
+                    // a fragment only has once it is joined.
+                    if f.width().is_some() || f.precision().is_some() {
+                        return f.pad(&self.to_cow_str());
+                    }
+
+                    match self {
+                        #( #display_match_arms )*
+                        Self::_Custom(crate::PrivOwnedSmallStr(s)) => f.write_str(s),
+                    }
                 }
             }
 
@@ -238,14 +293,17 @@ impl EventTypeEnum<'_> {
                 where
                     S: #serde::Serializer,
                 {
-                    self.to_cow_str().serialize(serializer)
+                    match self {
+                        #( #serialize_match_arms )*
+                        Self::_Custom(crate::PrivOwnedSmallStr(s)) => serializer.serialize_str(s),
+                    }
                 }
             }
         }
     }
 
-    /// Generate the `From<&str>`, `From<String>` and `serde::Deserialize` implementations for the
-    /// event type enum.
+    /// Generate the `from_known_str` helper and the `From<&str>`, `From<String>` and
+    /// `serde::Deserialize` implementations for the event type enum.
     fn expand_from_string_impl(&self) -> TokenStream {
         let ident = &self.ident;
         let ruma_common = self.ruma_events.ruma_common();
@@ -294,26 +352,45 @@ impl EventTypeEnum<'_> {
 
         quote! {
             #[allow(deprecated)]
+            impl #ident {
+                /// Match one of the documented event types, without taking ownership of `s`.
+                ///
+                /// Returns `None` for a type that only the `_Custom` variant can hold, which lets
+                /// a caller hand its own allocation to that variant instead of copying the string
+                /// and dropping the original.
+                fn from_known_str(s: &::std::primitive::str) -> Option<Self> {
+                    Some(match s {
+                        #( #from_str_match_arms )*
+                        _ => return None,
+                    })
+                }
+            }
+
+            #[allow(deprecated)]
             impl ::std::convert::From<&::std::primitive::str> for #ident {
                 fn from(s: &::std::primitive::str) -> Self {
-                    match s {
-                        #( #from_str_match_arms )*
-                        _ => Self::_Custom(crate::PrivOwnedStr(::std::convert::From::from(s))),
-                    }
+                    Self::from_known_str(s).unwrap_or_else(|| {
+                        Self::_Custom(crate::PrivOwnedSmallStr(::std::convert::From::from(s)))
+                    })
                 }
             }
 
             #[allow(deprecated)]
             impl ::std::convert::From<::std::string::String> for #ident {
                 fn from(s: ::std::string::String) -> Self {
-                    ::std::convert::From::from(s.as_str())
+                    Self::from_known_str(&s).unwrap_or_else(|| {
+                        Self::_Custom(crate::PrivOwnedSmallStr::from_string(s))
+                    })
                 }
             }
 
             #[allow(deprecated)]
             impl<'a> ::std::convert::From<::std::borrow::Cow<'a, ::std::primitive::str>> for #ident {
                 fn from(s: ::std::borrow::Cow<'a, ::std::primitive::str>) -> Self {
-                    Self::from(s.as_ref())
+                    match s {
+                        ::std::borrow::Cow::Borrowed(s) => Self::from(s),
+                        ::std::borrow::Cow::Owned(s) => Self::from(s),
+                    }
                 }
             }
 
@@ -330,8 +407,8 @@ impl EventTypeEnum<'_> {
                 where
                     D: #serde::Deserializer<'de>
                 {
-                    let s = #ruma_common::serde::deserialize_cow_str(deserializer)?;
-                    Ok(::std::convert::From::from(&s[..]))
+                    #ruma_common::serde::deserialize_cow_str(deserializer)
+                        .map(::std::convert::From::from)
                 }
             }
         }

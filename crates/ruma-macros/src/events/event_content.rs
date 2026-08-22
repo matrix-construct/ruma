@@ -442,10 +442,15 @@ impl EventContent {
 
         let event_type = self.types.ev_type.without_wildcard();
         let event_type_fn_impl = if let Some(field) = self.type_fragment_field() {
-            let format = event_type.to_owned() + "{}";
-
+            // Join the prefix and fragment in an `EventTypeJoinString` so the type stays inline
+            // instead of taking a `String` allocation that is dropped again.
             quote! {
-                ::std::convert::From::from(::std::format!(#format, self.#field))
+                {
+                    let event_type: #ruma_events::EventTypeJoinString =
+                        ::std::iter::FromIterator::from_iter([#event_type, &self.#field[..]]);
+
+                    ::std::convert::From::from(&event_type[..])
+                }
             }
         } else {
             quote! { ::std::convert::From::from(#event_type) }
@@ -576,7 +581,7 @@ impl EventContent {
                                 #fields_ident_without_type_fragment:
                                     c.#fields_ident_without_type_fragment,
                             )*
-                            #type_fragment_field: type_fragment.to_owned(),
+                            #type_fragment_field: ::std::convert::From::from(type_fragment),
                         })
                     } else {
                         ::std::result::Result::Err(#serde::de::Error::custom(

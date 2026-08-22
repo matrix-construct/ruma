@@ -63,3 +63,85 @@ macro_rules! priv_owned_str {
         });
     };
 }
+
+/// Convenience macro to declare a struct named `PrivOwnedSmallStr`.
+///
+/// This serves the same purpose as [`priv_owned_str!`], but the wrapper holds a
+/// [`smallstr::SmallString`] instead of a `Box<str>`, so a short value stays inline rather than
+/// taking a heap allocation. The inline buffer widens every value of the enum carrying the
+/// `_Custom` variant, trading stack bytes on the common documented types for an allocation
+/// spared on each custom one, so size the wrapped type to the modal custom string.
+///
+/// The struct implements `Clone`, `Debug`, `PartialEq`, `Eq`, `PartialOrd`, `Ord` and `Hash`.
+///
+/// ## Arguments
+///
+/// The first argument names the wrapped type, which must be a `smallstr::SmallString`. UniFFI
+/// takes the name of a custom type from a plain identifier, so a type from another crate is
+/// imported before it is passed here.
+///
+/// The `uniffi` keyword can follow it, with the same meaning as in [`priv_owned_str!`], except
+/// that the value crosses the FFI boundary as a plain string rather than as an object. The
+/// wrapped type gets a bridge of its own, for the generated code that holds one beside the
+/// wrapper.
+///
+/// ## Example
+///
+/// ```
+/// pub type MyString = smallstr::SmallString<[u8; 40]>;
+/// ruma_common::priv_owned_small_str!(MyString);
+/// ```
+///
+/// [`smallstr::SmallString`]: https://docs.rs/smallstr/latest/smallstr/struct.SmallString.html
+#[doc(hidden)]
+#[macro_export]
+macro_rules! priv_owned_small_str {
+    ( $inner:ident ) => {
+        #[doc(hidden)]
+        #[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+        pub struct PrivOwnedSmallStr($inner);
+
+        impl PrivOwnedSmallStr {
+            /// Take ownership of `s`, keeping its allocation only when the value is too long to
+            /// be held inline.
+            ///
+            /// Deliberately not `pub`: a public constructor would let other crates build the
+            /// `_Custom` variant this type exists to keep private.
+            #[allow(dead_code)]
+            fn from_string(s: std::string::String) -> Self {
+                if s.len() > <$inner>::new().inline_size() {
+                    Self(<$inner>::from_string(s))
+                } else {
+                    Self(<$inner>::from_str(&s))
+                }
+            }
+        }
+
+        impl std::fmt::Debug for PrivOwnedSmallStr {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                self.0.fmt(f)
+            }
+        }
+    };
+
+    ( $inner:ident, uniffi ) => {
+        $crate::priv_owned_small_str!($inner);
+
+        #[cfg(feature = "unstable-uniffi")]
+        uniffi::custom_type!(PrivOwnedSmallStr, std::string::String, {
+            lower: |value| value.0.into_string(),
+            try_lift: |value| Ok(PrivOwnedSmallStr::from_string(value)),
+        });
+
+        // The wrapped type is foreign, so its bridge is declared `remote` and implements the
+        // conversion traits for the calling crate's `UniFfiTag` alone. Generated code holding
+        // the wrapped type itself beside the wrapper, as an event type enum holds one in its
+        // type fragment variants, needs the bridge in the crate it is generated into.
+        #[cfg(feature = "unstable-uniffi")]
+        uniffi::custom_type!($inner, std::string::String, {
+            remote,
+            lower: |value| value.into_string(),
+            try_lift: |value| Ok(PrivOwnedSmallStr::from_string(value).0),
+        });
+    };
+}
