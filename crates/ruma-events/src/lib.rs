@@ -111,6 +111,7 @@ use std::collections::BTreeSet;
 
 use ruma_common::{EventEncryptionAlgorithm, OwnedUserId, room_version_rules::RedactionRules};
 use serde::{Deserialize, Serialize, Serializer, de::IgnoredAny};
+use smallstr::SmallString;
 
 // Needs to be public for trybuild tests
 #[doc(hidden)]
@@ -220,6 +221,27 @@ pub use self::{
     },
 };
 
+/// String type for an event type.
+///
+/// A short value is held inline rather than on the heap; one longer than the inline budget
+/// spills to a heap allocation.
+pub type EventTypeString = SmallString<[u8; EVENT_TYPE_STRING_INLINE_BYTES]>;
+
+/// Number of bytes carried in an `EventTypeString` before spilling.
+///
+/// The modal custom event type fits well within this, and 40 is the largest budget that keeps
+/// the string to 48 bytes overall. It also keeps the alias a type distinct from `StateKey`: were
+/// the two budgets equal, an implementation on either alias, the UniFFI bridge that
+/// `priv_owned_small_str!` declares included, would silently cover the other.
+const EVENT_TYPE_STRING_INLINE_BYTES: usize = 40;
+
+/// String type for joining a prefix event type to its fragment.
+///
+/// Only the transient join in macro-generated `event_type()` uses this; a stored payload stays
+/// on the tighter [`EventTypeString`] budget, which a joined value would usually spill.
+#[doc(hidden)]
+pub type EventTypeJoinString = SmallString<[u8; 64]>;
+
 /// Trait to define the behavior of redact an event's content object.
 pub trait RedactContent {
     /// The redacted form of the event's content.
@@ -310,3 +332,4 @@ impl Mentions {
 }
 
 ruma_common::priv_owned_str!(uniffi);
+ruma_common::priv_owned_small_str!(EventTypeString, uniffi);

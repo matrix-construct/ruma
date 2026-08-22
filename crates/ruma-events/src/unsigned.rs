@@ -13,7 +13,7 @@ use super::{
     relation::{BundledMessageLikeRelations, BundledStateRelations},
     room::redaction::RoomRedactionEventContent,
 };
-use crate::TimelineEventType;
+use crate::{EventTypeString, TimelineEventType};
 
 mod redacted_because_serde;
 
@@ -267,7 +267,7 @@ pub struct UnsignedRoomRedactionEvent {
 #[derive(Clone, Debug)]
 pub struct CustomRedactionEvent {
     /// The type of the event
-    event_type: Box<str>,
+    event_type: EventTypeString,
 
     /// The globally unique event identifier for the user who sent the event.
     event_id: OwnedEventId,

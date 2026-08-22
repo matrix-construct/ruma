@@ -14,3 +14,6 @@ event_enum! {
 fn main() {}
 
 ruma_common::priv_owned_str!(uniffi);
+
+use ruma_events::EventTypeString;
+ruma_common::priv_owned_small_str!(EventTypeString, uniffi);

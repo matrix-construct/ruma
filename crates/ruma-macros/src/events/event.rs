@@ -246,7 +246,7 @@ impl Event {
                         where
                             A: #serde::de::MapAccess<'de>,
                         {
-                            let mut event_type: Option<String> = None;
+                            let mut event_type: Option<#ruma_events::EventTypeString> = None;
                             #( let mut #field_idents: Option<#field_types> = None; )*
 
                             while let Some(key) = map.next_key()? {

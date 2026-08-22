@@ -14,7 +14,7 @@ use serde_json::Value as JsonValue;
 
 mod secret_encryption_algorithm_serde;
 
-use crate::macros::EventContent;
+use crate::{EventTypeString, macros::EventContent};
 
 /// A passphrase from which a key is to be derived.
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -65,7 +65,7 @@ pub struct SecretStorageKeyEventContent {
     /// The ID of the key.
     #[ruma_event(type_fragment)]
     #[serde(skip)]
-    pub key_id: String,
+    pub key_id: EventTypeString,
 
     /// The name of the key.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -83,9 +83,9 @@ pub struct SecretStorageKeyEventContent {
 }
 
 impl SecretStorageKeyEventContent {
-    /// Creates a `KeyDescription` with the given name.
-    pub fn new(key_id: String, algorithm: SecretStorageEncryptionAlgorithm) -> Self {
-        Self { key_id, name: None, algorithm, passphrase: None }
+    /// Creates a `SecretStorageKeyEventContent` with the given key ID and algorithm.
+    pub fn new(key_id: &str, algorithm: SecretStorageEncryptionAlgorithm) -> Self {
+        Self { key_id: key_id.into(), name: None, algorithm, passphrase: None }
     }
 }
 
@@ -189,7 +189,7 @@ mod tests {
     #[test]
     fn key_description_serialization() {
         let mut content = SecretStorageKeyEventContent::new(
-            "my_key".into(),
+            "my_key",
             SecretStorageEncryptionAlgorithm::V1AesHmacSha2(SecretStorageV1AesHmacSha2Properties {
                 iv: Some(Base64::parse("YWJjZGVmZ2hpamtsbW5vcA").unwrap()),
                 mac: Some(Base64::parse("aWRvbnRrbm93d2hhdGFtYWNsb29rc2xpa2U").unwrap()),
@@ -265,7 +265,7 @@ mod tests {
         let mut content = SecretStorageKeyEventContent {
             passphrase: Some(PassPhrase::new("rocksalt".into(), uint!(8))),
             ..SecretStorageKeyEventContent::new(
-                "my_key".into(),
+                "my_key",
                 SecretStorageEncryptionAlgorithm::V1AesHmacSha2(
                     SecretStorageV1AesHmacSha2Properties {
                         iv: Some(Base64::parse("YWJjZGVmZ2hpamtsbW5vcA").unwrap()),
@@ -332,7 +332,7 @@ mod tests {
     #[test]
     fn event_content_serialization() {
         let mut content = SecretStorageKeyEventContent::new(
-            "my_key_id".into(),
+            "my_key_id",
             SecretStorageEncryptionAlgorithm::V1AesHmacSha2(SecretStorageV1AesHmacSha2Properties {
                 iv: Some(Base64::parse("YWJjZGVmZ2hpamtsbW5vcA").unwrap()),
                 mac: Some(Base64::parse("aWRvbnRrbm93d2hhdGFtYWNsb29rc2xpa2U").unwrap()),
@@ -354,7 +354,7 @@ mod tests {
     #[test]
     fn event_serialization() {
         let mut content = SecretStorageKeyEventContent::new(
-            "my_key_id".into(),
+            "my_key_id",
             SecretStorageEncryptionAlgorithm::V1AesHmacSha2(SecretStorageV1AesHmacSha2Properties {
                 iv: Some(Base64::parse("YWJjZGVmZ2hpamtsbW5vcA").unwrap()),
                 mac: Some(Base64::parse("aWRvbnRrbm93d2hhdGFtYWNsb29rc2xpa2U").unwrap()),
