@@ -10,7 +10,8 @@ exclude = [
 [advisories]
 version = 2
 ignore = [
-    "RUSTSEC-2024-0436" # in paste, used transitively by `smol_macros`, which is test-only.
+    "RUSTSEC-2024-0436", # in paste, used transitively by `smol_macros`, which is test-only.
+    "RUSTSEC-2026-0215", # smallstr is unmaintained; its alternatives fix the inline capacity our string types choose.
 ]
 
 [licenses]
