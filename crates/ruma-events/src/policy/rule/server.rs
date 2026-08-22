@@ -7,14 +7,16 @@ use ruma_macros::EventContent;
 use serde::{Deserialize, Serialize};
 
 use super::{PolicyRuleEventContent, PossiblyRedactedPolicyRuleEventContent};
-use crate::{PossiblyRedactedStateEventContent, RedactContent, StateEventType, StaticEventContent};
+use crate::{
+    PossiblyRedactedStateEventContent, RedactContent, StateEventType, StateKey, StaticEventContent,
+};
 
 /// The content of an `m.policy.rule.server` event.
 ///
 /// This event type is used to apply rules to server entities.
 #[derive(Clone, Debug, Deserialize, Serialize, EventContent)]
 #[allow(clippy::exhaustive_structs)]
-#[ruma_event(type = "m.policy.rule.server", kind = State, state_key_type = String, custom_possibly_redacted)]
+#[ruma_event(type = "m.policy.rule.server", kind = State, state_key_type = StateKey, custom_possibly_redacted)]
 pub struct PolicyRuleServerEventContent(pub PolicyRuleEventContent);
 
 /// The possibly redacted form of [`PolicyRuleServerEventContent`].
@@ -25,7 +27,7 @@ pub struct PolicyRuleServerEventContent(pub PolicyRuleEventContent);
 pub struct PossiblyRedactedPolicyRuleServerEventContent(pub PossiblyRedactedPolicyRuleEventContent);
 
 impl PossiblyRedactedStateEventContent for PossiblyRedactedPolicyRuleServerEventContent {
-    type StateKey = String;
+    type StateKey = StateKey;
 
     fn event_type(&self) -> StateEventType {
         StateEventType::PolicyRuleServer

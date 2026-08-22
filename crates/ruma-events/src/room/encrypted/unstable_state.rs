@@ -6,14 +6,14 @@ use ruma_macros::EventContent;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    PossiblyRedactedStateEventContent, RedactContent, StateEventType, StaticEventContent,
+    PossiblyRedactedStateEventContent, RedactContent, StateEventType, StateKey, StaticEventContent,
     room::encrypted::EncryptedEventScheme,
 };
 
 /// The content of an `m.room.encrypted` state event.
 #[derive(Clone, Debug, Deserialize, Serialize, EventContent)]
 #[cfg_attr(not(ruma_unstable_exhaustive_types), non_exhaustive)]
-#[ruma_event(type = "m.room.encrypted", kind = State, state_key_type = String, custom_possibly_redacted)]
+#[ruma_event(type = "m.room.encrypted", kind = State, state_key_type = StateKey, custom_possibly_redacted)]
 pub struct StateRoomEncryptedEventContent {
     /// Algorithm-specific fields.
     #[serde(flatten)]
@@ -35,7 +35,7 @@ impl StaticEventContent for PossiblyRedactedStateRoomEncryptedEventContent {
 }
 
 impl PossiblyRedactedStateEventContent for PossiblyRedactedStateRoomEncryptedEventContent {
-    type StateKey = String;
+    type StateKey = StateKey;
 
     fn event_type(&self) -> StateEventType {
         StateEventType::RoomEncrypted
