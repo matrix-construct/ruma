@@ -8,7 +8,7 @@ use ruma_common::OwnedMxcUri;
 use ruma_macros::{EventContent, StringEnum};
 use serde::{Deserialize, Serialize};
 
-use crate::{PrivOwnedStr, room::ImageInfo};
+use crate::{PrivOwnedStr, StateKey, room::ImageInfo};
 
 /// The content of an [`m.room.image_pack`] event.
 ///
@@ -17,7 +17,7 @@ use crate::{PrivOwnedStr, room::ImageInfo};
 /// [`m.room.image_pack`]: https://spec.matrix.org/v1.19/client-server-api/#mroomimage_pack
 #[derive(Clone, Debug, Default, Deserialize, Serialize, EventContent)]
 #[cfg_attr(not(ruma_unstable_exhaustive_types), non_exhaustive)]
-#[ruma_event(type = "m.room.image_pack", kind = State, state_key_type = String)]
+#[ruma_event(type = "m.room.image_pack", kind = State, state_key_type = StateKey)]
 pub struct RoomImagePackEventContent {
     /// A map from a shortcode to an image object.
     ///

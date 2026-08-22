@@ -1,17 +1,20 @@
-use std::str::FromStr;
+use std::{fmt::Write as _, str::FromStr};
 
 use ruma_common::{OwnedUserId, UserId};
 use serde::{
     Serialize, Serializer,
     de::{self, Deserialize, Deserializer, Unexpected},
 };
+
+use crate::StateKey;
+
 /// A type that can be used as the `state_key` for call member state events.
 /// Those state keys can be a combination of UserId and DeviceId.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
 #[allow(clippy::exhaustive_structs)]
 pub struct CallMemberStateKey {
     key: CallMemberStateKeyEnum,
-    raw: Box<str>,
+    raw: StateKey,
 }
 
 impl CallMemberStateKey {
@@ -53,7 +56,11 @@ impl AsRef<str> for CallMemberStateKey {
 
 impl From<CallMemberStateKeyEnum> for CallMemberStateKey {
     fn from(value: CallMemberStateKeyEnum) -> Self {
-        let raw = value.to_string().into();
+        // Formatted in place so a short state key stays inline.
+        let mut raw = StateKey::new();
+
+        write!(raw, "{value}").expect("writing to a string never fails");
+
         Self { key: value, raw }
     }
 }

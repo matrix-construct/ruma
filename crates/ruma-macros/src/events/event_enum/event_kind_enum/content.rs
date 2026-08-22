@@ -211,7 +211,7 @@ impl EventContentEnumVariation<'_> {
             self.kind.to_content_kind_trait(self.variation.to_event_content_trait());
         let extra_event_content_impl = (self.kind == EventEnumKind::State).then(|| {
             quote! {
-                type StateKey = String;
+                type StateKey = #ruma_events::StateKey;
             }
         });
 
