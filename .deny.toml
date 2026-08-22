@@ -10,6 +10,9 @@ exclude = [
 [advisories]
 version = 2
 yanked = "deny"
+ignore = [
+    "RUSTSEC-2026-0215", # smallstr is unmaintained; its alternatives fix the inline capacity our string types choose.
+]
 
 [licenses]
 version = 2
