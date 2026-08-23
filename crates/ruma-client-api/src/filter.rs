@@ -7,6 +7,8 @@ mod lazy_load;
 mod url;
 
 use js_int::UInt;
+#[cfg(feature = "unstable-msc4429")]
+use ruma_common::profile::ProfileFieldName;
 use ruma_common::{OwnedRoomId, OwnedUserId, serde::StringEnum};
 use serde::{Deserialize, Serialize};
 
@@ -348,6 +350,45 @@ pub struct FilterDefinition {
     /// Filters to be applied to room data.
     #[serde(default, skip_serializing_if = "ruma_common::serde::is_empty")]
     pub room: RoomFilter,
+
+    /// The profile field updates to include.
+    ///
+    /// Specified as part of [MSC4429](https://github.com/matrix-org/matrix-spec-proposals/pull/4429).
+    #[cfg(feature = "unstable-msc4429")]
+    #[serde(
+        default,
+        skip_serializing_if = "ruma_common::serde::is_empty",
+        rename = "org.matrix.msc4429.profile_fields",
+        alias = "profile_fields"
+    )]
+    pub profile_fields: ProfileFieldsFilter,
+}
+
+/// The profile fields a client wants updates for.
+///
+/// An empty list of ids, which is the default, asks for no profile updates at all.
+///
+/// Specified as part of [MSC4429](https://github.com/matrix-org/matrix-spec-proposals/pull/4429).
+#[cfg(feature = "unstable-msc4429")]
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
+#[cfg_attr(not(ruma_unstable_exhaustive_types), non_exhaustive)]
+pub struct ProfileFieldsFilter {
+    /// The names of the profile fields to receive updates for.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub ids: Vec<ProfileFieldName>,
+}
+
+#[cfg(feature = "unstable-msc4429")]
+impl ProfileFieldsFilter {
+    /// Creates an empty `ProfileFieldsFilter`.
+    pub fn new() -> Self {
+        Default::default()
+    }
+
+    /// Returns true if no profile field was asked for.
+    pub fn is_empty(&self) -> bool {
+        self.ids.is_empty()
+    }
 }
 
 impl FilterDefinition {
@@ -379,7 +420,21 @@ impl FilterDefinition {
 
     /// Returns `true` if all fields are empty.
     pub fn is_empty(&self) -> bool {
-        let Self { event_fields, event_format, presence, account_data, room } = self;
+        let Self {
+            event_fields,
+            event_format,
+            presence,
+            account_data,
+            room,
+            #[cfg(feature = "unstable-msc4429")]
+            profile_fields,
+        } = self;
+
+        #[cfg(feature = "unstable-msc4429")]
+        if !profile_fields.is_empty() {
+            return false;
+        }
+
         event_fields.is_none()
             && *event_format == EventFormat::Client
             && presence.is_empty()
@@ -400,6 +455,8 @@ macro_rules! can_be_empty {
 
 can_be_empty!(Filter);
 can_be_empty!(FilterDefinition);
+#[cfg(feature = "unstable-msc4429")]
+can_be_empty!(ProfileFieldsFilter);
 can_be_empty!(RoomEventFilter);
 can_be_empty!(RoomFilter);
 
@@ -413,6 +470,33 @@ mod tests {
     use super::{
         Filter, FilterDefinition, LazyLoadOptions, RoomEventFilter, RoomFilter, UrlFilter,
     };
+
+    /// MSC4429 puts the filter behind an unstable name until it stabilizes, and
+    /// clients switch to the stable one on their own, so both must deserialize.
+    #[cfg(feature = "unstable-msc4429")]
+    #[test]
+    fn profile_fields_filter_accepts_both_names() {
+        for name in ["org.matrix.msc4429.profile_fields", "profile_fields"] {
+            let filter: FilterDefinition =
+                from_json_value(json!({ name: { "ids": ["m.status"] } })).unwrap();
+
+            assert_eq!(filter.profile_fields.ids.len(), 1);
+            assert_eq!(filter.profile_fields.ids[0].as_str(), "m.status");
+            assert!(!filter.is_empty());
+        }
+    }
+
+    /// An absent filter asks for no profile updates at all, so it must not
+    /// serialize and must leave an otherwise-default filter empty.
+    #[cfg(feature = "unstable-msc4429")]
+    #[test]
+    fn absent_profile_fields_filter_is_empty() {
+        let filter = FilterDefinition::default();
+
+        assert!(filter.profile_fields.is_empty());
+        assert!(filter.is_empty());
+        assert_to_canonical_json_eq!(filter, json!({}));
+    }
 
     #[test]
     fn default_filters_are_empty() {

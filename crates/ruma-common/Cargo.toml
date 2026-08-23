@@ -49,6 +49,7 @@ unstable-msc4186 = []
 unstable-msc4195 = []
 # Profile Updates Sliding Sync Extension
 unstable-msc4262 = []
+unstable-msc4429 = []
 # Thread subscriptions.
 unstable-msc4306 = []
 # OAuth step up authentication
