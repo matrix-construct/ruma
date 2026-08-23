@@ -6,6 +6,8 @@ use std::{collections::BTreeMap, time::Duration};
 
 use as_variant::as_variant;
 use js_int::UInt;
+#[cfg(feature = "unstable-msc4429")]
+use ruma_common::profile::ProfileFieldName;
 use ruma_common::{
     OneTimeKeyAlgorithm, OwnedEventId, OwnedRoomId, OwnedUserId,
     api::{auth_scheme::AccessToken, request, response},
@@ -19,6 +21,8 @@ use ruma_events::{
     presence::PresenceEvent,
 };
 use serde::{Deserialize, Serialize};
+#[cfg(feature = "unstable-msc4429")]
+use serde_json::Value as JsonValue;
 
 mod response_serde;
 
@@ -135,6 +139,18 @@ pub struct Response {
     /// fallback keys.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub device_unused_fallback_key_types: Option<Vec<OneTimeKeyAlgorithm>>,
+
+    /// Updates to the profiles of users sharing a room with this one.
+    ///
+    /// Specified as part of [MSC4429](https://github.com/matrix-org/matrix-spec-proposals/pull/4429).
+    #[cfg(feature = "unstable-msc4429")]
+    #[serde(
+        default,
+        skip_serializing_if = "BTreeMap::is_empty",
+        rename = "org.matrix.msc4429.users",
+        alias = "users"
+    )]
+    pub users: BTreeMap<OwnedUserId, UserUpdate>,
 }
 
 impl Request {
@@ -156,7 +172,37 @@ impl Response {
             device_lists: Default::default(),
             device_one_time_keys_count: BTreeMap::new(),
             device_unused_fallback_key_types: None,
+            #[cfg(feature = "unstable-msc4429")]
+            users: BTreeMap::new(),
         }
+    }
+}
+
+/// Updates to one user, outside of any room.
+///
+/// Specified as part of [MSC4429](https://github.com/matrix-org/matrix-spec-proposals/pull/4429).
+#[cfg(feature = "unstable-msc4429")]
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
+#[cfg_attr(not(ruma_unstable_exhaustive_types), non_exhaustive)]
+pub struct UserUpdate {
+    /// The user's profile fields that changed, by name.
+    ///
+    /// A field mapped to `null` was removed from the profile rather than set to `null`. The whole
+    /// map being `null` means the user shares no room with the syncing user any more, and their
+    /// profile can be dropped.
+    pub profile_updates: Option<BTreeMap<ProfileFieldName, JsonValue>>,
+}
+
+#[cfg(feature = "unstable-msc4429")]
+impl UserUpdate {
+    /// Creates a `UserUpdate` carrying the given profile field changes.
+    pub fn new(profile_updates: BTreeMap<ProfileFieldName, JsonValue>) -> Self {
+        Self { profile_updates: Some(profile_updates) }
+    }
+
+    /// Creates a `UserUpdate` telling the client to stop tracking this user.
+    pub fn dropped() -> Self {
+        Self { profile_updates: None }
     }
 }
 
@@ -776,6 +822,46 @@ mod tests {
     use serde_json::{from_value as from_json_value, json};
 
     use super::Timeline;
+
+    /// MSC4429 distinguishes a field cleared from the profile, which is `null`
+    /// under `profile_updates`, from the user becoming untrackable, which is a
+    /// `profile_updates` of `null`. Both have to survive the round trip.
+    #[cfg(feature = "unstable-msc4429")]
+    #[test]
+    fn user_update_serde() {
+        use std::collections::BTreeMap;
+
+        use ruma_common::profile::ProfileFieldName;
+
+        use super::UserUpdate;
+
+        let cleared = json!({ "profile_updates": { "m.call": null } });
+        let update: UserUpdate = from_json_value(cleared.clone()).unwrap();
+
+        assert_to_canonical_json_eq!(update, cleared);
+        assert!(
+            update
+                .profile_updates
+                .unwrap()
+                .get(&ProfileFieldName::from("m.call"))
+                .unwrap()
+                .is_null()
+        );
+
+        let dropped = json!({ "profile_updates": null });
+        let update: UserUpdate = from_json_value(dropped.clone()).unwrap();
+
+        assert_to_canonical_json_eq!(update, dropped);
+        assert!(update.profile_updates.is_none());
+
+        let update =
+            UserUpdate::new(BTreeMap::from([("m.status".into(), json!({ "text": "hi" }))]));
+
+        assert_to_canonical_json_eq!(
+            update,
+            json!({ "profile_updates": { "m.status": { "text": "hi" } } })
+        );
+    }
 
     #[test]
     fn timeline_serde() {
