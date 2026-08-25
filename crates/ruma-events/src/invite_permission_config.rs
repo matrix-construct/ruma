@@ -17,6 +17,7 @@ use crate::PrivOwnedStr;
 ///
 /// [`m.invite_permission_config`]: https://spec.matrix.org/v1.19/client-server-api/#minvite_permission_config
 #[derive(Clone, Debug, Deserialize, Serialize, EventContent)]
+#[cfg_attr(not(feature = "unstable-msc4155"), derive(Default))]
 #[cfg_attr(not(ruma_unstable_exhaustive_types), non_exhaustive)]
 #[ruma_event(
     kind = GlobalAccountData,
@@ -78,7 +79,7 @@ pub struct InvitePermissionConfigEventContent {
     /// [server ACLs].
     ///
     /// [MSC4155]: https://github.com/matrix-org/matrix-spec-proposals/pull/4155
-    /// [server ACLs]: https://spec.matrix.org/latest/client-server-api/#mroomserver_acl
+    /// [server ACLs]: https://spec.matrix.org/v1.19/client-server-api/#mroomserver_acl
     #[cfg(feature = "unstable-msc4155")]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub allowed_servers: Vec<String>,
@@ -170,23 +171,21 @@ impl InvitePermissionConfigEventContent {
     }
 }
 
+/// `enabled` defaults to `true`, so the derive only serves the build without
+/// [MSC4155]'s rule lists.
+///
+/// [MSC4155]: https://github.com/matrix-org/matrix-spec-proposals/pull/4155
+#[cfg(feature = "unstable-msc4155")]
 impl Default for InvitePermissionConfigEventContent {
     fn default() -> Self {
         Self {
             default_action: None,
-            #[cfg(feature = "unstable-msc4155")]
             enabled: true,
-            #[cfg(feature = "unstable-msc4155")]
             allowed_users: Vec::new(),
-            #[cfg(feature = "unstable-msc4155")]
             ignored_users: Vec::new(),
-            #[cfg(feature = "unstable-msc4155")]
             blocked_users: Vec::new(),
-            #[cfg(feature = "unstable-msc4155")]
             allowed_servers: Vec::new(),
-            #[cfg(feature = "unstable-msc4155")]
             ignored_servers: Vec::new(),
-            #[cfg(feature = "unstable-msc4155")]
             blocked_servers: Vec::new(),
         }
     }
@@ -214,7 +213,7 @@ pub enum InvitePermission {
 
 /// Whether any glob in `globs` matches `value`, case-insensitively like [server ACLs].
 ///
-/// [server ACLs]: https://spec.matrix.org/latest/client-server-api/#mroomserver_acl
+/// [server ACLs]: https://spec.matrix.org/v1.19/client-server-api/#mroomserver_acl
 #[cfg(feature = "unstable-msc4155")]
 fn matches(globs: &[String], value: &str) -> bool {
     globs.iter().any(|glob| match glob.contains(['*', '?']) {
