@@ -512,6 +512,50 @@ mod tests {
         }
 
         #[test]
+        fn matching_is_case_insensitive() {
+            // Synapse compiles every glob with glob_to_regex, whose ignore_case
+            // defaults to true, so matching here is case-insensitive for interop.
+            let config = config(json!({
+                "blocked_users": ["@Spammer:Example.ORG"],
+                "ignored_servers": ["*.BadGuys.org"],
+            }));
+
+            assert_eq!(
+                config.permission(user_id!("@spammer:example.org")),
+                InvitePermission::Block
+            );
+            assert_eq!(
+                config.permission(user_id!("@SPAMMER:example.org")),
+                InvitePermission::Block
+            );
+            assert_eq!(
+                config.permission(user_id!("@rando:mail.badguys.org")),
+                InvitePermission::Ignore
+            );
+            assert_eq!(
+                config.permission(user_id!("@rando:MAIL.badguys.org")),
+                InvitePermission::Ignore
+            );
+        }
+
+        #[test]
+        fn allow_list_matches_case_insensitively() {
+            // Also Synapse's behaviour: one allow entry admits every casing of
+            // the id, which over-allows where localparts are case-distinct.
+            let config = config(json!({
+                "allowed_users": ["@alice:example.org"],
+                "blocked_servers": ["*"],
+            }));
+
+            assert_eq!(config.permission(user_id!("@alice:example.org")), InvitePermission::Allow);
+            assert_eq!(config.permission(user_id!("@Alice:example.org")), InvitePermission::Allow);
+            assert_eq!(
+                config.permission(user_id!("@mallory:example.org")),
+                InvitePermission::Block
+            );
+        }
+
+        #[test]
         fn invalid_list_invalidates_event() {
             assert!(
                 from_json_value::<InvitePermissionConfigEventContent>(json!({
