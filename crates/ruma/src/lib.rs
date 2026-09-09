@@ -143,9 +143,8 @@
 //!   variable.
 //! * `ruma_unstable_exhaustive_types` -- Most types in Ruma are marked as non-exhaustive to avoid
 //!   breaking changes when new fields are added in the specification. This setting compiles all
-//!   types as exhaustive. By enabling this feature you opt out of all semver guarantees Ruma
-//!   otherwise provides. This can also be configured by setting the
-//!   `RUMA_UNSTABLE_EXHAUSTIVE_TYPES` environment variable.
+//!   types as exhaustive, opting out of all semver guarantees Ruma otherwise provides. Every
+//!   crate's build script sets it unconditionally, so all types in this fork are exhaustive.
 
 #![warn(missing_docs)]
 #![cfg_attr(docsrs, feature(doc_cfg))]
