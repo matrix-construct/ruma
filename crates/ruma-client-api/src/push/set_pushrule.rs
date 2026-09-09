@@ -78,6 +78,12 @@ pub mod v3 {
                     let body = PatternedRequestBody { actions: r.actions, pattern: r.pattern };
                     ruma_common::serde::json_to_buf(&body)
                 }
+                #[cfg(feature = "unstable-msc4306")]
+                NewPushRule::PostContent(r) => {
+                    let body =
+                        ConditionalRequestBody { actions: r.actions, conditions: r.conditions };
+                    ruma_common::serde::json_to_buf(&body)
+                }
                 NewPushRule::Room(r) => {
                     let body = SimpleRequestBody { actions: r.actions };
                     ruma_common::serde::json_to_buf(&body)

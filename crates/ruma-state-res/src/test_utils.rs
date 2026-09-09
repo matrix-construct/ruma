@@ -13,6 +13,7 @@ pub fn default_room_id(format: &RoomIdFormatVersion) -> OwnedRoomId {
         RoomIdFormatVersion::V1 => owned_room_id!("!room:matrix.local"),
         // The default ID of the `m.room.create` event.
         RoomIdFormatVersion::V2 => owned_room_id!("!room-create"),
+        #[cfg(not(ruma_unstable_exhaustive_types))]
         _ => panic!("Unsupported RoomIdFormatVersion"),
     }
 }
