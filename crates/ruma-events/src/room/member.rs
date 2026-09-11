@@ -897,6 +897,19 @@ pub struct RoomMemberUnsigned {
     /// regardless of history visibility.
     pub replaces_state: Option<OwnedEventId>,
 
+    /// The delayed event ID, included only for the sending user, according to [MSC4140].
+    ///
+    /// [MSC4140]: https://github.com/matrix-org/matrix-spec-proposals/pull/4140
+    #[cfg(feature = "unstable-msc4140")]
+    pub delay_id: Option<String>,
+
+    /// The unstable delayed event ID, included only for the sending user, according to [MSC4140].
+    ///
+    /// [MSC4140]: https://github.com/matrix-org/matrix-spec-proposals/pull/4140
+    #[cfg(feature = "unstable-msc4140")]
+    #[serde(rename = "org.matrix.msc4140.delay_id")]
+    pub unstable_delay_id: Option<String>,
+
     /// Optional previous content of the event.
     pub prev_content: Option<PossiblyRedactedRoomMemberEventContent>,
 
@@ -939,6 +952,10 @@ impl CanBeEmpty for RoomMemberUnsigned {
         let Self {
             age,
             transaction_id,
+            #[cfg(feature = "unstable-msc4140")]
+            delay_id,
+            #[cfg(feature = "unstable-msc4140")]
+            unstable_delay_id,
             replaces_state,
             prev_content,
             prev_sender,
@@ -947,14 +964,18 @@ impl CanBeEmpty for RoomMemberUnsigned {
             relations,
         } = self;
 
-        age.is_none()
+        let empty = age.is_none()
             && transaction_id.is_none()
             && replaces_state.is_none()
             && prev_content.is_none()
             && prev_sender.is_none()
             && invite_room_state.is_empty()
             && knock_room_state.is_empty()
-            && relations.is_empty()
+            && relations.is_empty();
+        #[cfg(feature = "unstable-msc4140")]
+        let empty = empty && delay_id.is_none() && unstable_delay_id.is_none();
+
+        empty
     }
 }
 

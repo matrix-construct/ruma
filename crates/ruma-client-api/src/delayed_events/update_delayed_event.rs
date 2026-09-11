@@ -27,6 +27,7 @@ pub enum UpdateAction {
 }
 
 pub mod msc4140_v1;
+pub mod v1;
 
 pub mod msc4140_v2 {
     //! `/unstable/org.matrix.msc4140/` ([MSC])

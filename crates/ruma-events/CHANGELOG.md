@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+Improvements:
+
+- Add stable and unstable delayed event IDs to unsigned data behind `unstable-msc4140`.
+
 ## 0.36.0
 
 Breaking changes:

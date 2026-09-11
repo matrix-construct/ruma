@@ -2,6 +2,8 @@
 //!
 //! Send a delayed event (a scheduled message) to a room.
 
+pub mod v3;
+
 pub mod msc4140 {
     //! `/unstable/org.matrix.msc4140/` ([MSC])
     //!

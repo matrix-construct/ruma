@@ -355,6 +355,8 @@ impl<'de> Visitor<'de> for ErrorKindVisitor {
                     .unwrap_or_default(),
             }),
             ErrorCode::Unrecognized => ErrorKind::Unrecognized,
+            #[cfg(feature = "unstable-msc4140")]
+            ErrorCode::UnstableDelayTooLarge => ErrorKind::UnstableDelayTooLarge,
             ErrorCode::UnsupportedRoomVersion => ErrorKind::UnsupportedRoomVersion,
             ErrorCode::UrlNotSet => ErrorKind::UrlNotSet,
             ErrorCode::UserDeactivated => ErrorKind::UserDeactivated,
@@ -531,6 +533,8 @@ impl Serialize for ErrorKind {
             | Self::UserInUse
             | Self::UserSuspended
             | Self::WeakPassword => {}
+            #[cfg(feature = "unstable-msc4140")]
+            Self::DelayTooLarge | Self::UnstableDelayTooLarge => {}
             #[cfg(feature = "unstable-msc4306")]
             Self::ConflictingUnsubscription => {}
             #[cfg(feature = "unstable-msc4306")]
@@ -541,9 +545,8 @@ impl Serialize for ErrorKind {
             Self::UnknownPos => {}
             #[cfg(feature = "unstable-msc4388")]
             Self::ConcurrentWrite => {}
-            #[cfg(feature = "unstable-msc4140")]
-            Self::DelayTooLarge => {}
         }
+
         st.end()
     }
 }

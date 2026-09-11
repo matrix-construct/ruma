@@ -5,6 +5,9 @@
 //!
 //! [spec]: https://spec.matrix.org/v1.19/client-server-api/#capabilities-negotiation
 
+#[cfg(all(test, feature = "unstable-msc4140"))]
+mod tests;
+
 pub mod v3 {
     //! `/v3/` ([spec])
     //!
@@ -14,6 +17,8 @@ pub mod v3 {
     use std::collections::BTreeSet;
     use std::{borrow::Cow, collections::BTreeMap};
 
+    #[cfg(feature = "unstable-msc4140")]
+    use js_int::UInt;
     use maplit::btreemap;
     #[cfg(feature = "unstable-msc4540")]
     use ruma_common::api::OAuthClientScope;
@@ -52,6 +57,25 @@ pub mod v3 {
     pub struct Response {
         /// The capabilities the server supports
         pub capabilities: Capabilities,
+    }
+
+    /// Limits for delayed events defined by [MSC4140].
+    ///
+    /// An absent limit is not enforced; a zero limit disables delayed events.
+    /// The same type describes the stable and unstable capability names.
+    ///
+    /// [MSC4140]: https://github.com/matrix-org/matrix-spec-proposals/pull/4140
+    #[cfg(feature = "unstable-msc4140")]
+    #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+    #[cfg_attr(not(ruma_unstable_exhaustive_types), non_exhaustive)]
+    pub struct DelayedEventsCapability {
+        /// Maximum allowed delay in milliseconds, if the server enforces a limit.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub max_delay_ms: Option<UInt>,
+
+        /// Maximum number of scheduled delayed events per user, if the server enforces a limit.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub max_scheduled: Option<UInt>,
     }
 
     impl Request {
@@ -131,11 +155,7 @@ pub mod v3 {
         pub account_moderation: AccountModerationCapability,
 
         /// Capability to indicate if the user can request URL previews.
-        #[serde(
-            rename = "m.preview_url",
-            default,
-            skip_serializing_if = "PreviewUrlCapability::is_default"
-        )]
+        #[serde(rename = "m.preview_url", default)]
         pub preview_url: PreviewUrlCapability,
 
         /// Capability to indicate if the user can perform administrative actions. ([MSC4540])
@@ -148,6 +168,23 @@ pub mod v3 {
             skip_serializing_if = "AdminCapability::is_default"
         )]
         pub admin: AdminCapability,
+
+        /// Limits for delayed events using the stable endpoints from [MSC4140].
+        ///
+        /// [MSC4140]: https://github.com/matrix-org/matrix-spec-proposals/pull/4140
+        #[cfg(feature = "unstable-msc4140")]
+        #[serde(rename = "m.delayed_events", skip_serializing_if = "Option::is_none")]
+        pub delayed_events: Option<DelayedEventsCapability>,
+
+        /// Limits for delayed events using the unstable endpoints from [MSC4140].
+        ///
+        /// [MSC4140]: https://github.com/matrix-org/matrix-spec-proposals/pull/4140
+        #[cfg(feature = "unstable-msc4140")]
+        #[serde(
+            rename = "org.matrix.msc4140.delayed_events",
+            skip_serializing_if = "Option::is_none"
+        )]
+        pub unstable_delayed_events: Option<DelayedEventsCapability>,
 
         /// Any other custom capabilities that the server supports outside of the specification,
         /// labeled using the Java package naming convention and stored as arbitrary JSON values.
@@ -183,6 +220,12 @@ pub mod v3 {
                 #[cfg(feature = "unstable-msc4540")]
                 #[serde(rename = "org.continuwuity.msc4540.admin", default)]
                 admin: AdminCapability,
+                #[cfg(feature = "unstable-msc4140")]
+                #[serde(rename = "m.delayed_events", default)]
+                delayed_events: Option<DelayedEventsCapability>,
+                #[cfg(feature = "unstable-msc4140")]
+                #[serde(rename = "org.matrix.msc4140.delayed_events", default)]
+                unstable_delayed_events: Option<DelayedEventsCapability>,
                 #[serde(flatten)]
                 custom_capabilities: BTreeMap<String, JsonValue>,
             }
@@ -209,6 +252,10 @@ pub mod v3 {
                 preview_url: helper.preview_url,
                 #[cfg(feature = "unstable-msc4540")]
                 admin: helper.admin,
+                #[cfg(feature = "unstable-msc4140")]
+                delayed_events: helper.delayed_events,
+                #[cfg(feature = "unstable-msc4140")]
+                unstable_delayed_events: helper.unstable_delayed_events,
                 custom_capabilities: helper.custom_capabilities,
             })
         }
@@ -248,6 +295,13 @@ pub mod v3 {
                 "m.preview_url" => Some(Cow::Owned(serialize(&self.preview_url))),
                 #[cfg(feature = "unstable-msc4540")]
                 "org.continuwuity.msc4540.admin" => Some(Cow::Owned(serialize(&self.admin))),
+
+                #[cfg(feature = "unstable-msc4140")]
+                "m.delayed_events" => self.delayed_events.as_ref().map(serialize).map(Cow::Owned),
+                #[cfg(feature = "unstable-msc4140")]
+                "org.matrix.msc4140.delayed_events" => {
+                    self.unstable_delayed_events.as_ref().map(serialize).map(Cow::Owned)
+                }
                 _ => self.custom_capabilities.get(capability).map(Cow::Borrowed),
             }
         }
@@ -279,6 +333,15 @@ pub mod v3 {
                 "m.preview_url" => self.preview_url = from_json_value(value)?,
                 #[cfg(feature = "unstable-msc4540")]
                 "org.continuwuity.msc4540.admin" => self.admin = from_json_value(value)?,
+
+                #[cfg(feature = "unstable-msc4140")]
+                "m.delayed_events" => {
+                    self.delayed_events = Some(from_json_value(value)?);
+                }
+                #[cfg(feature = "unstable-msc4140")]
+                "org.matrix.msc4140.delayed_events" => {
+                    self.unstable_delayed_events = Some(from_json_value(value)?);
+                }
                 _ => {
                     self.custom_capabilities.insert(capability.to_owned(), value);
                 }
@@ -633,13 +696,27 @@ pub mod v3 {
         }
     }
 
+    #[cfg(feature = "unstable-msc4140")]
+    impl DelayedEventsCapability {
+        /// Creates a delayed-events capability with the given optional limits.
+        ///
+        /// Omitted limits are unrestricted; a zero limit disables delayed events.
+        pub fn new(max_delay_ms: Option<UInt>, max_scheduled: Option<UInt>) -> Self {
+            Self { max_delay_ms, max_scheduled }
+        }
+    }
+
     #[cfg(test)]
     mod tests {
+        #[cfg(feature = "unstable-msc4140")]
+        use js_int::uint;
         use ruma_common::RoomVersionId;
         #[cfg(feature = "unstable-msc4540")]
         use ruma_common::api::OAuthClientScope;
         use serde_json::to_value as to_json_value;
 
+        #[cfg(feature = "unstable-msc4140")]
+        use super::DelayedEventsCapability;
         #[allow(deprecated)]
         use super::{
             AccountModerationCapability, Capabilities, ChangePasswordCapability,
@@ -667,6 +744,16 @@ pub mod v3 {
                 preview_url: PreviewUrlCapability::new(false),
                 #[cfg(feature = "unstable-msc4540")]
                 admin: super::AdminCapability::new([OAuthClientScope::ApiFullAccess].into()),
+                #[cfg(feature = "unstable-msc4140")]
+                delayed_events: Some(DelayedEventsCapability::new(
+                    Some(uint!(1000)),
+                    Some(uint!(10)),
+                )),
+                #[cfg(feature = "unstable-msc4140")]
+                unstable_delayed_events: Some(DelayedEventsCapability::new(
+                    Some(uint!(2000)),
+                    None,
+                )),
                 custom_capabilities: Default::default(),
             }
         }

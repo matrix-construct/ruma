@@ -2,6 +2,8 @@ mod audio;
 mod beacon;
 mod beacon_info;
 mod call;
+#[cfg(feature = "unstable-msc4140")]
+mod delayed_events;
 mod encrypted;
 mod enums;
 mod ephemeral_event;

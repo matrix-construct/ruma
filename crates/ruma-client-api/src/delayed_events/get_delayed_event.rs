@@ -2,6 +2,8 @@
 //!
 //! Get information about a delayed event.
 
+pub mod v1;
+
 pub mod msc4140 {
     //! `/unstable/org.matrix.msc4140/` ([MSC])
     //!

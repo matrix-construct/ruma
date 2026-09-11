@@ -2,6 +2,8 @@
 // enabled to avoid errors when running checks wrongly without enabling any of them.
 #![cfg(any(feature = "client", feature = "server"))]
 
+#[cfg(feature = "unstable-msc4140")]
+mod delayed_events;
 mod event_content;
 mod headers;
 mod uiaa;

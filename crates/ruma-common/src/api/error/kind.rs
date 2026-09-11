@@ -111,11 +111,8 @@ pub enum ErrorKind {
 
     /// `M_DELAY_TOO_LARGE`
     ///
-    /// The requested delay of a [delayed event] exceeds the maximum allowed by the server.
+    /// The requested delay exceeds the server's limit for delayed events from [MSC4140].
     ///
-    /// This uses the unstable prefix defined in [MSC4140].
-    ///
-    /// [delayed event]: https://github.com/matrix-org/matrix-spec-proposals/pull/4140
     /// [MSC4140]: https://github.com/matrix-org/matrix-spec-proposals/pull/4140
     #[cfg(feature = "unstable-msc4140")]
     DelayTooLarge,
@@ -397,6 +394,14 @@ pub enum ErrorKind {
     /// HTTP method is used.
     Unrecognized,
 
+    /// `ORG.MATRIX.MSC4140_DELAY_TOO_LARGE`
+    ///
+    /// The unstable spelling of [`DelayTooLarge`](Self::DelayTooLarge) from [MSC4140].
+    ///
+    /// [MSC4140]: https://github.com/matrix-org/matrix-spec-proposals/pull/4140
+    #[cfg(feature = "unstable-msc4140")]
+    UnstableDelayTooLarge,
+
     /// `M_UNSUPPORTED_ROOM_VERSION`
     ///
     /// The request to `POST /_matrix/client/*/createRoom` used a room version that the server does
@@ -534,6 +539,8 @@ impl ErrorKind {
             ErrorKind::UnknownPos => ErrorCode::UnknownPos,
             ErrorKind::UnknownToken(_) => ErrorCode::UnknownToken,
             ErrorKind::Unrecognized => ErrorCode::Unrecognized,
+            #[cfg(feature = "unstable-msc4140")]
+            ErrorKind::UnstableDelayTooLarge => ErrorCode::UnstableDelayTooLarge,
             ErrorKind::UnsupportedRoomVersion => ErrorCode::UnsupportedRoomVersion,
             ErrorKind::UrlNotSet => ErrorCode::UrlNotSet,
             ErrorKind::UserDeactivated => ErrorCode::UserDeactivated,
@@ -880,14 +887,10 @@ pub enum ErrorCode {
 
     /// `M_DELAY_TOO_LARGE`
     ///
-    /// The requested delay of a [delayed event] exceeds the maximum allowed by the server.
+    /// The requested delay exceeds the server's limit for delayed events from [MSC4140].
     ///
-    /// This uses the unstable prefix defined in [MSC4140].
-    ///
-    /// [delayed event]: https://github.com/matrix-org/matrix-spec-proposals/pull/4140
     /// [MSC4140]: https://github.com/matrix-org/matrix-spec-proposals/pull/4140
     #[cfg(feature = "unstable-msc4140")]
-    #[ruma_enum(rename = "ORG.MATRIX.MSC4140_DELAY_TOO_LARGE")]
     DelayTooLarge,
 
     /// `M_DUPLICATE_ANNOTATION`
@@ -1173,6 +1176,15 @@ pub enum ErrorCode {
     /// implemented or a 405 HTTP status code if the endpoint is implemented, but the incorrect
     /// HTTP method is used.
     Unrecognized,
+
+    /// `ORG.MATRIX.MSC4140_DELAY_TOO_LARGE`
+    ///
+    /// The unstable spelling of [`DelayTooLarge`](Self::DelayTooLarge) from [MSC4140].
+    ///
+    /// [MSC4140]: https://github.com/matrix-org/matrix-spec-proposals/pull/4140
+    #[cfg(feature = "unstable-msc4140")]
+    #[ruma_enum(rename = "ORG.MATRIX.MSC4140_DELAY_TOO_LARGE")]
+    UnstableDelayTooLarge,
 
     /// `M_UNSUPPORTED_ROOM_VERSION`
     UnsupportedRoomVersion,

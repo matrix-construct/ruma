@@ -33,6 +33,19 @@ pub struct MessageLikeUnsigned<C: MessageLikeEventContent> {
     /// which sent it.
     pub transaction_id: Option<OwnedTransactionId>,
 
+    /// The delayed event ID, included only for the sending user, according to [MSC4140].
+    ///
+    /// [MSC4140]: https://github.com/matrix-org/matrix-spec-proposals/pull/4140
+    #[cfg(feature = "unstable-msc4140")]
+    pub delay_id: Option<String>,
+
+    /// The unstable delayed event ID, included only for the sending user, according to [MSC4140].
+    ///
+    /// [MSC4140]: https://github.com/matrix-org/matrix-spec-proposals/pull/4140
+    #[cfg(feature = "unstable-msc4140")]
+    #[serde(rename = "org.matrix.msc4140.delay_id")]
+    pub unstable_delay_id: Option<String>,
+
     /// [Bundled aggregations] of related child events.
     ///
     /// [Bundled aggregations]: https://spec.matrix.org/v1.19/client-server-api/#aggregations-of-child-events
@@ -56,6 +69,10 @@ impl<C: MessageLikeEventContent> MessageLikeUnsigned<C> {
         Self {
             age: None,
             transaction_id: None,
+            #[cfg(feature = "unstable-msc4140")]
+            delay_id: None,
+            #[cfg(feature = "unstable-msc4140")]
+            unstable_delay_id: None,
             relations: BundledMessageLikeRelations::default(),
             #[cfg(feature = "unstable-msc4354")]
             sticky_duration_ttl_ms: None,
@@ -78,8 +95,12 @@ impl<C: MessageLikeEventContent> CanBeEmpty for MessageLikeUnsigned<C> {
     fn is_empty(&self) -> bool {
         let empty =
             self.age.is_none() && self.transaction_id.is_none() && self.relations.is_empty();
+
+        #[cfg(feature = "unstable-msc4140")]
+        let empty = empty && self.delay_id.is_none() && self.unstable_delay_id.is_none();
         #[cfg(feature = "unstable-msc4354")]
         let empty = empty && self.sticky_duration_ttl_ms.is_none();
+
         empty
     }
 }
@@ -98,6 +119,19 @@ pub struct StateUnsigned<C: PossiblyRedactedStateEventContent> {
     /// The client-supplied transaction ID, if the client being given the event is the same one
     /// which sent it.
     pub transaction_id: Option<OwnedTransactionId>,
+
+    /// The delayed event ID, included only for the sending user, according to [MSC4140].
+    ///
+    /// [MSC4140]: https://github.com/matrix-org/matrix-spec-proposals/pull/4140
+    #[cfg(feature = "unstable-msc4140")]
+    pub delay_id: Option<String>,
+
+    /// The unstable delayed event ID, included only for the sending user, according to [MSC4140].
+    ///
+    /// [MSC4140]: https://github.com/matrix-org/matrix-spec-proposals/pull/4140
+    #[cfg(feature = "unstable-msc4140")]
+    #[serde(rename = "org.matrix.msc4140.delay_id")]
+    pub unstable_delay_id: Option<String>,
 
     /// The event ID of the state event replaced by this event.
     ///
@@ -137,6 +171,10 @@ impl<C: PossiblyRedactedStateEventContent> StateUnsigned<C> {
         Self {
             age: None,
             transaction_id: None,
+            #[cfg(feature = "unstable-msc4140")]
+            delay_id: None,
+            #[cfg(feature = "unstable-msc4140")]
+            unstable_delay_id: None,
             replaces_state: None,
             prev_content: None,
             prev_sender: None,
@@ -157,6 +195,10 @@ impl<C: PossiblyRedactedStateEventContent> CanBeEmpty for StateUnsigned<C> {
         let Self {
             age,
             transaction_id,
+            #[cfg(feature = "unstable-msc4140")]
+            delay_id,
+            #[cfg(feature = "unstable-msc4140")]
+            unstable_delay_id,
             replaces_state,
             prev_content,
             prev_sender,
@@ -173,6 +215,9 @@ impl<C: PossiblyRedactedStateEventContent> CanBeEmpty for StateUnsigned<C> {
             && relations.is_empty();
         #[cfg(feature = "unstable-msc4354")]
         let empty = empty && sticky_duration_ttl_ms.is_none();
+        #[cfg(feature = "unstable-msc4140")]
+        let empty = empty && delay_id.is_none() && unstable_delay_id.is_none();
+
         empty
     }
 }

@@ -10,6 +10,9 @@ use super::{
     WrongRoomKeysVersionErrorData,
 };
 
+#[cfg(feature = "unstable-msc4140")]
+mod delayed_events;
+
 #[test]
 fn deserialize_forbidden() {
     let deserialized: StandardErrorBody = from_json_value(json!({

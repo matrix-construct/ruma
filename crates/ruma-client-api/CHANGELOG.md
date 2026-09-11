@@ -5,6 +5,11 @@
 - Add `tags`, `not_tags`, and `spaces` fields to `sync_events::v5::request::ListFilters` as
   specified in MSC4186 `SlidingRoomFilter` properties.
 
+Improvements:
+
+- Add final MSC4140 creation, action and lookup types shared by stable and unstable routes.
+- Add shared MSC4140 delayed-event limits with independent stable and unstable capability fields.
+
 ## 0.26.0
 
 Breaking changes:
