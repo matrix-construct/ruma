@@ -7,6 +7,8 @@ pub mod get_delayed_event;
 pub mod send_delayed_event;
 pub mod update_delayed_event;
 
+mod duration;
+
 // deprecated endpoints
 pub mod delayed_message_event;
 pub mod delayed_state_event;

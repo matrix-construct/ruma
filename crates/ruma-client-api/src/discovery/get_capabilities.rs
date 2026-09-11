@@ -5,6 +5,9 @@
 //!
 //! [spec]: https://spec.matrix.org/v1.19/client-server-api/#capabilities-negotiation
 
+#[cfg(all(test, feature = "unstable-msc4140"))]
+mod tests;
+
 pub mod v3 {
     //! `/v3/` ([spec])
     //!
@@ -12,6 +15,8 @@ pub mod v3 {
 
     use std::{borrow::Cow, collections::BTreeMap};
 
+    #[cfg(feature = "unstable-msc4140")]
+    use js_int::UInt;
     use maplit::btreemap;
     use ruma_common::{
         RoomVersionId,
@@ -47,6 +52,25 @@ pub mod v3 {
     pub struct Response {
         /// The capabilities the server supports
         pub capabilities: Capabilities,
+    }
+
+    /// Limits for delayed events defined by [MSC4140].
+    ///
+    /// An absent limit is not enforced; a zero limit disables delayed events.
+    /// The same type describes the stable and unstable capability names.
+    ///
+    /// [MSC4140]: https://github.com/matrix-org/matrix-spec-proposals/pull/4140
+    #[cfg(feature = "unstable-msc4140")]
+    #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+    #[cfg_attr(not(ruma_unstable_exhaustive_types), non_exhaustive)]
+    pub struct DelayedEventsCapability {
+        /// Maximum allowed delay in milliseconds, if the server enforces a limit.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub max_delay_ms: Option<UInt>,
+
+        /// Maximum number of scheduled delayed events per user, if the server enforces a limit.
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub max_scheduled: Option<UInt>,
     }
 
     impl Request {
@@ -129,6 +153,23 @@ pub mod v3 {
         )]
         pub account_moderation: AccountModerationCapability,
 
+        /// Limits for delayed events using the stable endpoints from [MSC4140].
+        ///
+        /// [MSC4140]: https://github.com/matrix-org/matrix-spec-proposals/pull/4140
+        #[cfg(feature = "unstable-msc4140")]
+        #[serde(rename = "m.delayed_events", skip_serializing_if = "Option::is_none")]
+        pub delayed_events: Option<DelayedEventsCapability>,
+
+        /// Limits for delayed events using the unstable endpoints from [MSC4140].
+        ///
+        /// [MSC4140]: https://github.com/matrix-org/matrix-spec-proposals/pull/4140
+        #[cfg(feature = "unstable-msc4140")]
+        #[serde(
+            rename = "org.matrix.msc4140.delayed_events",
+            skip_serializing_if = "Option::is_none"
+        )]
+        pub unstable_delayed_events: Option<DelayedEventsCapability>,
+
         /// Any other custom capabilities that the server supports outside of the specification,
         /// labeled using the Java package naming convention and stored as arbitrary JSON values.
         #[serde(flatten)]
@@ -163,6 +204,12 @@ pub mod v3 {
                     Some(Cow::Owned(serialize(&self.forget_forced_upon_leave)))
                 }
                 "m.account_moderation" => Some(Cow::Owned(serialize(&self.account_moderation))),
+                #[cfg(feature = "unstable-msc4140")]
+                "m.delayed_events" => self.delayed_events.as_ref().map(serialize).map(Cow::Owned),
+                #[cfg(feature = "unstable-msc4140")]
+                "org.matrix.msc4140.delayed_events" => {
+                    self.unstable_delayed_events.as_ref().map(serialize).map(Cow::Owned)
+                }
                 _ => self.custom_capabilities.get(capability).map(Cow::Borrowed),
             }
         }
@@ -187,6 +234,14 @@ pub mod v3 {
                 }
                 "m.account_moderation" => {
                     self.account_moderation = from_json_value(value)?;
+                }
+                #[cfg(feature = "unstable-msc4140")]
+                "m.delayed_events" => {
+                    self.delayed_events = Some(from_json_value(value)?);
+                }
+                #[cfg(feature = "unstable-msc4140")]
+                "org.matrix.msc4140.delayed_events" => {
+                    self.unstable_delayed_events = Some(from_json_value(value)?);
                 }
                 _ => {
                     self.custom_capabilities.insert(capability.to_owned(), value);
@@ -475,6 +530,16 @@ pub mod v3 {
         /// Returns whether all fields have their default value.
         pub fn is_default(&self) -> bool {
             !self.suspend && !self.lock
+        }
+    }
+
+    #[cfg(feature = "unstable-msc4140")]
+    impl DelayedEventsCapability {
+        /// Creates a delayed-events capability with the given optional limits.
+        ///
+        /// Omitted limits are unrestricted; a zero limit disables delayed events.
+        pub fn new(max_delay_ms: Option<UInt>, max_scheduled: Option<UInt>) -> Self {
+            Self { max_delay_ms, max_scheduled }
         }
     }
 }

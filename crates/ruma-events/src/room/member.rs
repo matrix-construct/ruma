@@ -877,6 +877,19 @@ pub struct RoomMemberUnsigned {
     /// which sent it.
     pub transaction_id: Option<OwnedTransactionId>,
 
+    /// The delayed event ID, included only for the sending user, according to [MSC4140].
+    ///
+    /// [MSC4140]: https://github.com/matrix-org/matrix-spec-proposals/pull/4140
+    #[cfg(feature = "unstable-msc4140")]
+    pub delay_id: Option<String>,
+
+    /// The unstable delayed event ID, included only for the sending user, according to [MSC4140].
+    ///
+    /// [MSC4140]: https://github.com/matrix-org/matrix-spec-proposals/pull/4140
+    #[cfg(feature = "unstable-msc4140")]
+    #[serde(rename = "org.matrix.msc4140.delay_id")]
+    pub unstable_delay_id: Option<String>,
+
     /// Optional previous content of the event.
     pub prev_content: Option<PossiblyRedactedRoomMemberEventContent>,
 
@@ -910,11 +923,16 @@ impl CanBeEmpty for RoomMemberUnsigned {
     /// events. Do not use it to determine whether an incoming `unsigned` field was present - it
     /// could still have been present but contained none of the known fields.
     fn is_empty(&self) -> bool {
-        self.age.is_none()
+        let empty = self.age.is_none()
             && self.transaction_id.is_none()
             && self.prev_content.is_none()
             && self.invite_room_state.is_empty()
-            && self.relations.is_empty()
+            && self.relations.is_empty();
+
+        #[cfg(feature = "unstable-msc4140")]
+        let empty = empty && self.delay_id.is_none() && self.unstable_delay_id.is_none();
+
+        empty
     }
 }
 

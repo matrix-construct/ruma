@@ -770,6 +770,13 @@ pub enum FeatureFlag {
     #[ruma_enum(rename = "org.matrix.msc4140")]
     Msc4140,
 
+    /// `org.matrix.msc4140.stable` enables the accepted delayed event endpoints.
+    ///
+    /// This transition flag selects stable paths before a containing Matrix version is published.
+    #[cfg(feature = "unstable-msc4140")]
+    #[ruma_enum(rename = "org.matrix.msc4140.stable")]
+    Msc4140Stable,
+
     /// `org.matrix.simplified_msc3575` ([MSC])
     ///
     /// Simplified Sliding Sync.

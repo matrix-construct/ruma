@@ -457,6 +457,19 @@ pub struct RoomRedactionUnsigned {
     /// which sent it.
     pub transaction_id: Option<OwnedTransactionId>,
 
+    /// The delayed event ID, included only for the sending user, according to [MSC4140].
+    ///
+    /// [MSC4140]: https://github.com/matrix-org/matrix-spec-proposals/pull/4140
+    #[cfg(feature = "unstable-msc4140")]
+    pub delay_id: Option<String>,
+
+    /// The unstable delayed event ID, included only for the sending user, according to [MSC4140].
+    ///
+    /// [MSC4140]: https://github.com/matrix-org/matrix-spec-proposals/pull/4140
+    #[cfg(feature = "unstable-msc4140")]
+    #[serde(rename = "org.matrix.msc4140.delay_id")]
+    pub unstable_delay_id: Option<String>,
+
     /// [Bundled aggregations] of related child events.
     ///
     /// [Bundled aggregations]: https://spec.matrix.org/v1.19/client-server-api/#aggregations-of-child-events
@@ -467,7 +480,15 @@ pub struct RoomRedactionUnsigned {
 impl RoomRedactionUnsigned {
     /// Create a new `Unsigned` with fields set to `None`.
     pub fn new() -> Self {
-        Self { age: None, transaction_id: None, relations: BundledMessageLikeRelations::default() }
+        Self {
+            age: None,
+            transaction_id: None,
+            #[cfg(feature = "unstable-msc4140")]
+            delay_id: None,
+            #[cfg(feature = "unstable-msc4140")]
+            unstable_delay_id: None,
+            relations: BundledMessageLikeRelations::default(),
+        }
     }
 }
 
@@ -484,7 +505,13 @@ impl CanBeEmpty for RoomRedactionUnsigned {
     /// events. Do not use it to determine whether an incoming `unsigned` field was present - it
     /// could still have been present but contained none of the known fields.
     fn is_empty(&self) -> bool {
-        self.age.is_none() && self.transaction_id.is_none() && self.relations.is_empty()
+        let empty =
+            self.age.is_none() && self.transaction_id.is_none() && self.relations.is_empty();
+
+        #[cfg(feature = "unstable-msc4140")]
+        let empty = empty && self.delay_id.is_none() && self.unstable_delay_id.is_none();
+
+        empty
     }
 }
 

@@ -25,6 +25,7 @@ pub enum UpdateAction {
 }
 
 pub mod unstable_v1;
+pub mod v1;
 
 pub mod unstable_v2 {
     //! `msc3814` ([MSC])

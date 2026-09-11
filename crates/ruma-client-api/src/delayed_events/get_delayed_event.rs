@@ -2,6 +2,8 @@
 //!
 //! Get the information about a delayed event.
 
+pub mod v1;
+
 pub mod unstable {
     //! `msc4140` ([MSC])
     //!

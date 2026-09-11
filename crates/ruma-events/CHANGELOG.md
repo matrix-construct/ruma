@@ -4,6 +4,7 @@
 
 Improvements:
 
+- Add stable and unstable delayed event IDs to unsigned data behind `unstable-msc4140`.
 - Add `replaces_state` field to `StateUnsigned`, due to a clarification in the Matrix spec.
 - Stabilize image packs:
   - `RoomImagePackEventContent` uses its stable `m.room.image_pack` type and was moved under

@@ -17,6 +17,8 @@ Bug fixes:
 
 Improvements:
 
+- Add final MSC4140 creation, action and lookup types shared by stable and unstable routes.
+- Add shared MSC4140 delayed-event limits with independent stable and unstable capability fields.
 - `profile::get_profile` is now using `ruma_common::profile::UserProfile` for its underlying data
   storage.
 - Add support for MSC4262 (Profile Updates Sliding Sync Extension).
