@@ -5,6 +5,7 @@
 Improvements:
 
 - Add endpoint types for application service key claims and queries from MSC3983 and MSC3984.
+- Add the `keys_claims` registration flag, opting an application service into MSC3983 key claims.
 
 ## 0.16.0
 

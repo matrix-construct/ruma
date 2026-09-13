@@ -119,6 +119,12 @@ pub struct Registration {
     /// Defaults to `false`
     #[serde(default, rename = "org.matrix.msc3202")]
     pub msc3202_transaction_extensions: bool,
+
+    /// Whether the application service serves one-time key claims, as part of MSC3983.
+    ///
+    /// Defaults to `false`.
+    #[serde(default)]
+    pub keys_claims: bool,
 }
 
 /// Initial set of fields of `Registration`.
@@ -183,6 +189,7 @@ impl From<RegistrationInit> for Registration {
             receive_ephemeral: false,
             device_management: false,
             msc3202_transaction_extensions: false,
+            keys_claims: false,
         }
     }
 }
