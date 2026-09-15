@@ -37,6 +37,7 @@ Improvements:
 - The `Profiles` sliding sync extension response data is wrapped in a `users` field instead of
   being decoded directly. The profile updates now use a `UserProfileUpdate` enum to signal if the
   profile changed or should be dropped.
+- Updated support for unstable MSC4388 with new `txn_id` field on update requests.
 
 ## 0.24.0
 
