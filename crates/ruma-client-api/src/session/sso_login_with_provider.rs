@@ -23,6 +23,7 @@ pub mod v3 {
         authentication: NoAccessToken,
         history: {
             unstable => "/_matrix/client/unstable/org.matrix.msc2858/login/sso/redirect/{idp_id}",
+            1.0 => "/_matrix/client/r0/login/sso/redirect/{idp_id}",
             1.1 => "/_matrix/client/v3/login/sso/redirect/{idp_id}",
         }
     }
