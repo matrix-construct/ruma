@@ -7,6 +7,10 @@ Breaking changes:
 - `UiaaInfo`s field `auth_error` from `Option<StandardErrorBody>` to `Option<Box<StandardErrorBody>>`
   (this saves a couple bytes when the field is not set, and gets rid of a default-warn clippy
   lint that was showing up in ruma-client and matrix-sdk)
+- `dehydrated_device::get_events::unstable` now matches the current state of MSC3814: it uses
+  `GET` with the batch token in the `from` query parameter, and the response omits `next_batch`
+  once there are no more events. The previous `POST` definition is available as
+  `dehydrated_device::get_events::unstable_v1`.
 
 Bug fixes:
 
