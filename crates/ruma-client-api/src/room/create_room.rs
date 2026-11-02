@@ -20,7 +20,7 @@ pub mod v3 {
 
     use assign::assign;
     use ruma_common::{
-        OwnedRoomId, OwnedUserId, RoomVersionId,
+        MilliSecondsSinceUnixEpoch, OwnedRoomId, OwnedUserId, RoomVersionId,
         api::{auth_scheme::AccessToken, request, response},
         metadata,
         room::RoomType,
@@ -93,6 +93,10 @@ pub mod v3 {
         /// The desired custom room ID, local part or fully qualified.
         #[serde(alias = "fi.mau.room_id", skip_serializing_if = "Option::is_none")]
         pub room_id: Option<String>,
+
+        /// The desired `origin_server_ts` of the `m.room.create` event.
+        #[serde(alias = "fi.mau.origin_server_ts", skip_serializing_if = "Option::is_none")]
+        pub origin_server_ts: Option<MilliSecondsSinceUnixEpoch>,
 
         /// Room version to set for the room.
         ///
