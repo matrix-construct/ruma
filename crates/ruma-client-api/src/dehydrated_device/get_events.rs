@@ -67,7 +67,7 @@ pub mod msc3814 {
 // Keep the legacy POST definition under its former fork name.
 pub use self::msc3814 as unstable_v1;
 
-pub mod unstable {
+pub mod unstable_v2 {
     //! `msc3814` ([MSC])
     //!
     //! [MSC]: https://github.com/matrix-org/matrix-spec-proposals/pull/3814

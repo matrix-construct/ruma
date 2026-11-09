@@ -7,10 +7,10 @@
 
 Breaking changes:
 
-- `dehydrated_device::get_events::unstable` now matches the current state of MSC3814: it uses
-  `GET` with the batch token in the `from` query parameter, and the response omits `next_batch`
-  once there are no more events. The previous `POST` definition is available as
-  `dehydrated_device::get_events::unstable_v1`.
+- `dehydrated_device::get_events::unstable` is replaced by two modules. `unstable_v2` matches the
+  current state of MSC3814: it uses `GET` with the batch token in the `from` query parameter,
+  and the response omits `next_batch` once there are no more events. `unstable_v1` keeps the
+  previous `POST` definition.
 
 Improvements:
 
