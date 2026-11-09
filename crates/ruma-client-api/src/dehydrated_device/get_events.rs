@@ -37,8 +37,12 @@ pub mod unstable_v2 {
         ///
         /// Should be a token from the `next_batch` field of a previous `/events`
         /// response.
-        #[ruma_api(query)]
         #[serde(skip_serializing_if = "Option::is_none")]
+        #[cfg_attr(
+            feature = "compat-empty-string-null",
+            serde(default, deserialize_with = "ruma_common::serde::empty_string_as_none")
+        )]
+        #[ruma_api(query)]
         pub from: Option<String>,
     }
 
@@ -133,6 +137,25 @@ pub mod unstable_v2 {
 
             assert_eq!(req.device_id, "DEHYDRATED");
             assert_eq!(req.from.as_deref(), Some("s123"));
+        }
+
+        #[test]
+        #[cfg(feature = "compat-empty-string-null")]
+        fn deserialize_request_empty_from_as_absent() {
+            let req = Request::try_from_http_request(
+                http::Request::builder()
+                    .method(http::Method::GET)
+                    .uri(
+                        "https://matrix.org/_matrix/client/unstable/org.matrix.msc3814.v1\
+                        /dehydrated_device/DEHYDRATED/events?from=",
+                    )
+                    .body(&[] as &[u8])
+                    .unwrap(),
+                &["DEHYDRATED"],
+            )
+            .unwrap();
+
+            assert_eq!(req.from, None);
         }
 
         #[test]
