@@ -4,7 +4,7 @@
 
 pub mod unstable_v1;
 
-pub mod unstable {
+pub mod unstable_v2 {
     //! `msc3814` ([MSC])
     //!
     //! [MSC]: https://github.com/matrix-org/matrix-spec-proposals/pull/3814
