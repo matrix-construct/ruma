@@ -125,6 +125,12 @@ pub struct Registration {
     /// Defaults to `false`.
     #[serde(default)]
     pub keys_claims: bool,
+
+    /// The scopes the application service requests, as part of MSC4502.
+    ///
+    /// Defaults to an empty list.
+    #[serde(default, rename = "io.element.msc4502.scopes", skip_serializing_if = "Vec::is_empty")]
+    pub scopes: Vec<String>,
 }
 
 /// Initial set of fields of `Registration`.
@@ -190,6 +196,7 @@ impl From<RegistrationInit> for Registration {
             device_management: false,
             msc3202_transaction_extensions: false,
             keys_claims: false,
+            scopes: Vec::new(),
         }
     }
 }
