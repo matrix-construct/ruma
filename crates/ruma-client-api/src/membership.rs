@@ -5,6 +5,8 @@ pub mod forget_room;
 pub mod get_member_events;
 pub mod get_mutual_rooms;
 pub mod invite_user;
+#[cfg(feature = "unstable-msc4502")]
+pub mod is_joined;
 pub mod join_room_by_id;
 pub mod join_room_by_id_or_alias;
 pub mod joined_members;
