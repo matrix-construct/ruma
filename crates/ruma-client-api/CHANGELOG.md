@@ -26,6 +26,7 @@ Improvements:
 - `profile::get_profile` is now using `ruma_common::profile::UserProfile` for its underlying data
   storage.
 - Add support for MSC4262 (Profile Updates Sliding Sync Extension).
+- Add the unstable `membership::is_joined` endpoint from MSC4502, behind `unstable-msc4502`.
 - Added new `unstable-compat-lax-syncv5-deser` feature, which allows the `name` and `avatar` fields
   for rooms and hero users to be ignored during deserialization if they have an invalid format.
 - Route the MSC4133 extended profile field endpoints (`set_profile_field`, `get_profile_field`,
