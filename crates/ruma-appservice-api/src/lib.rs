@@ -131,6 +131,26 @@ pub struct Registration {
     /// Defaults to an empty list.
     #[serde(default, rename = "io.element.msc4502.scopes", skip_serializing_if = "Vec::is_empty")]
     pub scopes: Vec<String>,
+
+    /// The path prefix the application service claims for proxied requests, as part of MSC4512.
+    ///
+    /// Given together with `proxy_url`; defaults to `None`.
+    #[serde(
+        default,
+        rename = "io.element.msc4512.proxy_prefix",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub proxy_prefix: Option<String>,
+
+    /// The URL proxied requests under `proxy_prefix` are forwarded to, as part of MSC4512.
+    ///
+    /// Given together with `proxy_prefix`; defaults to `None`.
+    #[serde(
+        default,
+        rename = "io.element.msc4512.proxy_url",
+        skip_serializing_if = "Option::is_none"
+    )]
+    pub proxy_url: Option<String>,
 }
 
 /// Initial set of fields of `Registration`.
@@ -197,6 +217,8 @@ impl From<RegistrationInit> for Registration {
             msc3202_transaction_extensions: false,
             keys_claims: false,
             scopes: Vec::new(),
+            proxy_prefix: None,
+            proxy_url: None,
         }
     }
 }

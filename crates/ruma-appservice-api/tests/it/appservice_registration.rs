@@ -113,3 +113,43 @@ fn registration_without_scopes() {
     let serialized = serde_yaml::to_string(&observed).unwrap();
     assert!(!serialized.contains("scopes"));
 }
+
+#[test]
+fn registration_with_proxy_claim() {
+    let registration_config = r#"
+        id: "lk-jwt-service"
+        url: null
+        as_token: "30c05ae90a248a4188e620216fa72e349803310ec83e2a77b34fe90be6081f46"
+        hs_token: "312df522183efd404ec1cd22d2ffa4bbc76a8c1ccf541dd692eef281356bb74e"
+        sender_localpart: "_lk_jwt"
+        namespaces:
+          users: []
+        io.element.msc4512.proxy_prefix: "rtc/livekit"
+        io.element.msc4512.proxy_url: "http://lk-jwt-service:8080"
+        "#;
+    let observed: Registration = serde_yaml::from_str(registration_config).unwrap();
+    assert_eq!(observed.proxy_prefix.as_deref(), Some("rtc/livekit"));
+    assert_eq!(observed.proxy_url.as_deref(), Some("http://lk-jwt-service:8080"));
+
+    let serialized = serde_yaml::to_string(&observed).unwrap();
+    assert!(serialized.contains("io.element.msc4512.proxy_prefix"));
+    assert!(serialized.contains("io.element.msc4512.proxy_url"));
+}
+
+#[test]
+fn registration_without_proxy_claim() {
+    let registration_config = r#"
+        id: "IRC Bridge"
+        url: null
+        as_token: "30c05ae90a248a4188e620216fa72e349803310ec83e2a77b34fe90be6081f46"
+        hs_token: "312df522183efd404ec1cd22d2ffa4bbc76a8c1ccf541dd692eef281356bb74e"
+        sender_localpart: "_irc_bot"
+        namespaces: {}
+        "#;
+    let observed: Registration = serde_yaml::from_str(registration_config).unwrap();
+    assert!(observed.proxy_prefix.is_none());
+    assert!(observed.proxy_url.is_none());
+
+    let serialized = serde_yaml::to_string(&observed).unwrap();
+    assert!(!serialized.contains("proxy"));
+}
