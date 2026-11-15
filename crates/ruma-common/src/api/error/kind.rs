@@ -402,6 +402,32 @@ pub enum ErrorKind {
     #[cfg(feature = "unstable-msc4140")]
     UnstableDelayTooLarge,
 
+    /// `IO.ELEMENT.MSC4512_FEDPROXY_CONNECTION_FAILED`
+    ///
+    /// The server could not deliver a proxied federation request, from [MSC4512].
+    ///
+    /// [MSC4512]: https://github.com/matrix-org/matrix-spec-proposals/pull/4512
+    #[cfg(feature = "unstable-msc4512")]
+    UnstableFedProxyConnectionFailed,
+
+    /// `IO.ELEMENT.MSC4512_FEDPROXY_DESTINATION_DENIED`
+    ///
+    /// The server refuses to send a proxied federation request to the destination, from
+    /// [MSC4512].
+    ///
+    /// [MSC4512]: https://github.com/matrix-org/matrix-spec-proposals/pull/4512
+    #[cfg(feature = "unstable-msc4512")]
+    UnstableFedProxyDestinationDenied,
+
+    /// `IO.ELEMENT.MSC4512_FEDPROXY_PATH_NOT_ALLOWED`
+    ///
+    /// The path of a proxied federation request is outside the application service's proxy prefix,
+    /// from [MSC4512].
+    ///
+    /// [MSC4512]: https://github.com/matrix-org/matrix-spec-proposals/pull/4512
+    #[cfg(feature = "unstable-msc4512")]
+    UnstableFedProxyPathNotAllowed,
+
     /// `M_UNSUPPORTED_ROOM_VERSION`
     ///
     /// The request to `POST /_matrix/client/*/createRoom` used a room version that the server does
@@ -541,6 +567,16 @@ impl ErrorKind {
             ErrorKind::Unrecognized => ErrorCode::Unrecognized,
             #[cfg(feature = "unstable-msc4140")]
             ErrorKind::UnstableDelayTooLarge => ErrorCode::UnstableDelayTooLarge,
+            #[cfg(feature = "unstable-msc4512")]
+            ErrorKind::UnstableFedProxyConnectionFailed => {
+                ErrorCode::UnstableFedProxyConnectionFailed
+            }
+            #[cfg(feature = "unstable-msc4512")]
+            ErrorKind::UnstableFedProxyDestinationDenied => {
+                ErrorCode::UnstableFedProxyDestinationDenied
+            }
+            #[cfg(feature = "unstable-msc4512")]
+            ErrorKind::UnstableFedProxyPathNotAllowed => ErrorCode::UnstableFedProxyPathNotAllowed,
             ErrorKind::UnsupportedRoomVersion => ErrorCode::UnsupportedRoomVersion,
             ErrorKind::UrlNotSet => ErrorCode::UrlNotSet,
             ErrorKind::UserDeactivated => ErrorCode::UserDeactivated,
@@ -1185,6 +1221,35 @@ pub enum ErrorCode {
     #[cfg(feature = "unstable-msc4140")]
     #[ruma_enum(rename = "ORG.MATRIX.MSC4140_DELAY_TOO_LARGE")]
     UnstableDelayTooLarge,
+
+    /// `IO.ELEMENT.MSC4512_FEDPROXY_CONNECTION_FAILED`
+    ///
+    /// The server could not deliver a proxied federation request, from [MSC4512].
+    ///
+    /// [MSC4512]: https://github.com/matrix-org/matrix-spec-proposals/pull/4512
+    #[cfg(feature = "unstable-msc4512")]
+    #[ruma_enum(rename = "IO.ELEMENT.MSC4512_FEDPROXY_CONNECTION_FAILED")]
+    UnstableFedProxyConnectionFailed,
+
+    /// `IO.ELEMENT.MSC4512_FEDPROXY_DESTINATION_DENIED`
+    ///
+    /// The server refuses to send a proxied federation request to the destination, from
+    /// [MSC4512].
+    ///
+    /// [MSC4512]: https://github.com/matrix-org/matrix-spec-proposals/pull/4512
+    #[cfg(feature = "unstable-msc4512")]
+    #[ruma_enum(rename = "IO.ELEMENT.MSC4512_FEDPROXY_DESTINATION_DENIED")]
+    UnstableFedProxyDestinationDenied,
+
+    /// `IO.ELEMENT.MSC4512_FEDPROXY_PATH_NOT_ALLOWED`
+    ///
+    /// The path of a proxied federation request is outside the application service's proxy prefix,
+    /// from [MSC4512].
+    ///
+    /// [MSC4512]: https://github.com/matrix-org/matrix-spec-proposals/pull/4512
+    #[cfg(feature = "unstable-msc4512")]
+    #[ruma_enum(rename = "IO.ELEMENT.MSC4512_FEDPROXY_PATH_NOT_ALLOWED")]
+    UnstableFedProxyPathNotAllowed,
 
     /// `M_UNSUPPORTED_ROOM_VERSION`
     UnsupportedRoomVersion,

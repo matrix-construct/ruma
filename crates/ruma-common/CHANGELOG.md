@@ -4,6 +4,7 @@
 
 Improvements:
 
+- Add the unstable federation proxy error codes for MSC4512.
 - Add the MSC4140 stable-route transition feature flag.
 - Add stable and unstable excessive-delay error codes for MSC4140.
 

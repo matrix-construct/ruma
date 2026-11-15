@@ -357,6 +357,16 @@ impl<'de> Visitor<'de> for ErrorKindVisitor {
             ErrorCode::Unrecognized => ErrorKind::Unrecognized,
             #[cfg(feature = "unstable-msc4140")]
             ErrorCode::UnstableDelayTooLarge => ErrorKind::UnstableDelayTooLarge,
+            #[cfg(feature = "unstable-msc4512")]
+            ErrorCode::UnstableFedProxyConnectionFailed => {
+                ErrorKind::UnstableFedProxyConnectionFailed
+            }
+            #[cfg(feature = "unstable-msc4512")]
+            ErrorCode::UnstableFedProxyDestinationDenied => {
+                ErrorKind::UnstableFedProxyDestinationDenied
+            }
+            #[cfg(feature = "unstable-msc4512")]
+            ErrorCode::UnstableFedProxyPathNotAllowed => ErrorKind::UnstableFedProxyPathNotAllowed,
             ErrorCode::UnsupportedRoomVersion => ErrorKind::UnsupportedRoomVersion,
             ErrorCode::UrlNotSet => ErrorKind::UrlNotSet,
             ErrorCode::UserDeactivated => ErrorKind::UserDeactivated,
@@ -535,6 +545,10 @@ impl Serialize for ErrorKind {
             | Self::WeakPassword => {}
             #[cfg(feature = "unstable-msc4140")]
             Self::DelayTooLarge | Self::UnstableDelayTooLarge => {}
+            #[cfg(feature = "unstable-msc4512")]
+            Self::UnstableFedProxyConnectionFailed
+            | Self::UnstableFedProxyDestinationDenied
+            | Self::UnstableFedProxyPathNotAllowed => {}
             #[cfg(feature = "unstable-msc4306")]
             Self::ConflictingUnsubscription => {}
             #[cfg(feature = "unstable-msc4306")]
