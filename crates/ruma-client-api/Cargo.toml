@@ -76,6 +76,7 @@ unstable-msc4466 = []
 unstable-msc4480 = ["unstable-msc4354"]
 unstable-msc4484 = ["ruma-common/unstable-msc4484"]
 unstable-msc4502 = []
+unstable-msc4512 = ["ruma-common/unstable-msc4512"]
 unstable-msc4532 = ["ruma-common/unstable-msc4532", "ruma-events/unstable-msc4532"]
 unstable-msc4536 = ["ruma-common/unstable-msc4536"]
 unstable-msc4540 = []
@@ -92,7 +93,7 @@ js_option = { workspace = true }
 maplit = { workspace = true }
 ruma-common = { workspace = true, features = ["api"] }
 ruma-events = { workspace = true }
-ruma-identity-service-api = { workspace = true }
+ruma-identity-service-api = { workspace = true, features = ["client"] }
 serde = { workspace = true }
 serde_html_form = { workspace = true }
 serde_json = { workspace = true }
