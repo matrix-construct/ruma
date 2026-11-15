@@ -17,6 +17,7 @@ Improvements:
 
 - Add the MSC4140 stable-route transition feature flag.
 - Add stable and unstable excessive-delay error codes for MSC4140.
+- Add the unstable federation proxy error codes for MSC4512.
 - Add `From` conversions between `MatrixToUri` and `MatrixUri`.
 - Extract a common `UserProfile` type out of `ruma_client_api::profile::get_profile`.
 - Add `M_CONCURRENT_WRITE` error code, used by [MSC4438].

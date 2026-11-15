@@ -12,6 +12,8 @@ use super::{
 
 #[cfg(feature = "unstable-msc4140")]
 mod delayed_events;
+#[cfg(feature = "unstable-msc4512")]
+mod fed_proxy;
 
 #[test]
 fn deserialize_forbidden() {
