@@ -239,8 +239,11 @@ pub mod v3 {
         #[serde(rename = "ts", skip_serializing_if = "Option::is_none")]
         timestamp: Option<MilliSecondsSinceUnixEpoch>,
 
+        /// MSC4354 dropped sticky state events, so a server reads a malformed value as absent.
         #[cfg(feature = "unstable-msc4354")]
         #[serde(
+            default,
+            deserialize_with = "ruma_events::sticky::deserialize_requested_lenient",
             skip_serializing_if = "Option::is_none",
             rename = "org.matrix.msc4354.sticky_duration_ms"
         )]
@@ -343,5 +346,43 @@ mod server_tests {
 
         assert_eq!(request.room_id, "!roomid:example.org");
         assert_eq!(request.sticky_duration_ms.map(|duration| duration.get()), Some(123_456));
+    }
+
+    #[test]
+    fn deserialize_malformed_sticky_duration() {
+        for query in ["abc", "-1", "3000.5", ""] {
+            let request = http::Request::builder()
+                .method("PUT")
+                .uri(format!(
+                    "/_matrix/client/v3/rooms/!roomid:example.org/state/m.room.name/?org.matrix.msc4354.sticky_duration_ms={query}"
+                ))
+                .body(br#"{"name":"A room"}"# as &[u8])
+                .unwrap();
+
+            let request = Request::try_from_http_request(
+                request,
+                &["!roomid:example.org", "m.room.name", ""],
+            )
+            .unwrap();
+
+            assert_eq!(request.sticky_duration_ms, None, "{query}");
+        }
+    }
+
+    #[test]
+    fn deserialize_sticky_duration_over_maximum() {
+        let request = http::Request::builder()
+            .method("PUT")
+            .uri(
+                "/_matrix/client/v3/rooms/!roomid:example.org/state/m.room.name/?org.matrix.msc4354.sticky_duration_ms=7200000",
+            )
+            .body(br#"{"name":"A room"}"# as &[u8])
+            .unwrap();
+
+        let request =
+            Request::try_from_http_request(request, &["!roomid:example.org", "m.room.name", ""])
+                .unwrap();
+
+        assert_eq!(request.sticky_duration_ms.map(|duration| duration.get()), Some(3_600_000));
     }
 }

@@ -55,6 +55,24 @@ where
         .map(|duration| duration.map(StickyDurationMs::new_clamped))
 }
 
+/// Deserializes an optional requested duration from a query string, reading a value that does
+/// not parse as absent.
+///
+/// For a parameter the server ignores, so that its value can never fail the request. A valid
+/// value over [`StickyDurationMs::MAX`] is clamped.
+pub fn deserialize_requested_lenient<'de, D>(
+    deserializer: D,
+) -> Result<Option<StickyDurationMs>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    Option::<String>::deserialize(deserializer).map(|duration| {
+        duration
+            .and_then(|duration| duration.parse::<u64>().ok())
+            .map(StickyDurationMs::new_clamped)
+    })
+}
+
 impl<'de> Deserialize<'de> for StickyDurationMs {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
