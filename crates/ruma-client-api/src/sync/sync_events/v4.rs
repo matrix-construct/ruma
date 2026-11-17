@@ -133,8 +133,9 @@ pub mod request {
 
         /// Only list rooms that are direct children of any of these spaces, according to their
         /// `m.space.child` state events.
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
-        pub spaces: Vec<OwnedRoomId>,
+        /// An empty list matches no room; an absent list applies no filter.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub spaces: Option<Vec<OwnedRoomId>>,
 
         /// Whether to return encrypted rooms (as determined by the existence of an
         /// `m.room.encryption` state event).
@@ -153,8 +154,9 @@ pub mod request {
         ///
         /// If a room type is specified in both `room_types` and `not_room_types`,
         /// `not_room_types` wins and the corresponding rooms are not included.
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
-        pub room_types: Vec<RoomTypeFilter>,
+        /// An empty list matches no room; an absent list applies no filter.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub room_types: Option<Vec<RoomTypeFilter>>,
 
         /// Only list rooms that are not of these create-types, or all.
         ///
@@ -164,8 +166,9 @@ pub mod request {
         pub not_room_types: Vec<RoomTypeFilter>,
 
         /// Only list rooms with any of these tags, or all.
-        #[serde(default, skip_serializing_if = "Vec::is_empty")]
-        pub tags: Vec<TagName>,
+        /// An empty list matches no room; an absent list applies no filter.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        pub tags: Option<Vec<TagName>>,
 
         /// Only list rooms with none of these tags, or all.
         ///
@@ -194,12 +197,12 @@ pub mod request {
             } = self;
 
             *is_dm == FilterMode::Both
-                && spaces.is_empty()
+                && spaces.is_none()
                 && *is_encrypted == FilterMode::Both
                 && *is_invited == FilterMode::Both
-                && room_types.is_empty()
+                && room_types.is_none()
                 && not_room_types.is_empty()
-                && tags.is_empty()
+                && tags.is_none()
                 && not_tags.is_empty()
         }
     }
@@ -1899,16 +1902,59 @@ mod tests {
 mod client_tests {
     use std::{borrow::Cow, time::Duration};
 
+    use js_int::uint;
     use ruma_common::{
         api::{
             FeatureFlag, MatrixVersion, OutgoingRequestExt as _, SupportedVersions,
             auth_scheme::SendAccessToken,
         },
         assert_to_canonical_json_eq,
+        directory::RoomTypeFilter,
     };
-    use serde_json::{Value as JsonValue, from_slice as from_json_slice, json};
+    use serde_json::{
+        Value as JsonValue, from_slice as from_json_slice, from_value as from_json_value, json,
+        to_value as to_json_value,
+    };
 
-    use super::Request;
+    use super::{
+        Request,
+        request::{List, ListFilters, RequiredState},
+    };
+
+    #[test]
+    fn positive_filter_presence() {
+        macro_rules! check {
+            ($field:ident, $populated:expr) => {{
+                let absent: ListFilters = from_json_value(json!({})).unwrap();
+                assert_eq!(absent.$field, None);
+                assert_eq!(to_json_value(&absent).unwrap(), json!({}));
+                let expected = json!({stringify!($field): []});
+                let empty: ListFilters = from_json_value(expected.clone()).unwrap();
+                assert_eq!(empty.$field, Some(vec![]));
+                let list = List { filters: empty, ..List::new(RequiredState::new(), uint!(1)) };
+                let request = Request { lists: [("all".into(), list)].into(), ..Request::new() };
+                let supported = SupportedVersions {
+                    versions: [MatrixVersion::V1_19].into(),
+                    features: [FeatureFlag::Msc4186Stable].into(),
+                };
+                let http: http::Request<Vec<u8>> = request.try_into_http_request(
+                    "https://homeserver.tld", SendAccessToken::IfRequired("token"), Cow::Owned(supported),
+                ).unwrap();
+                let body: JsonValue = from_json_slice(http.body()).unwrap();
+                let actual = &body["lists"]["all"]["filters"];
+                assert_eq!(actual, &expected);
+                let value = json!({stringify!($field): $populated});
+                let filters: ListFilters = from_json_value(value.clone()).unwrap();
+                assert_eq!(to_json_value(filters).unwrap(), value);
+            }};
+        }
+        check!(spaces, ["!space:example.org"]);
+        check!(room_types, ["m.space"]);
+        check!(tags, ["m.favourite"]);
+        let filters: ListFilters = from_json_value(json!({"room_types": [null]})).unwrap();
+        assert_eq!(filters.room_types, Some(vec![RoomTypeFilter::Default]));
+        assert_eq!(to_json_value(&filters).unwrap(), json!({"room_types": [null]}));
+    }
 
     #[test]
     fn serialize_request() {

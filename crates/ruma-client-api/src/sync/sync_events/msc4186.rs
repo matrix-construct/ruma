@@ -261,6 +261,7 @@ pub mod request {
         pub spaces: Vec<OwnedRoomId>,
     }
 
+    /// Absent and present-empty positive filters become empty lists: no unstable constraint.
     impl From<v4::request::ListFilters> for ListFilters {
         fn from(value: v4::request::ListFilters) -> Self {
             let v4::request::ListFilters {
@@ -275,13 +276,13 @@ pub mod request {
             } = value;
 
             Self {
-                spaces,
-                tags,
+                spaces: spaces.unwrap_or_default(),
+                tags: tags.unwrap_or_default(),
                 not_tags,
                 is_dm: is_dm.into(),
                 is_encrypted: is_encrypted.into(),
                 is_invite: is_invited.into(),
-                room_types,
+                room_types: room_types.unwrap_or_default(),
                 not_room_types,
             }
         }
@@ -1502,6 +1503,22 @@ mod tests {
     use serde_json::{from_value as from_json_value, json};
 
     use super::{Request, request, request::ExtensionRoomConfig, response, v4};
+
+    #[test]
+    fn v4_conversion_loses_positive_filter_presence() {
+        let empty = v4::request::ListFilters {
+            spaces: Some(vec![]),
+            room_types: Some(vec![]),
+            tags: Some(vec![]),
+            ..Default::default()
+        };
+        for filters in [empty, v4::request::ListFilters::default()] {
+            let converted = request::ListFilters::from(filters);
+            assert!(converted.spaces.is_empty());
+            assert!(converted.room_types.is_empty());
+            assert!(converted.tags.is_empty());
+        }
+    }
 
     #[test]
     fn serialize_request_extension_room_config() {
