@@ -43,6 +43,18 @@ impl From<StickyDurationMs> for u32 {
     }
 }
 
+/// Deserializes an optional requested duration, clamping one over [`StickyDurationMs::MAX`].
+///
+/// A client may request any positive duration: MSC4354 bounds how long an event stays sticky,
+/// not what a request may ask for. Use it with `#[serde(default, deserialize_with = "...")]`.
+pub fn deserialize_requested<'de, D>(deserializer: D) -> Result<Option<StickyDurationMs>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    Option::<u64>::deserialize(deserializer)
+        .map(|duration| duration.map(StickyDurationMs::new_clamped))
+}
+
 impl<'de> Deserialize<'de> for StickyDurationMs {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
@@ -171,6 +183,26 @@ mod tests {
         let sticky_object = StickyObject { duration_ms: StickyDurationMs::new_clamped(78_000_u32) };
         let ser = serde_json::to_string(&sticky_object).unwrap();
         assert_eq!(ser, r#"{"duration_ms":78000}"#);
+    }
+
+    #[test]
+    fn deserialize_requested_clamps() {
+        #[derive(Debug, serde::Deserialize)]
+        struct Body {
+            #[serde(default, deserialize_with = "super::deserialize_requested")]
+            sticky: Option<StickyDurationMs>,
+        }
+
+        let body: Body = serde_json::from_str(r#"{"sticky":7200000}"#).unwrap();
+        assert_eq!(body.sticky.map(StickyDurationMs::get), Some(StickyDurationMs::MAX));
+
+        let body: Body = serde_json::from_str(r#"{"sticky":0}"#).unwrap();
+        assert_eq!(body.sticky.map(StickyDurationMs::get), Some(0));
+
+        let body: Body = serde_json::from_str("{}").unwrap();
+        assert_eq!(body.sticky, None);
+
+        serde_json::from_str::<Body>(r#"{"sticky":-1}"#).unwrap_err();
     }
 
     #[test]

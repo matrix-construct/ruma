@@ -69,7 +69,8 @@ pub mod v3 {
 
         /// The duration to stick the event for.
         ///
-        /// Valid values are the integer range 0-3600000 (1 hour).
+        /// Valid values are the integer range 0-3600000 (1 hour); a server reading a longer
+        /// requested duration clamps it.
         /// The presence of this field indicates that the event should be sticky, this
         /// will give this event additional delivery guarantees.
         ///
@@ -80,6 +81,8 @@ pub mod v3 {
         #[cfg(feature = "unstable-msc4354")]
         #[ruma_api(query)]
         #[serde(
+            default,
+            deserialize_with = "ruma_events::sticky::deserialize_requested",
             skip_serializing_if = "Option::is_none",
             rename = "org.matrix.msc4354.sticky_duration_ms"
         )]
@@ -214,5 +217,41 @@ mod server_tests {
 
         assert_eq!(request.room_id, "!roomid:example.org");
         assert_eq!(request.sticky_duration_ms.map(|duration| duration.get()), Some(123_456));
+    }
+
+    #[test]
+    fn deserialize_sticky_duration_over_maximum() {
+        let request = http::Request::builder()
+            .method("PUT")
+            .uri(
+                "/_matrix/client/v3/rooms/!roomid:example.org/send/m.room.message/0000?org.matrix.msc4354.sticky_duration_ms=7200000",
+            )
+            .body(br#"{"body":"Hello"}"# as &[u8])
+            .unwrap();
+
+        let request = Request::try_from_http_request(
+            request,
+            &["!roomid:example.org", "m.room.message", "0000"],
+        )
+        .unwrap();
+
+        assert_eq!(request.sticky_duration_ms.map(|duration| duration.get()), Some(3_600_000));
+    }
+
+    #[test]
+    fn deserialize_without_sticky_duration() {
+        let request = http::Request::builder()
+            .method("PUT")
+            .uri("/_matrix/client/v3/rooms/!roomid:example.org/send/m.room.message/0000")
+            .body(br#"{"body":"Hello"}"# as &[u8])
+            .unwrap();
+
+        let request = Request::try_from_http_request(
+            request,
+            &["!roomid:example.org", "m.room.message", "0000"],
+        )
+        .unwrap();
+
+        assert_eq!(request.sticky_duration_ms, None);
     }
 }
