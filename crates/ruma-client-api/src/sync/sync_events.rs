@@ -8,6 +8,9 @@ use serde::{Deserialize, Serialize};
 
 #[cfg(feature = "unstable-msc4186")]
 pub mod msc4186;
+/// The former name of [`msc4186`].
+#[cfg(feature = "unstable-msc4186")]
+pub use self::msc4186 as v5;
 pub mod v3;
 #[cfg(feature = "unstable-msc4186")]
 pub mod v4;
@@ -63,5 +66,24 @@ impl DeviceLists {
     pub fn is_empty(&self) -> bool {
         let Self { changed, left } = self;
         changed.is_empty() && left.is_empty()
+    }
+}
+
+#[cfg(all(test, feature = "unstable-msc4186"))]
+mod tests {
+    use super::{msc4186, v5};
+
+    #[test]
+    fn v5_alias_types() {
+        request(v5::Request::new());
+        response(v5::Response::new("pos".into()));
+    }
+
+    fn request(value: v5::Request) -> msc4186::Request {
+        value
+    }
+
+    fn response(value: v5::Response) -> msc4186::Response {
+        value
     }
 }

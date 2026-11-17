@@ -14,6 +14,8 @@ Breaking changes:
 
 Improvements:
 
+- Keep `sync_events::v5` as an alias of `sync_events::msc4186`.
+
 - Add the unstable `appservice::fed_proxy` endpoint from MSC4512, behind `unstable-msc4512`.
 - Add the unstable `membership::is_joined` endpoint from MSC4502, behind `unstable-msc4502`.
 - Add final MSC4140 creation, action and lookup types shared by stable and unstable routes.
