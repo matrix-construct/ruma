@@ -12,6 +12,8 @@ use ruma_common::{
     metadata,
     serde::Raw,
 };
+#[cfg(feature = "unstable-msc4354")]
+use ruma_events::sticky::StickyDurationMs;
 use ruma_events::{AnyTimelineEventContent, StateKey, TimelineEventType};
 
 metadata! {
@@ -44,6 +46,21 @@ pub struct Request {
     /// The positive delay before sending, in milliseconds on the wire.
     #[serde(with = "crate::delayed_events::duration")]
     pub delay_ms: Duration,
+
+    /// The duration the event stays sticky once sent, from [MSC4354].
+    ///
+    /// It cannot be combined with a state key. A server reading a duration over one hour clamps
+    /// it.
+    ///
+    /// [MSC4354]: https://github.com/matrix-org/matrix-spec-proposals/pull/4354
+    #[cfg(feature = "unstable-msc4354")]
+    #[serde(
+        default,
+        deserialize_with = "ruma_events::sticky::deserialize_requested",
+        skip_serializing_if = "Option::is_none",
+        rename = "org.matrix.msc4354.sticky_duration_ms"
+    )]
+    pub sticky_duration_ms: Option<StickyDurationMs>,
 
     /// The state key for a state event, including an empty key, or none for a message.
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -95,7 +112,17 @@ impl Request {
         state_key: Option<StateKey>,
         content: Raw<AnyTimelineEventContent>,
     ) -> Self {
-        Self { room_id, event_type, txn_id, delay_ms, state_key, content, ts: None }
+        Self {
+            room_id,
+            event_type,
+            txn_id,
+            delay_ms,
+            #[cfg(feature = "unstable-msc4354")]
+            sticky_duration_ms: None,
+            state_key,
+            content,
+            ts: None,
+        }
     }
 }
 
@@ -105,5 +132,48 @@ impl Response {
     /// The identifier can subsequently be used for management and lookup.
     pub fn new(delay_id: String) -> Self {
         Self { delay_id }
+    }
+}
+
+#[cfg(all(test, feature = "server", feature = "unstable-msc4354"))]
+mod tests {
+    use ruma_common::api::IncomingRequestExt as _;
+
+    use super::Request;
+
+    fn request(body: &'static [u8]) -> Request {
+        let request = http::Request::builder()
+            .method("PUT")
+            .uri("/_matrix/client/v3/rooms/!roomid:example.org/delayed_event/m.rtc.member/0000")
+            .body(body)
+            .unwrap();
+
+        Request::try_from_http_request(request, &["!roomid:example.org", "m.rtc.member", "0000"])
+            .unwrap()
+    }
+
+    #[test]
+    fn deserialize_sticky_duration() {
+        let request = request(
+            br#"{"delay_ms":1000,"org.matrix.msc4354.sticky_duration_ms":300000,"content":{}}"#,
+        );
+
+        assert_eq!(request.sticky_duration_ms.map(|duration| duration.get()), Some(300_000));
+    }
+
+    #[test]
+    fn deserialize_sticky_duration_over_maximum() {
+        let request = request(
+            br#"{"delay_ms":1000,"org.matrix.msc4354.sticky_duration_ms":7200000,"content":{}}"#,
+        );
+
+        assert_eq!(request.sticky_duration_ms.map(|duration| duration.get()), Some(3_600_000));
+    }
+
+    #[test]
+    fn deserialize_without_sticky_duration() {
+        let request = request(br#"{"delay_ms":1000,"content":{}}"#);
+
+        assert_eq!(request.sticky_duration_ms, None);
     }
 }
