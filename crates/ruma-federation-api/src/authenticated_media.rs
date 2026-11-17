@@ -109,7 +109,7 @@ impl MultipartMixedBoundary {
 
     /// Write this boundary at the end of the body.
     fn write_end(&self, buf: &mut impl std::io::Write) {
-        let _ = write!(buf, "\r\n--{}", self.0);
+        let _ = write!(buf, "\r\n--{}--", self.0);
     }
 }
 
@@ -464,6 +464,10 @@ mod tests {
         let body = ResponseBody::new(outgoing_metadata, outgoing_content);
         let multipart_content_type = body.content_type().unwrap();
         let body = body.try_into_buf::<Vec<u8>>().unwrap();
+
+        let (_, boundary) =
+            multipart_content_type.to_str().unwrap().split_once("boundary=").unwrap();
+        assert!(body.ends_with(format!("\r\n--{boundary}--").as_bytes()));
 
         let response = http::Response::builder()
             .header(http::header::CONTENT_TYPE, multipart_content_type)
