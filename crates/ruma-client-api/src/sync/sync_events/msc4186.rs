@@ -1002,6 +1002,11 @@ pub mod response {
         #[serde(default, skip_serializing_if = "ruma_common::serde::is_default")]
         pub limited: bool,
 
+        /// Set by the server when it expanded the timeline beyond the requested limit
+        /// for a room the client already knew.
+        #[serde(default, skip_serializing_if = "ruma_common::serde::is_default")]
+        pub unstable_expanded_timeline: bool,
+
         /// The number of users with membership of `join`, including the
         /// client’s own user ID.
         #[serde(skip_serializing_if = "Option::is_none")]
@@ -1046,7 +1051,7 @@ pub mod response {
         }
     }
 
-    /// The conversion is lossy: `expanded_timeline`, deleted state
+    /// The conversion is lossy: deleted state
     /// entries and the removal of the room name are dropped.
     impl From<v4::response::Room> for Room {
         fn from(value: v4::response::Room) -> Self {
@@ -1060,7 +1065,7 @@ pub mod response {
                         heroes,
                         is_dm,
                         initial,
-                        expanded_timeline: _,
+                        expanded_timeline,
                         required_state,
                         timeline,
                         prev_batch,
@@ -1088,6 +1093,7 @@ pub mod response {
                             .collect(),
                         prev_batch: prev_batch.map(Into::into),
                         limited,
+                        unstable_expanded_timeline: expanded_timeline,
                         joined_count,
                         invited_count,
                         num_live,
@@ -1503,6 +1509,19 @@ mod tests {
     use serde_json::{from_value as from_json_value, json};
 
     use super::{Request, request, request::ExtensionRoomConfig, response, v4};
+
+    #[test]
+    fn expanded_timeline() {
+        let room: response::Room = from_json_value(json!({})).unwrap();
+        assert!(!room.unstable_expanded_timeline);
+        assert_to_canonical_json_eq!(room, json!({}));
+        let room = response::Room { unstable_expanded_timeline: true, ..Default::default() };
+        assert_to_canonical_json_eq!(room, json!({"unstable_expanded_timeline": true}));
+        let full: v4::response::Room = from_json_value(json!({"expanded_timeline": true})).unwrap();
+        assert!(response::Room::from(full).unstable_expanded_timeline);
+        let stripped: v4::response::Room = from_json_value(json!({"stripped_state": []})).unwrap();
+        assert!(!response::Room::from(stripped).unstable_expanded_timeline);
+    }
 
     #[test]
     fn v4_conversion_loses_positive_filter_presence() {

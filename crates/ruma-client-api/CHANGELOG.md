@@ -8,15 +8,15 @@
 Breaking changes:
 
 - Make `spaces`, `room_types`, and `tags` in `sync_events::v4::request::ListFilters` optional.
-- `dehydrated_device::get_events::unstable` is replaced by two modules. `unstable_v2` matches the
-  current state of MSC3814: it uses `GET` with the batch token in the `from` query parameter,
-  and the response omits `next_batch` once there are no more events. `unstable_v1` keeps the
-  previous `POST` definition.
 
 Improvements:
 
+- Add `dehydrated_device::get_events::unstable_v2`, which matches the current state of MSC3814: it
+  uses `GET` with the batch token in the `from` query parameter, and the response omits `next_batch`
+  once there are no more events. `unstable_v1` is an alias of `msc3814`, the previous `POST`
+  definition.
+- Add `unstable_expanded_timeline` to `sync_events::msc4186::response::Room`.
 - Keep `sync_events::v5` as an alias of `sync_events::msc4186`.
-
 - Add the unstable `appservice::fed_proxy` endpoint from MSC4512, behind `unstable-msc4512`.
 - Add the unstable `membership::is_joined` endpoint from MSC4502, behind `unstable-msc4502`.
 - Add final MSC4140 creation, action and lookup types shared by stable and unstable routes.
