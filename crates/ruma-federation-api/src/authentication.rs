@@ -2,6 +2,7 @@
 
 use std::{fmt, str::FromStr};
 
+use headers::authorization::Credentials;
 use http::{HeaderMap, HeaderValue};
 use http_auth::ChallengeParser;
 use ruma_common::{
@@ -352,6 +353,18 @@ impl From<&XMatrix> for HeaderValue {
     }
 }
 
+impl Credentials for XMatrix {
+    const SCHEME: &'static str = Self::AUTH_SCHEME;
+
+    fn decode(value: &HeaderValue) -> Option<Self> {
+        value.try_into().ok()
+    }
+
+    fn encode(&self) -> HeaderValue {
+        self.into()
+    }
+}
+
 /// An error when trying to construct an [`XMatrix`] from a [`http::Request`].
 #[derive(Debug, Error)]
 #[non_exhaustive]
@@ -432,10 +445,26 @@ pub enum XMatrixVerificationError {
 
 #[cfg(test)]
 mod tests {
+    use headers::{Authorization, Header, authorization::Credentials};
     use http::header::HeaderValue;
     use ruma_common::{OwnedServerName, serde::Base64};
 
     use super::XMatrix;
+
+    #[test]
+    fn xmatrix_credentials() {
+        let header = HeaderValue::from_static(
+            "X-Matrix origin=origin.hs.example.com,key=\"ed25519:key1\",sig=dGVzdA",
+        );
+        let Authorization(xmatrix) =
+            Authorization::<XMatrix>::decode(&mut [&header].into_iter()).unwrap();
+        assert_eq!(xmatrix.origin.as_str(), "origin.hs.example.com");
+        assert_eq!(xmatrix.destination, None);
+        assert_eq!(xmatrix.key.as_str(), "ed25519:key1");
+        assert_eq!(xmatrix.sig, Base64::new(b"test".to_vec()));
+        assert_eq!(Credentials::encode(&xmatrix), HeaderValue::from(&xmatrix));
+        assert_eq!(<XMatrix as Credentials>::SCHEME, "X-Matrix");
+    }
 
     #[test]
     fn xmatrix_auth_pre_1_3() {

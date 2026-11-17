@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+Improvements:
+
+- Restore the `Credentials` implementation of `XMatrix`, for use with `headers::Authorization`.
+
 ## 0.17.0
 
 Breaking changes:
